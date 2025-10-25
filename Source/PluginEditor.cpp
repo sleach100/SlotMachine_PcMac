@@ -2728,6 +2728,12 @@ void SlotMachineAudioProcessorEditor::resized()
     auto patternTabsBounds = tabsRow.reduced(0, 4);
     patternTabs.setBounds(patternTabsBounds);
 
+    {
+        auto unlockBounds = btnUnlock.getBounds();
+        unlockBounds.setY(patternTabsBounds.getY());
+        btnUnlock.setBounds(unlockBounds);
+    }
+
     area.translate(0, -tabsLift);
     area.setBottom(bounds.getBottom() - margin);
 
