@@ -2735,7 +2735,6 @@ void SlotMachineAudioProcessorEditor::resized()
         component.setBounds(bounds);
     };
 
-    alignWithTabsCenterLine(btnAbout);
     alignWithTabsCenterLine(btnUnlock);
 
     area.translate(0, -tabsLift);
