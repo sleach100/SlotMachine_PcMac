@@ -2024,6 +2024,7 @@ SlotMachineAudioProcessorEditor::SlotMachineAudioProcessorEditor(SlotMachineAudi
     addAndMakeVisible(btnTutorial);     beautify(btnTutorial);     btnTutorial.addListener(this);
     addAndMakeVisible(btnUserManual);   beautify(btnUserManual);   btnUserManual.addListener(this);
     addAndMakeVisible(btnAbout);        beautify(btnAbout);        btnAbout.addListener(this);
+    addAndMakeVisible(btnLock);         beautify(btnLock);
     addAndMakeVisible(btnUnlock);       beautify(btnUnlock);
 
     addAndMakeVisible(patternTabs);
@@ -2644,7 +2645,7 @@ void SlotMachineAudioProcessorEditor::resized()
         auto sliderArea = top.removeFromLeft(420);
 
         auto buttonArea = top.reduced(10, buttonInsetY);
-        const int numButtons = 10; // Start/Save/Load/Reset Loop/Reset UI/Initialize/Options/Export MIDI/Export Audio/Visualizer (Tutorial, User Manual, About, and Unlock below)
+        const int numButtons = 10; // Start/Save/Load/Reset Loop/Reset UI/Initialize/Options/Export MIDI/Export Audio/Visualizer (Tutorial, User Manual, About, Lock, and Unlock below)
         const int bw = buttonArea.getWidth() / numButtons;
         const int bh = buttonHeight;
         const int firstRowY = buttonArea.getY();
@@ -2710,6 +2711,7 @@ void SlotMachineAudioProcessorEditor::resized()
         btnTutorial.setBounds(secondRowBounds(7));
         btnUserManual.setBounds(secondRowBounds(8));
         btnAbout.setBounds(secondRowBounds(9));
+        btnLock.setBounds(thirdRowBounds(8));
         btnUnlock.setBounds(thirdRowBounds(9));
 
         const int refH = btnTutorial.getHeight();
@@ -2729,6 +2731,10 @@ void SlotMachineAudioProcessorEditor::resized()
     patternTabs.setBounds(patternTabsBounds);
 
     {
+        auto lockBounds = btnLock.getBounds();
+        lockBounds.setY(patternTabsBounds.getY());
+        btnLock.setBounds(lockBounds);
+
         auto unlockBounds = btnUnlock.getBounds();
         unlockBounds.setY(patternTabsBounds.getY());
         btnUnlock.setBounds(unlockBounds);

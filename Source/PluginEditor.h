@@ -179,6 +179,7 @@ private:
     juce::TextButton btnTutorial{ "Tutorial" };
     juce::TextButton btnUserManual{ "User Manual" };
     juce::TextButton btnAbout{ "About" };
+    juce::TextButton btnLock{ "Lock" };
     juce::TextButton btnUnlock{ "Unlock" };
 
     std::unique_ptr<APVTS::SliderAttachment> masterBPMA;
