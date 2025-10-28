@@ -2508,6 +2508,7 @@ void SlotMachineAudioProcessorEditor::setUnlocked(bool unlocked)
 
     btnUnlock.setEnabled(!unlocked);
     btnUnlock.setButtonText(unlocked ? "Unlocked" : "Unlock");
+    btnUnlock.setVisible(!unlocked);
     btnLock.setEnabled(unlocked);
     btnLock.setButtonText(unlocked ? "Lock" : "Locked");
 
