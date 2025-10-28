@@ -3,6 +3,7 @@
 #include "PolyrhythmVizComponent.h"
 #include "BeatsQuickPickGrid.h"
 #include "CountBeatMaskGrid.h"
+#include "LicenseRegistry.h"
 
 #include <memory>
 #include <cmath>
@@ -10,6 +11,7 @@
 #include <limits>
 #include <functional>
 #include <cstring>
+#include <string>
 
 #if __has_include("BinaryData.h")
 #include "BinaryData.h"
@@ -30,10 +32,19 @@ namespace BinaryData
 }
 #endif
 
+namespace license
+{
+    bool verifyLicense(const std::string& licenseKey,
+        const std::string& firstName,
+        const std::string& lastName,
+        const std::string& email);
+}
+
 using APVTS = juce::AudioProcessorValueTreeState;
 static const juce::Identifier kPatternNameProperty("name");
 
 static juce::Font createBoldFont(float size);
+static juce::Font createRegularFont(float size);
 
 namespace
 {
@@ -256,10 +267,174 @@ namespace
         bool hasResolved = false;
     };
 
+    class UnlockDialogComponent : public juce::Component,
+                                  private juce::Button::Listener,
+                                  private juce::TextEditor::Listener
+    {
+    public:
+        struct Result
+        {
+            juce::String firstName;
+            juce::String lastName;
+            juce::String email;
+            juce::String licenseKey;
+        };
+
+        using ResultHandler = std::function<void(bool accepted, const Result& result)>;
+
+        UnlockDialogComponent(const Result& initialValues, ResultHandler handler)
+            : onResult(std::move(handler))
+        {
+            instruction.setText("Enter your license details to unlock Slot Machine.", juce::dontSendNotification);
+            instruction.setJustificationType(juce::Justification::centredLeft);
+            instruction.setColour(juce::Label::textColourId, juce::Colours::whitesmoke);
+            addAndMakeVisible(instruction);
+
+            configureLabel(firstLabel, "First Name");
+            configureLabel(lastLabel, "Last Name");
+            configureLabel(emailLabel, "Email");
+            configureLabel(licenseLabel, "License Key");
+
+            configureEditor(firstEditor, initialValues.firstName);
+            configureEditor(lastEditor, initialValues.lastName);
+            configureEditor(emailEditor, initialValues.email);
+            configureEditor(licenseEditor, initialValues.licenseKey);
+
+            unlockButton.setButtonText("Unlock");
+            unlockButton.addListener(this);
+            addAndMakeVisible(unlockButton);
+
+            cancelButton.setButtonText("Cancel");
+            cancelButton.addListener(this);
+            addAndMakeVisible(cancelButton);
+        }
+
+        void setDialogWindow(juce::DialogWindow& dialogWindow)
+        {
+            owner = &dialogWindow;
+        }
+
+        void focusFirstField()
+        {
+            firstEditor.grabKeyboardFocus();
+            firstEditor.selectAll();
+        }
+
+        void resized() override
+        {
+            auto bounds = getLocalBounds().reduced(20);
+
+            auto instructionBounds = bounds.removeFromTop(48);
+            instruction.setBounds(instructionBounds);
+
+            layoutField(bounds, firstLabel, firstEditor);
+            layoutField(bounds, lastLabel, lastEditor);
+            layoutField(bounds, emailLabel, emailEditor);
+            layoutField(bounds, licenseLabel, licenseEditor);
+
+            bounds.removeFromBottom(12);
+            auto buttonsArea = bounds.removeFromBottom(34);
+            auto right = buttonsArea.removeFromRight(220);
+            unlockButton.setBounds(right.removeFromRight(100));
+            right.removeFromRight(20);
+            cancelButton.setBounds(right.removeFromRight(100));
+        }
+
+    private:
+        void configureLabel(juce::Label& label, const juce::String& text)
+        {
+            label.setText(text, juce::dontSendNotification);
+            label.setColour(juce::Label::textColourId, juce::Colours::whitesmoke);
+            label.setJustificationType(juce::Justification::centredLeft);
+            addAndMakeVisible(label);
+        }
+
+        void configureEditor(juce::TextEditor& editor, const juce::String& initial)
+        {
+            editor.setText(initial, juce::dontSendNotification);
+            editor.setSelectAllWhenFocused(true);
+            editor.addListener(this);
+            addAndMakeVisible(editor);
+        }
+
+        void layoutField(juce::Rectangle<int>& area, juce::Label& label, juce::TextEditor& editor)
+        {
+            const int labelHeight = 18;
+            const int editorHeight = 24;
+            const int gap = 4;
+
+            auto labelBounds = area.removeFromTop(labelHeight);
+            label.setBounds(labelBounds);
+            area.removeFromTop(gap);
+            auto editorBounds = area.removeFromTop(editorHeight);
+            editor.setBounds(editorBounds);
+            area.removeFromTop(gap + 6);
+        }
+
+        void buttonClicked(juce::Button* button) override
+        {
+            if (button == &unlockButton)
+            {
+                commit(true);
+            }
+            else if (button == &cancelButton)
+            {
+                commit(false);
+            }
+        }
+
+        void textEditorReturnKeyPressed(juce::TextEditor&) override
+        {
+            commit(true);
+        }
+
+        void textEditorEscapeKeyPressed(juce::TextEditor&) override
+        {
+            commit(false);
+        }
+
+        void commit(bool accepted)
+        {
+            if (hasCommitted)
+                return;
+
+            hasCommitted = true;
+
+            Result result;
+            result.firstName = firstEditor.getText();
+            result.lastName = lastEditor.getText();
+            result.email = emailEditor.getText();
+            result.licenseKey = licenseEditor.getText();
+
+            auto handler = onResult;
+            if (handler)
+                handler(accepted, result);
+
+            if (owner != nullptr)
+                owner->closeButtonPressed();
+        }
+
+        juce::Label instruction;
+        juce::Label firstLabel;
+        juce::Label lastLabel;
+        juce::Label emailLabel;
+        juce::Label licenseLabel;
+        juce::TextEditor firstEditor;
+        juce::TextEditor lastEditor;
+        juce::TextEditor emailEditor;
+        juce::TextEditor licenseEditor;
+        juce::TextButton unlockButton;
+        juce::TextButton cancelButton;
+
+        ResultHandler onResult;
+        juce::DialogWindow* owner = nullptr;
+        bool hasCommitted = false;
+    };
+
     class AboutComponent : public juce::Component
     {
     public:
-        AboutComponent()
+        explicit AboutComponent(const juce::String& registrationInfo)
         {
             logo = juce::ImageCache::getFromMemory(BinaryData::LonePearLogic_png,
                                                    BinaryData::LonePearLogic_pngSize);
@@ -274,6 +449,13 @@ namespace
             aboutLabel.setColour(juce::Label::textColourId, juce::Colours::whitesmoke);
             aboutLabel.setFont(createBoldFont(16.0f));
             addAndMakeVisible(aboutLabel);
+
+            registrationLabel.setText("Registered to: " + registrationInfo,
+                                      juce::dontSendNotification);
+            registrationLabel.setJustificationType(juce::Justification::centred);
+            registrationLabel.setColour(juce::Label::textColourId, juce::Colours::whitesmoke);
+            registrationLabel.setFont(createRegularFont(15.0f));
+            addAndMakeVisible(registrationLabel);
         }
 
         void paint(juce::Graphics& g) override
@@ -285,18 +467,23 @@ namespace
         {
             auto bounds = getLocalBounds().reduced(20);
 
-            const int labelHeight = 48;
-            auto imageArea = bounds.removeFromTop(juce::jmax(120, bounds.getHeight() - labelHeight - 20));
+            const int aboutLabelHeight = 48;
+            const int registrationLabelHeight = 32;
+            auto imageArea = bounds.removeFromTop(juce::jmax(120, bounds.getHeight() - aboutLabelHeight - registrationLabelHeight - 30));
             logoComponent.setBounds(imageArea);
 
             bounds.removeFromTop(20);
-            aboutLabel.setBounds(bounds.removeFromTop(labelHeight));
+            aboutLabel.setBounds(bounds.removeFromTop(aboutLabelHeight));
+
+            bounds.removeFromTop(10);
+            registrationLabel.setBounds(bounds.removeFromTop(registrationLabelHeight));
         }
 
     private:
         juce::Image logo;
         juce::ImageComponent logoComponent;
         juce::Label aboutLabel;
+        juce::Label registrationLabel;
     };
 }
 
@@ -727,6 +914,11 @@ static juce::Font createBoldFont(float size)
     juce::Font f{ juce::FontOptions(size) };
     f.setBold(true);
     return f;
+}
+
+static juce::Font createRegularFont(float size)
+{
+    return juce::Font{ juce::FontOptions(size) };
 }
 
 // ===== Knob helper =====
@@ -2024,8 +2216,30 @@ SlotMachineAudioProcessorEditor::SlotMachineAudioProcessorEditor(SlotMachineAudi
     addAndMakeVisible(btnTutorial);     beautify(btnTutorial);     btnTutorial.addListener(this);
     addAndMakeVisible(btnUserManual);   beautify(btnUserManual);   btnUserManual.addListener(this);
     addAndMakeVisible(btnAbout);        beautify(btnAbout);        btnAbout.addListener(this);
-    addAndMakeVisible(btnLock);         beautify(btnLock);
-    addAndMakeVisible(btnUnlock);       beautify(btnUnlock);
+#if JUCE_DEBUG
+    addAndMakeVisible(btnLock);
+#else
+    addChildComponent(btnLock);
+    btnLock.setVisible(false);
+#endif
+    beautify(btnLock);
+    btnLock.addListener(this);
+    addAndMakeVisible(btnUnlock);       beautify(btnUnlock);       btnUnlock.addListener(this);
+
+    lockIconImage = juce::ImageCache::getFromMemory(BinaryData::LockIcon2_png, BinaryData::LockIcon2_pngSize);
+
+    auto configureLockOverlay = [this](juce::ImageComponent& component)
+    {
+        component.setImage(lockIconImage);
+        component.setInterceptsMouseClicks(false, false);
+        component.setAlwaysOnTop(true);
+        addAndMakeVisible(component);
+        component.setVisible(false);
+    };
+
+    configureLockOverlay(lockIconLoad);
+    configureLockOverlay(lockIconExportAudio);
+    configureLockOverlay(lockIconExportMidi);
 
     addAndMakeVisible(patternTabs);
     patternTabs.onTabSelected([this](int index)
@@ -2262,6 +2476,226 @@ SlotMachineAudioProcessorEditor::SlotMachineAudioProcessorEditor(SlotMachineAudi
     if (lastShowVisualizer)
         openVisualizerWindow();
 
+    initialiseLicenseState();
+}
+
+void SlotMachineAudioProcessorEditor::initialiseLicenseState()
+{
+    std::string first;
+    std::string last;
+    std::string email;
+    std::string licenseKey;
+
+    storedFirstName.clear();
+    storedLastName.clear();
+    storedEmail.clear();
+    storedLicenseKey.clear();
+
+    if (loadLicenseFromRegistry(first, last, email, licenseKey))
+    {
+        storedFirstName = first;
+        storedLastName = last;
+        storedEmail = email;
+        storedLicenseKey = licenseKey;
+
+        if (!first.empty() && !last.empty() && !email.empty() && !licenseKey.empty()
+            && license::verifyLicense(licenseKey, first, last, email))
+        {
+            setUnlocked(true);
+            return;
+        }
+    }
+
+    setUnlocked(false);
+}
+
+void SlotMachineAudioProcessorEditor::setUnlocked(bool unlocked)
+{
+    isUnlocked = unlocked;
+
+    btnUnlock.setEnabled(!unlocked);
+    btnUnlock.setButtonText(unlocked ? "Unlocked" : "Unlock");
+    btnUnlock.setVisible(!unlocked);
+#if JUCE_DEBUG
+    btnLock.setVisible(true);
+#else
+    btnLock.setVisible(false);
+#endif
+    btnLock.setEnabled(unlocked);
+    btnLock.setButtonText(unlocked ? "Lock" : "Locked");
+
+    updateLockIconPositions();
+}
+
+void SlotMachineAudioProcessorEditor::showUnlockDialog()
+{
+    UnlockDialogComponent::Result initialValues;
+    initialValues.firstName = juce::String(storedFirstName);
+    initialValues.lastName = juce::String(storedLastName);
+    initialValues.email = juce::String(storedEmail);
+    initialValues.licenseKey = juce::String(storedLicenseKey);
+
+    auto unlockComponent = std::make_unique<UnlockDialogComponent>(initialValues,
+        [safeThis = juce::Component::SafePointer<SlotMachineAudioProcessorEditor>(this)](bool accepted, const UnlockDialogComponent::Result& result)
+        {
+            if (auto* editor = safeThis.getComponent())
+            {
+                editor->handleUnlockDialogResult(accepted,
+                    result.firstName,
+                    result.lastName,
+                    result.email,
+                    result.licenseKey);
+            }
+        });
+
+    auto* componentPtr = unlockComponent.get();
+    componentPtr->setSize(440, 320);
+
+    juce::DialogWindow::LaunchOptions options;
+    options.dialogTitle = "Unlock Slot Machine";
+    options.dialogBackgroundColour = getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId);
+    options.content.setOwned(unlockComponent.release());
+    options.componentToCentreAround = this;
+    options.escapeKeyTriggersCloseButton = true;
+    options.useNativeTitleBar = true;
+    options.resizable = false;
+
+    if (auto* window = options.launchAsync())
+    {
+        componentPtr->setDialogWindow(*window);
+        window->centreAroundComponent(this, window->getWidth(), window->getHeight());
+        componentPtr->focusFirstField();
+    }
+}
+
+void SlotMachineAudioProcessorEditor::handleUnlockDialogResult(bool accepted,
+    const juce::String& firstName,
+    const juce::String& lastName,
+    const juce::String& email,
+    const juce::String& licenseKey)
+{
+    if (!accepted)
+        return;
+
+    const auto trimmedFirst = firstName.trim();
+    const auto trimmedLast = lastName.trim();
+    const auto trimmedEmail = email.trim();
+    const auto trimmedLicense = licenseKey.trim();
+
+    if (trimmedFirst.isEmpty() || trimmedLast.isEmpty() || trimmedEmail.isEmpty() || trimmedLicense.isEmpty())
+    {
+        juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
+            "Unlock Slot Machine",
+            "All fields are required to unlock the application.");
+        return;
+    }
+
+    storedFirstName = trimmedFirst.toStdString();
+    storedLastName = trimmedLast.toStdString();
+    storedEmail = trimmedEmail.toStdString();
+    storedLicenseKey = trimmedLicense.toStdString();
+
+    if (!license::verifyLicense(storedLicenseKey, storedFirstName, storedLastName, storedEmail))
+    {
+        juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
+            "Unlock Slot Machine",
+            "The supplied license details could not be validated.");
+        return;
+    }
+
+#if JUCE_WINDOWS
+    if (!saveLicenseToRegistry(storedFirstName, storedLastName, storedEmail, storedLicenseKey))
+    {
+        juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
+            "Unlock Slot Machine",
+            "Unable to save the license information to the registry.");
+        return;
+    }
+#else
+    saveLicenseToRegistry(storedFirstName, storedLastName, storedEmail, storedLicenseKey);
+#endif
+
+    setUnlocked(true);
+
+    juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::InfoIcon,
+        "Unlock Slot Machine",
+        "Thank you! The application has been unlocked.");
+}
+
+void SlotMachineAudioProcessorEditor::showTrialModeDialog()
+{
+    juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
+        "Feature Locked",
+        "This function is not available in trial mode.  Please consider purchasing a key to unlock.");
+}
+
+void SlotMachineAudioProcessorEditor::updateLockIconPositions()
+{
+    const bool showLocks = lockIconImage.isValid() && !isUnlocked;
+
+    auto updateIcon = [this, showLocks](juce::Component& button, juce::ImageComponent& icon)
+    {
+        if (!showLocks)
+        {
+            icon.setVisible(false);
+            return;
+        }
+
+        auto bounds = button.getBounds();
+        if (bounds.isEmpty())
+        {
+            icon.setVisible(false);
+            return;
+        }
+
+        const float aspect = (float)lockIconImage.getHeight() / (float)juce::jmax(1, lockIconImage.getWidth());
+        int iconWidth = juce::jmin(lockIconImage.getWidth(), juce::jmax(12, bounds.getWidth() / 4));
+        int iconHeight = juce::roundToInt((float)iconWidth * aspect);
+
+        const int availableHeight = juce::jmax(1, bounds.getHeight());
+        if (iconHeight > availableHeight)
+        {
+            iconHeight = juce::jmax(12, availableHeight);
+            iconWidth = juce::roundToInt((float)iconHeight / aspect);
+        }
+
+        const int horizontalInset = juce::roundToInt((float)iconWidth * 0.35f);
+        const int verticalInset = juce::roundToInt((float)iconHeight * 0.35f);
+
+        const int x = bounds.getX() - horizontalInset + 4;
+        const int y = bounds.getY() - verticalInset;
+
+        icon.setBounds(x, y, juce::jmax(1, iconWidth), juce::jmax(1, iconHeight));
+        icon.setVisible(true);
+        icon.toFront(false);
+    };
+
+    updateIcon(btnLoad, lockIconLoad);
+    updateIcon(btnExportAudio, lockIconExportAudio);
+    updateIcon(btnExportMidi, lockIconExportMidi);
+}
+
+juce::String SlotMachineAudioProcessorEditor::getRegistrationDisplayName() const
+{
+    if (!isUnlocked)
+        return "Not Registered";
+
+    juce::StringArray parts;
+
+    if (!storedFirstName.empty())
+        parts.add(juce::String(storedFirstName));
+    if (!storedLastName.empty())
+        parts.add(juce::String(storedLastName));
+
+    auto combined = parts.joinIntoString(" ").trim();
+
+    if (combined.isEmpty() && !storedEmail.empty())
+        combined = juce::String(storedEmail);
+
+    if (combined.isEmpty())
+        combined = "Not Registered";
+
+    return combined;
 }
 
 SlotMachineAudioProcessorEditor::~SlotMachineAudioProcessorEditor()
@@ -2738,6 +3172,8 @@ void SlotMachineAudioProcessorEditor::resized()
         auto unlockBounds = btnUnlock.getBounds();
         unlockBounds.setY(patternTabsBounds.getY());
         btnUnlock.setBounds(unlockBounds);
+
+        updateLockIconPositions();
     }
 
     area.translate(0, -tabsLift);
@@ -3583,6 +4019,40 @@ void SlotMachineAudioProcessorEditor::buttonClicked(juce::Button* b)
         return;
     }
 
+    if (b == &btnUnlock)
+    {
+        showUnlockDialog();
+        return;
+    }
+
+    if (b == &btnLock)
+    {
+#if JUCE_WINDOWS
+        if (!clearLicenseFromRegistry())
+        {
+            juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
+                "Lock Slot Machine",
+                "Unable to remove the saved license information from the registry.");
+        }
+#else
+        clearLicenseFromRegistry();
+#endif
+
+        storedFirstName.clear();
+        storedLastName.clear();
+        storedEmail.clear();
+        storedLicenseKey.clear();
+
+        setUnlocked(false);
+        return;
+    }
+
+    if (!isUnlocked && (b == &btnLoad || b == &btnExportAudio || b == &btnExportMidi))
+    {
+        showTrialModeDialog();
+        return;
+    }
+
     // >>> Load sequence: Stop -> Load (initialization happens after confirming the preset)
     if (b == &btnLoad)
     {
@@ -3662,7 +4132,7 @@ void SlotMachineAudioProcessorEditor::buttonClicked(juce::Button* b)
             return;
         }
 
-        auto aboutContent = std::make_unique<AboutComponent>();
+        auto aboutContent = std::make_unique<AboutComponent>(getRegistrationDisplayName());
         aboutContent->setSize(420, 460);
 
         juce::DialogWindow::LaunchOptions options;

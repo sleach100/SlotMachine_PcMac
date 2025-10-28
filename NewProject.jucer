@@ -73,6 +73,10 @@
       <FILE id="OsSVUx" name="PluginEditor.cpp" compile="1" resource="0"
             file="Source/PluginEditor.cpp"/>
       <FILE id="PisV1i" name="PluginEditor.h" compile="0" resource="0" file="Source/PluginEditor.h"/>
+      <FILE id="ZfX0yH" name="LicenseRegistry.cpp" compile="1" resource="0"
+            file="Source/LicenseRegistry.cpp"/>
+      <FILE id="gQwT7P" name="LicenseRegistry.h" compile="0" resource="0"
+            file="Source/LicenseRegistry.h"/>
       <FILE id="rX1k5u" name="BeatsQuickPickGrid.cpp" compile="1" resource="0"
             file="Source/BeatsQuickPickGrid.cpp"/>
       <FILE id="vE7sLq" name="BeatsQuickPickGrid.h" compile="0" resource="0"
@@ -86,6 +90,10 @@
       <FILE id="dCSe0b" name="PolyrhythmVizComponent.h" compile="0" resource="0"
             file="Source/PolyrhythmVizComponent.h"/>
     </GROUP>
+    <FILE id="RTt46d" name="base32.h" compile="0" resource="0" file="Source/base32.h"/>
+    <FILE id="TQ3uw4" name="crypto_small.h" compile="0" resource="0" file="Source/crypto_small.h"/>
+    <FILE id="mjuz99" name="license.cpp" compile="1" resource="0" file="Source/license.cpp"/>
+    <FILE id="yl6Hgw" name="license.h" compile="0" resource="0" file="Source/license.h"/>
     <FILE id="ClHMkc" name="LockIcon2.png" compile="0" resource="1" file="Resources/Images/LockIcon2.png"/>
     <FILE id="Jej5zP" name="LonePearLogic.png" compile="0" resource="1"
           file="Resources/Images/LonePearLogic.png"/>

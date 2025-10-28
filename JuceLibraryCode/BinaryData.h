@@ -138,7 +138,7 @@ namespace BinaryData
     const int            SpeakerIcon_pngSize = 2701;
 
     extern const char*   LockIcon2_png;
-    const int            LockIcon2_pngSize = 2285;
+    const int            LockIcon2_pngSize = 878;
 
     extern const char*   LonePearLogic_png;
     const int            LonePearLogic_pngSize = 331159;

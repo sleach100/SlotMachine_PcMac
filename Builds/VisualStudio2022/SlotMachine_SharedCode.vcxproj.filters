@@ -679,6 +679,9 @@
     <ClCompile Include="..\..\Source\PluginEditor.cpp">
       <Filter>SlotMachine\Source</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\Source\LicenseRegistry.cpp">
+      <Filter>SlotMachine\Source</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\Source\BeatsQuickPickGrid.cpp">
       <Filter>SlotMachine\Source</Filter>
     </ClCompile>
@@ -687,6 +690,9 @@
     </ClCompile>
     <ClCompile Include="..\..\Source\PolyrhythmVizComponent.cpp">
       <Filter>SlotMachine\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Source\license.cpp">
+      <Filter>SlotMachine</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\..\..\..\JUCE\modules\juce_audio_basics\audio_play_head\juce_AudioPlayHead.cpp">
       <Filter>JUCE Modules\juce_audio_basics\audio_play_head</Filter>
@@ -3558,6 +3564,9 @@
     <ClInclude Include="..\..\Source\PluginEditor.h">
       <Filter>SlotMachine\Source</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Source\LicenseRegistry.h">
+      <Filter>SlotMachine\Source</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\Source\BeatsQuickPickGrid.h">
       <Filter>SlotMachine\Source</Filter>
     </ClInclude>
@@ -3566,6 +3575,15 @@
     </ClInclude>
     <ClInclude Include="..\..\Source\PolyrhythmVizComponent.h">
       <Filter>SlotMachine\Source</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\base32.h">
+      <Filter>SlotMachine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\crypto_small.h">
+      <Filter>SlotMachine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\license.h">
+      <Filter>SlotMachine</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\..\..\..\JUCE\modules\juce_audio_basics\audio_play_head\juce_AudioPlayHead.h">
       <Filter>JUCE Modules\juce_audio_basics\audio_play_head</Filter>
