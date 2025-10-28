@@ -625,14 +625,14 @@ APVTS::ParameterLayout SlotMachineAudioProcessor::createParameterLayout()
 
     // Pulse
     layout.add(std::make_unique<juce::AudioParameterInt>(
-        "optPulseColor", "Pulse Color (RGB)", 0x000000, 0xFFFFFF, mkRGB(0xD3, 0xCF, 0xE4)));
+        "optPulseColor", "Pulse Color (RGB)", 0x000000, 0xFFFFFF, mkRGB(0xD5, 0xCF, 0xEE)));
     layout.add(std::make_unique<juce::AudioParameterFloat>(
         "optPulseAlpha", "Pulse Alpha", juce::NormalisableRange<float>(0.0f, 1.0f, 0.001f), 1.0f));
     layout.add(std::make_unique<juce::AudioParameterFloat>(
         "optPulseWidth", "Pulse Width (px)", juce::NormalisableRange<float>(0.5f, 36.0f, 0.01f), 4.0f));
 
     layout.add(std::make_unique<juce::AudioParameterInt>(
-        "optTimingMode", "Timing Mode", 0, 1, 0));
+        "optTimingMode", "Timing Mode", 0, 1, 1));
 
     return layout;
 }
