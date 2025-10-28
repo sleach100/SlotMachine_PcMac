@@ -1861,7 +1861,7 @@ private:
     }
 
     juce::Colour defaultGlowColour()  const { return juce::Colour::fromRGB(0x69, 0x94, 0xFC); }
-    juce::Colour defaultPulseColour() const { return juce::Colour::fromRGB(0xD3, 0xCF, 0xE4); }
+    juce::Colour defaultPulseColour() const { return juce::Colour::fromRGB(0xD5, 0xCF, 0xEE); }
 
     void refreshFromState()
     {
@@ -1875,7 +1875,7 @@ private:
         visualizerModeCombo.setSelectedId(edgeWalk ? 1 : 2, juce::dontSendNotification);
         blockVisualizerModeUpdate = false;
 
-        const int timingModeValue = Opt::getInt(apvts, "optTimingMode", timingModeValues.front());
+        const int timingModeValue = Opt::getInt(apvts, "optTimingMode", timingModeValues.back());
         applyVisualizerAvailabilityForTimingMode(timingModeValue);
 
         const int currentSampleRate = Opt::getInt(apvts, "optSampleRate", sampleRateValues.front());
@@ -1926,7 +1926,7 @@ private:
 
         // colours
         glowColourSel.setCurrentColour(Opt::rgbParam(apvts, "optGlowColor", 0x6994FC, 1.0f));
-        pulseColourSel.setCurrentColour(Opt::rgbParam(apvts, "optPulseColor", 0xD3CFE4, 1.0f));
+        pulseColourSel.setCurrentColour(Opt::rgbParam(apvts, "optPulseColor", 0xD5CFEE, 1.0f));
 
         // sliders
         glowAlpha.setValue(Opt::getFloat(apvts, "optGlowAlpha", 0.431f), juce::dontSendNotification);
@@ -2036,11 +2036,11 @@ private:
         constexpr int   kDefaultGlowRGB = 0x6994FC;
         constexpr float kDefaultGlowAlpha = 0.431f;
         constexpr float kDefaultGlowWidth = 1.34f;
-        constexpr int   kDefaultPulseRGB = 0xD3CFE4;
+        constexpr int   kDefaultPulseRGB = 0xD5CFEE;
         constexpr float kDefaultPulseAlpha = 1.0f;
         constexpr float kDefaultPulseWidth = 4.0f;
         constexpr int   kDefaultSampleRate = 48000;
-        constexpr int   kDefaultTimingMode = 0;
+        constexpr int   kDefaultTimingMode = 1;
 
         setBoolParam("optShowMasterBar", true);
         setBoolParam("optShowSlotBars", true);
@@ -2161,7 +2161,7 @@ SlotMachineAudioProcessorEditor::SlotMachineAudioProcessorEditor(SlotMachineAudi
     logoImage = juce::ImageCache::getFromMemory(BinaryData::SM5_png, BinaryData::SM5_pngSize);
 
     slotScale = juce::jlimit(0.75f, 1.0f, Opt::getFloat(apvts, "optSlotScale", 0.8f));
-    const int initialTimingMode = Opt::getInt(apvts, "optTimingMode", 0);
+    const int initialTimingMode = Opt::getInt(apvts, "optTimingMode", 1);
     lastTimingMode = initialTimingMode;
 
     constexpr int slotColumns = 4;
@@ -2444,7 +2444,7 @@ SlotMachineAudioProcessorEditor::SlotMachineAudioProcessorEditor(SlotMachineAudi
 
     lastStartToggleState = startToggle.getToggleState();
     cachedStartGlowColour = Opt::rgbParam(apvts, "optGlowColor", 0x6994FC, 1.0f);
-    cachedStartPulseColour = Opt::rgbParam(apvts, "optPulseColor", 0xD3CFE4, 1.0f);
+    cachedStartPulseColour = Opt::rgbParam(apvts, "optPulseColor", 0xD5CFEE, 1.0f);
     cachedStartGlowAlpha = Opt::getFloat(apvts, "optGlowAlpha", 0.431f);
     cachedStartGlowWidth = Opt::getFloat(apvts, "optGlowWidth", 1.34f);
     updateStartButtonVisuals(lastStartToggleState, cachedStartGlowColour,
@@ -2720,7 +2720,7 @@ void SlotMachineAudioProcessorEditor::mouseDown(const juce::MouseEvent& e)
     if (eventComponent == nullptr)
         return;
 
-    const int timingMode = Opt::getInt(apvts, "optTimingMode", 0);
+    const int timingMode = Opt::getInt(apvts, "optTimingMode", 1);
 
     for (int i = 0; i < kNumSlots; ++i)
     {
@@ -2883,7 +2883,7 @@ void SlotMachineAudioProcessorEditor::paint(juce::Graphics& g)
     const float pulseWidthPx = Opt::getFloat(apvts, "optPulseWidth", 4.0f);
 
     const juce::Colour glowColour = Opt::rgbParam(apvts, "optGlowColor", 0x6994FC, glowAlpha);
-    const juce::Colour pulseColour = Opt::rgbParam(apvts, "optPulseColor", 0xD3CFE4, pulseAlpha);
+    const juce::Colour pulseColour = Opt::rgbParam(apvts, "optPulseColor", 0xD5CFEE, pulseAlpha);
 
     const auto barBack = juce::Colours::white.withAlpha(0.18f);
     const auto barFill = pulseColour.withAlpha(0.92f);
@@ -4404,7 +4404,7 @@ void SlotMachineAudioProcessorEditor::beginMidiExportWithCycles(int cyclesReques
     std::vector<SlotDef> active;
     active.reserve(kNumSlots);
 
-    const int timingMode = Opt::getInt(apvts, "optTimingMode", 0);
+    const int timingMode = Opt::getInt(apvts, "optTimingMode", 1);
 
     bool anySolo = false;
     std::vector<bool> soloMask(kNumSlots, false);
@@ -4713,7 +4713,7 @@ void SlotMachineAudioProcessorEditor::setMasterRun(bool shouldRun)
     startToggle.setToggleState(shouldRun, juce::dontSendNotification);
 
     const auto glowColour = Opt::rgbParam(apvts, "optGlowColor", 0x6994FC, 1.0f);
-    const auto pulseColour = Opt::rgbParam(apvts, "optPulseColor", 0xD3CFE4, 1.0f);
+    const auto pulseColour = Opt::rgbParam(apvts, "optPulseColor", 0xD5CFEE, 1.0f);
     const float glowAlpha = Opt::getFloat(apvts, "optGlowAlpha", 0.431f);
     const float glowWidth = Opt::getFloat(apvts, "optGlowWidth", 1.34f);
 
@@ -5207,7 +5207,7 @@ void SlotMachineAudioProcessorEditor::timerCallback()
 
     const bool isRunning = startToggle.getToggleState();
     const auto glowColour = Opt::rgbParam(apvts, "optGlowColor", 0x6994FC, 1.0f);
-    const auto pulseColour = Opt::rgbParam(apvts, "optPulseColor", 0xD3CFE4, 1.0f);
+    const auto pulseColour = Opt::rgbParam(apvts, "optPulseColor", 0xD5CFEE, 1.0f);
     const float glowAlpha = Opt::getFloat(apvts, "optGlowAlpha", 0.431f);
     const float glowWidth = Opt::getFloat(apvts, "optGlowWidth", 1.34f);
 
@@ -5257,7 +5257,7 @@ void SlotMachineAudioProcessorEditor::timerCallback()
     masterPhase = p; // used by paint() for the master bar
 
     // ---- per-slot UI polling ----
-    const int timingMode = Opt::getInt(apvts, "optTimingMode", 0);
+    const int timingMode = Opt::getInt(apvts, "optTimingMode", 1);
 
     if (timingMode == 0 && lastShowVisualizer)
     {
@@ -5347,7 +5347,7 @@ void SlotMachineAudioProcessorEditor::handleSlotCountChanged(int slotIndex, Slot
     const float desiredRate  = convertCountToRate(countValue);
     const juce::String paramId = "slot" + juce::String(slotIndex + 1) + "_Rate";
 
-    if (Opt::getInt(apvts, "optTimingMode", 0) == 1)
+    if (Opt::getInt(apvts, "optTimingMode", 1) == 1)
     {
         const uint64_t fullMask = SlotMachineAudioProcessor::maskForBeats(countValue);
         processor.setSlotCountMask(slotIndex, fullMask);
@@ -5367,7 +5367,7 @@ void SlotMachineAudioProcessorEditor::handleSlotCountChanged(int slotIndex, Slot
 
 void SlotMachineAudioProcessorEditor::initialiseSlotTimingPair(int slotIndex, SlotUI& ui)
 {
-    const int timingMode = Opt::getInt(apvts, "optTimingMode", 0);
+    const int timingMode = Opt::getInt(apvts, "optTimingMode", 1);
 
     if (timingMode == 1)
     {
@@ -5381,7 +5381,7 @@ void SlotMachineAudioProcessorEditor::initialiseSlotTimingPair(int slotIndex, Sl
 
 void SlotMachineAudioProcessorEditor::refreshSlotTimingModeUI()
 {
-    refreshSlotTimingModeUI(Opt::getInt(apvts, "optTimingMode", 0));
+    refreshSlotTimingModeUI(Opt::getInt(apvts, "optTimingMode", 1));
 }
 
 void SlotMachineAudioProcessorEditor::refreshSlotTimingModeUI(int timingMode)
