@@ -12,14 +12,30 @@ namespace
 #if JUCE_WINDOWS
     std::wstring toWide(const std::string& text)
     {
-        juce::String juceStr(text);
-        auto wide = juceStr.toWideCharPointer();
-        return std::wstring(wide.getAddress());
+        if (text.empty())
+            return {};
+
+        const int requiredChars = MultiByteToWideChar(CP_UTF8, 0, text.c_str(), -1, nullptr, 0);
+        if (requiredChars <= 0)
+            return {};
+
+        std::wstring result(static_cast<size_t>(requiredChars - 1), L'\0');
+        MultiByteToWideChar(CP_UTF8, 0, text.c_str(), -1, result.data(), requiredChars);
+        return result;
     }
 
     std::string toNarrow(const std::wstring& text)
     {
-        return juce::String(text.c_str()).toStdString();
+        if (text.empty())
+            return {};
+
+        const int requiredBytes = WideCharToMultiByte(CP_UTF8, 0, text.c_str(), -1, nullptr, 0, nullptr, nullptr);
+        if (requiredBytes <= 0)
+            return {};
+
+        std::string result(static_cast<size_t>(requiredBytes - 1), '\0');
+        WideCharToMultiByte(CP_UTF8, 0, text.c_str(), -1, result.data(), requiredBytes, nullptr, nullptr);
+        return result;
     }
 #endif
 }
