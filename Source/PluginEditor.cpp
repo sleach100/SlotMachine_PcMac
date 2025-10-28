@@ -2650,7 +2650,7 @@ void SlotMachineAudioProcessorEditor::updateLockIconPositions()
         const int horizontalInset = juce::roundToInt((float)iconWidth * 0.35f);
         const int verticalInset = juce::roundToInt((float)iconHeight * 0.35f);
 
-        const int x = bounds.getX() - horizontalInset;
+        const int x = bounds.getX() - horizontalInset + 4;
         const int y = bounds.getY() - verticalInset;
 
         icon.setBounds(x, y, juce::jmax(1, iconWidth), juce::jmax(1, iconHeight));
