@@ -86,6 +86,7 @@
       <FILE id="dCSe0b" name="PolyrhythmVizComponent.h" compile="0" resource="0"
             file="Source/PolyrhythmVizComponent.h"/>
     </GROUP>
+    <FILE id="ClHMkc" name="LockIcon2.png" compile="0" resource="1" file="Resources/Images/LockIcon2.png"/>
     <FILE id="Jej5zP" name="LonePearLogic.png" compile="0" resource="1"
           file="Resources/Images/LonePearLogic.png"/>
     <FILE id="BBa7mv" name="MuteOFF.png" compile="0" resource="1" file="Resources/Images/MuteOFF.png"/>

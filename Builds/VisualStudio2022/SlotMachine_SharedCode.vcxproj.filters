@@ -7610,6 +7610,9 @@
     <None Include="..\..\Resources\Images\SpeakerIcon.png">
       <Filter>SlotMachine\Source</Filter>
     </None>
+    <None Include="..\..\Resources\Images\LockIcon2.png">
+      <Filter>SlotMachine</Filter>
+    </None>
     <None Include="..\..\Resources\Images\LonePearLogic.png">
       <Filter>SlotMachine</Filter>
     </None>

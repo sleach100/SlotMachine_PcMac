@@ -4193,6 +4193,7 @@
     <None Include="..\..\Resources\Open Source Wav Files\TOM-Mid 3.wav"/>
     <None Include="..\..\Resources\Open Source Wav Files\TOM-Mid.wav"/>
     <None Include="..\..\Resources\Images\SpeakerIcon.png"/>
+    <None Include="..\..\Resources\Images\LockIcon2.png"/>
     <None Include="..\..\Resources\Images\LonePearLogic.png"/>
     <None Include="..\..\Resources\Images\MuteOFF.png"/>
     <None Include="..\..\Resources\Images\MuteON.png"/>
