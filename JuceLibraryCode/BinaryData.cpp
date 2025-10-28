@@ -42343,7 +42343,7 @@ const char* getNamedResource (const char* resourceNameUTF8, int& numBytes)
         case 0x75ec6f17:  numBytes = 60362; return TOMMid_3_wav;
         case 0xca0cb2e3:  numBytes = 88422; return TOMMid_wav;
         case 0x721a4662:  numBytes = 2701; return SpeakerIcon_png;
-        case 0xf61e4ab8:  numBytes = 2285; return LockIcon2_png;
+        case 0xf61e4ab8:  numBytes = 878; return LockIcon2_png;
         case 0x4f3bc308:  numBytes = 331159; return LonePearLogic_png;
         case 0x67ba4ae0:  numBytes = 9443; return MuteOFF_png;
         case 0xb9825b42:  numBytes = 9965; return MuteON_png;

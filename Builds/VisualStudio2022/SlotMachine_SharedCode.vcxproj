@@ -146,9 +146,11 @@
   <ItemGroup>
     <ClCompile Include="..\..\Source\PluginProcessor.cpp"/>
     <ClCompile Include="..\..\Source\PluginEditor.cpp"/>
+    <ClCompile Include="..\..\Source\LicenseRegistry.cpp"/>
     <ClCompile Include="..\..\Source\BeatsQuickPickGrid.cpp"/>
     <ClCompile Include="..\..\Source\CountBeatMaskGrid.cpp"/>
     <ClCompile Include="..\..\Source\PolyrhythmVizComponent.cpp"/>
+    <ClCompile Include="..\..\Source\license.cpp"/>
     <ClCompile Include="..\..\..\..\..\..\..\JUCE\modules\juce_audio_basics\audio_play_head\juce_AudioPlayHead.cpp">
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
@@ -2841,9 +2843,13 @@
   <ItemGroup>
     <ClInclude Include="..\..\Source\PluginProcessor.h"/>
     <ClInclude Include="..\..\Source\PluginEditor.h"/>
+    <ClInclude Include="..\..\Source\LicenseRegistry.h"/>
     <ClInclude Include="..\..\Source\BeatsQuickPickGrid.h"/>
     <ClInclude Include="..\..\Source\CountBeatMaskGrid.h"/>
     <ClInclude Include="..\..\Source\PolyrhythmVizComponent.h"/>
+    <ClInclude Include="..\..\Source\base32.h"/>
+    <ClInclude Include="..\..\Source\crypto_small.h"/>
+    <ClInclude Include="..\..\Source\license.h"/>
     <ClInclude Include="..\..\..\..\..\..\..\JUCE\modules\juce_audio_basics\audio_play_head\juce_AudioPlayHead.h"/>
     <ClInclude Include="..\..\..\..\..\..\..\JUCE\modules\juce_audio_basics\buffers\juce_AudioChannelSet.h"/>
     <ClInclude Include="..\..\..\..\..\..\..\JUCE\modules\juce_audio_basics\buffers\juce_AudioDataConverters.h"/>
