@@ -8,6 +8,7 @@
 #include <vector>
 #include <utility>
 #include <map>
+#include <string>
 #include "PluginProcessor.h"
 #include "WaveformUtils.h"
 #include "AppLookAndFeel.h"
@@ -40,6 +41,17 @@ public:
 
 
 private:
+    void initialiseLicenseState();
+    void setUnlocked(bool unlocked);
+    void showUnlockDialog();
+    void handleUnlockDialogResult(bool accepted,
+        const juce::String& firstName,
+        const juce::String& lastName,
+        const juce::String& email,
+        const juce::String& licenseKey);
+    void showTrialModeDialog();
+    void updateLockIconPositions();
+
     AppLookAndFeel appLF;
 
     struct EmbeddedSample
@@ -181,6 +193,17 @@ private:
     juce::TextButton btnAbout{ "About" };
     juce::TextButton btnLock{ "Lock" };
     juce::TextButton btnUnlock{ "Unlock" };
+
+    bool isUnlocked = false;
+    juce::Image lockIconImage;
+    juce::ImageComponent lockIconLoad;
+    juce::ImageComponent lockIconExportAudio;
+    juce::ImageComponent lockIconExportMidi;
+
+    std::string storedFirstName;
+    std::string storedLastName;
+    std::string storedEmail;
+    std::string storedLicenseKey;
 
     std::unique_ptr<APVTS::SliderAttachment> masterBPMA;
     std::unique_ptr<APVTS::ButtonAttachment> masterRunA;
