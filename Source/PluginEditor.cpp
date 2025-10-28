@@ -2636,19 +2636,22 @@ void SlotMachineAudioProcessorEditor::updateLockIconPositions()
             return;
         }
 
-        const int padding = 4;
         const float aspect = (float)lockIconImage.getHeight() / (float)juce::jmax(1, lockIconImage.getWidth());
         int iconWidth = juce::jmin(lockIconImage.getWidth(), juce::jmax(12, bounds.getWidth() / 4));
         int iconHeight = juce::roundToInt((float)iconWidth * aspect);
 
-        if (iconHeight > bounds.getHeight() - padding)
+        const int availableHeight = juce::jmax(1, bounds.getHeight());
+        if (iconHeight > availableHeight)
         {
-            iconHeight = juce::jmax(12, bounds.getHeight() - padding);
+            iconHeight = juce::jmax(12, availableHeight);
             iconWidth = juce::roundToInt((float)iconHeight / aspect);
         }
 
-        const int x = bounds.getX() + padding;
-        const int y = bounds.getY() + padding;
+        const int horizontalInset = juce::roundToInt((float)iconWidth * 0.35f);
+        const int verticalInset = juce::roundToInt((float)iconHeight * 0.35f);
+
+        const int x = bounds.getX() - horizontalInset;
+        const int y = bounds.getY() - verticalInset;
 
         icon.setBounds(x, y, juce::jmax(1, iconWidth), juce::jmax(1, iconHeight));
         icon.setVisible(true);
