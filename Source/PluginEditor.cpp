@@ -2216,7 +2216,14 @@ SlotMachineAudioProcessorEditor::SlotMachineAudioProcessorEditor(SlotMachineAudi
     addAndMakeVisible(btnTutorial);     beautify(btnTutorial);     btnTutorial.addListener(this);
     addAndMakeVisible(btnUserManual);   beautify(btnUserManual);   btnUserManual.addListener(this);
     addAndMakeVisible(btnAbout);        beautify(btnAbout);        btnAbout.addListener(this);
-    addAndMakeVisible(btnLock);         beautify(btnLock);         btnLock.addListener(this);
+#if JUCE_DEBUG
+    addAndMakeVisible(btnLock);
+#else
+    addChildComponent(btnLock);
+    btnLock.setVisible(false);
+#endif
+    beautify(btnLock);
+    btnLock.addListener(this);
     addAndMakeVisible(btnUnlock);       beautify(btnUnlock);       btnUnlock.addListener(this);
 
     lockIconImage = juce::ImageCache::getFromMemory(BinaryData::LockIcon2_png, BinaryData::LockIcon2_pngSize);
@@ -2509,6 +2516,11 @@ void SlotMachineAudioProcessorEditor::setUnlocked(bool unlocked)
     btnUnlock.setEnabled(!unlocked);
     btnUnlock.setButtonText(unlocked ? "Unlocked" : "Unlock");
     btnUnlock.setVisible(!unlocked);
+#if JUCE_DEBUG
+    btnLock.setVisible(true);
+#else
+    btnLock.setVisible(false);
+#endif
     btnLock.setEnabled(unlocked);
     btnLock.setButtonText(unlocked ? "Lock" : "Locked");
 
