@@ -128,6 +128,27 @@ bool keyExists(const wchar_t* subkey)
 #endif
 }
 
+bool deleteValue(const wchar_t* subkey, const wchar_t* name)
+{
+#if JUCE_WINDOWS
+    if (subkey == nullptr || name == nullptr)
+        return false;
+
+    HKEY key = nullptr;
+    const LONG status = RegOpenKeyExW(HKEY_CURRENT_USER, subkey, 0, KEY_SET_VALUE, &key);
+    if (status != ERROR_SUCCESS)
+        return status == ERROR_FILE_NOT_FOUND;
+
+    const LONG result = RegDeleteValueW(key, name);
+    RegCloseKey(key);
+
+    return result == ERROR_SUCCESS || result == ERROR_FILE_NOT_FOUND;
+#else
+    juce::ignoreUnused(subkey, name);
+    return false;
+#endif
+}
+
 } // namespace reg
 
 bool loadLicenseFromRegistry(std::string& first, std::string& last,
@@ -177,6 +198,20 @@ bool saveLicenseToRegistry(const std::string& first, const std::string& last,
     return true;
 #else
     juce::ignoreUnused(first, last, email, licenseStr);
+    return false;
+#endif
+}
+
+bool clearLicenseFromRegistry()
+{
+#if JUCE_WINDOWS
+    const bool firstRemoved = reg::deleteValue(reg::kRegistrySubkey, L"FirstName");
+    const bool lastRemoved = reg::deleteValue(reg::kRegistrySubkey, L"LastName");
+    const bool emailRemoved = reg::deleteValue(reg::kRegistrySubkey, L"Email");
+    const bool licenseRemoved = reg::deleteValue(reg::kRegistrySubkey, L"License");
+
+    return firstRemoved && lastRemoved && emailRemoved && licenseRemoved;
+#else
     return false;
 #endif
 }

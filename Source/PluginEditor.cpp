@@ -44,6 +44,7 @@ using APVTS = juce::AudioProcessorValueTreeState;
 static const juce::Identifier kPatternNameProperty("name");
 
 static juce::Font createBoldFont(float size);
+static juce::Font createRegularFont(float size);
 
 namespace
 {
@@ -433,7 +434,7 @@ namespace
     class AboutComponent : public juce::Component
     {
     public:
-        AboutComponent()
+        explicit AboutComponent(const juce::String& registrationInfo)
         {
             logo = juce::ImageCache::getFromMemory(BinaryData::LonePearLogic_png,
                                                    BinaryData::LonePearLogic_pngSize);
@@ -448,6 +449,13 @@ namespace
             aboutLabel.setColour(juce::Label::textColourId, juce::Colours::whitesmoke);
             aboutLabel.setFont(createBoldFont(16.0f));
             addAndMakeVisible(aboutLabel);
+
+            registrationLabel.setText("Registered to: " + registrationInfo,
+                                      juce::dontSendNotification);
+            registrationLabel.setJustificationType(juce::Justification::centred);
+            registrationLabel.setColour(juce::Label::textColourId, juce::Colours::whitesmoke);
+            registrationLabel.setFont(createRegularFont(15.0f));
+            addAndMakeVisible(registrationLabel);
         }
 
         void paint(juce::Graphics& g) override
@@ -459,18 +467,23 @@ namespace
         {
             auto bounds = getLocalBounds().reduced(20);
 
-            const int labelHeight = 48;
-            auto imageArea = bounds.removeFromTop(juce::jmax(120, bounds.getHeight() - labelHeight - 20));
+            const int aboutLabelHeight = 48;
+            const int registrationLabelHeight = 32;
+            auto imageArea = bounds.removeFromTop(juce::jmax(120, bounds.getHeight() - aboutLabelHeight - registrationLabelHeight - 30));
             logoComponent.setBounds(imageArea);
 
             bounds.removeFromTop(20);
-            aboutLabel.setBounds(bounds.removeFromTop(labelHeight));
+            aboutLabel.setBounds(bounds.removeFromTop(aboutLabelHeight));
+
+            bounds.removeFromTop(10);
+            registrationLabel.setBounds(bounds.removeFromTop(registrationLabelHeight));
         }
 
     private:
         juce::Image logo;
         juce::ImageComponent logoComponent;
         juce::Label aboutLabel;
+        juce::Label registrationLabel;
     };
 }
 
@@ -901,6 +914,11 @@ static juce::Font createBoldFont(float size)
     juce::Font f{ juce::FontOptions(size) };
     f.setBold(true);
     return f;
+}
+
+static juce::Font createRegularFont(float size)
+{
+    return juce::Font{ juce::FontOptions(size) };
 }
 
 // ===== Knob helper =====
@@ -2641,6 +2659,29 @@ void SlotMachineAudioProcessorEditor::updateLockIconPositions()
     updateIcon(btnExportMidi, lockIconExportMidi);
 }
 
+juce::String SlotMachineAudioProcessorEditor::getRegistrationDisplayName() const
+{
+    if (!isUnlocked)
+        return "Not Registered";
+
+    juce::StringArray parts;
+
+    if (!storedFirstName.empty())
+        parts.add(juce::String(storedFirstName));
+    if (!storedLastName.empty())
+        parts.add(juce::String(storedLastName));
+
+    auto combined = parts.joinIntoString(" ").trim();
+
+    if (combined.isEmpty() && !storedEmail.empty())
+        combined = juce::String(storedEmail);
+
+    if (combined.isEmpty())
+        combined = "Not Registered";
+
+    return combined;
+}
+
 SlotMachineAudioProcessorEditor::~SlotMachineAudioProcessorEditor()
 {
     setLookAndFeel(nullptr);
@@ -3970,6 +4011,22 @@ void SlotMachineAudioProcessorEditor::buttonClicked(juce::Button* b)
 
     if (b == &btnLock)
     {
+#if JUCE_WINDOWS
+        if (!clearLicenseFromRegistry())
+        {
+            juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
+                "Lock Slot Machine",
+                "Unable to remove the saved license information from the registry.");
+        }
+#else
+        clearLicenseFromRegistry();
+#endif
+
+        storedFirstName.clear();
+        storedLastName.clear();
+        storedEmail.clear();
+        storedLicenseKey.clear();
+
         setUnlocked(false);
         return;
     }
@@ -4059,7 +4116,7 @@ void SlotMachineAudioProcessorEditor::buttonClicked(juce::Button* b)
             return;
         }
 
-        auto aboutContent = std::make_unique<AboutComponent>();
+        auto aboutContent = std::make_unique<AboutComponent>(getRegistrationDisplayName());
         aboutContent->setSize(420, 460);
 
         juce::DialogWindow::LaunchOptions options;

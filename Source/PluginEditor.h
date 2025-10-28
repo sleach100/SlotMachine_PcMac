@@ -51,6 +51,7 @@ private:
         const juce::String& licenseKey);
     void showTrialModeDialog();
     void updateLockIconPositions();
+    juce::String getRegistrationDisplayName() const;
 
     AppLookAndFeel appLF;
 
