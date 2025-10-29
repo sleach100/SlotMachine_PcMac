@@ -3163,7 +3163,7 @@ void SlotMachineAudioProcessorEditor::resized()
     int masterSectionBottom = masterButtonsBottom;
     masterSectionBottom = juce::jmax(masterSectionBottom, masterLabel.getBottom());
     masterSectionBottom = juce::jmax(masterSectionBottom, masterBPM.getBottom());
-    const int tabsLift = 100;
+    const int tabsLift = 175;
 
     auto tabsRow = area.removeFromTop(36);
     tabsRow.translate(0, -tabsLift);
