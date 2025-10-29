@@ -3062,6 +3062,8 @@ void SlotMachineAudioProcessorEditor::resized()
         logoBounds = {};
     }
 
+    int masterButtonsBottom = 0;
+
     // Master row
     {
         const int sliderHeight = 32;
@@ -3086,6 +3088,7 @@ void SlotMachineAudioProcessorEditor::resized()
         const int secondRowY = firstRowY + bh + buttonRowGap;
         const int thirdRowY = secondRowY + bh + buttonRowGap;
         const int buttonBottom = thirdRowY + bh;
+        masterButtonsBottom = buttonBottom;
 
         auto labelBounds = labelArea.reduced(8, 0);
 
@@ -3156,7 +3159,12 @@ void SlotMachineAudioProcessorEditor::resized()
             appLF.setCornerRadius(6.0f);
     }
 
-    const int tabsLift = 73;
+    const int areaTopAfterMaster = area.getY();
+    int masterSectionBottom = masterButtonsBottom;
+    masterSectionBottom = juce::jmax(masterSectionBottom, masterLabel.getBottom());
+    masterSectionBottom = juce::jmax(masterSectionBottom, masterBPM.getBottom());
+    const int desiredGap = slotScaled(8);
+    const int tabsLift = juce::jmax(0, areaTopAfterMaster - (masterSectionBottom + desiredGap));
 
     auto tabsRow = area.removeFromTop(36);
     tabsRow.translate(0, -tabsLift);
