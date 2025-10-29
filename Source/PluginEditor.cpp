@@ -3062,6 +3062,8 @@ void SlotMachineAudioProcessorEditor::resized()
         logoBounds = {};
     }
 
+    int masterButtonsBottom = 0;
+
     // Master row
     {
         const int sliderHeight = 32;
@@ -3086,11 +3088,13 @@ void SlotMachineAudioProcessorEditor::resized()
         const int secondRowY = firstRowY + bh + buttonRowGap;
         const int thirdRowY = secondRowY + bh + buttonRowGap;
         const int buttonBottom = thirdRowY + bh;
+        masterButtonsBottom = buttonBottom;
 
         auto labelBounds = labelArea.reduced(8, 0);
 
         auto sliderBounds = sliderArea.withTrimmedRight(10).withHeight(sliderHeight);
         sliderBounds.setBottom(buttonBottom - sliderGap + kMasterControlsYOffset);
+        sliderBounds.translate(0, -20);
         sliderBounds.setLeft(labelBounds.getRight());
         sliderBounds.translate(-35, 0);
         sliderBounds.setWidth(juce::jmax(0, sliderBounds.getWidth() - 55));
@@ -3102,7 +3106,7 @@ void SlotMachineAudioProcessorEditor::resized()
 
         labelBounds.setHeight(labelHeight);
         labelBounds.setBottom(textBoxBottom + labelOffset);
-        labelBounds.translate(0, kMasterLabelExtraYOffset);
+        labelBounds.translate(0, kMasterLabelExtraYOffset + 20);
         masterLabel.setBounds(labelBounds);
 
         const int barLeft = buttonArea.getX();
@@ -3155,7 +3159,11 @@ void SlotMachineAudioProcessorEditor::resized()
             appLF.setCornerRadius(6.0f);
     }
 
-    const int tabsLift = 73;
+    const int areaTopAfterMaster = area.getY();
+    int masterSectionBottom = masterButtonsBottom;
+    masterSectionBottom = juce::jmax(masterSectionBottom, masterLabel.getBottom());
+    masterSectionBottom = juce::jmax(masterSectionBottom, masterBPM.getBottom());
+    const int tabsLift = 110;
 
     auto tabsRow = area.removeFromTop(36);
     tabsRow.translate(0, -tabsLift);
