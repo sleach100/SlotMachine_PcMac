@@ -3091,6 +3091,7 @@ void SlotMachineAudioProcessorEditor::resized()
 
         auto sliderBounds = sliderArea.withTrimmedRight(10).withHeight(sliderHeight);
         sliderBounds.setBottom(buttonBottom - sliderGap + kMasterControlsYOffset);
+        sliderBounds.translate(0, -20);
         sliderBounds.setLeft(labelBounds.getRight());
         sliderBounds.translate(-35, 0);
         sliderBounds.setWidth(juce::jmax(0, sliderBounds.getWidth() - 55));
