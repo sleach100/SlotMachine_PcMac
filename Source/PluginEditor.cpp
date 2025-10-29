@@ -3103,7 +3103,7 @@ void SlotMachineAudioProcessorEditor::resized()
 
         labelBounds.setHeight(labelHeight);
         labelBounds.setBottom(textBoxBottom + labelOffset);
-        labelBounds.translate(0, kMasterLabelExtraYOffset);
+        labelBounds.translate(0, kMasterLabelExtraYOffset + 20);
         masterLabel.setBounds(labelBounds);
 
         const int barLeft = buttonArea.getX();
