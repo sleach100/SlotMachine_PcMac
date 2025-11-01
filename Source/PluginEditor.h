@@ -421,6 +421,8 @@ private:
     void deleteCurrentPattern();
     void renameCurrentPattern();
     void editCurrentPatternRepeat();
+    void showLoopPlaythroughDialog();
+    void setLoopPlaythroughEnabled(bool shouldLoop);
     void beginPlayThrough();
     void advancePlayThrough();
     void finishPlayThrough(bool restorePattern, bool stopTransport);
@@ -469,12 +471,14 @@ private:
     int  playThroughInitialPattern = -1;
     int  playThroughCurrentPattern = -1;
     int  playThroughCyclesRemaining = 0;
+    bool loopPlaythroughEnabled = false;
 
     bool patternSwitchPending = false;
     juce::ValueTree pendingPatternTree;
     bool fileDialogActive = false;
     bool suppressNextFileBtnClick = false;
     juce::Component::SafePointer<juce::DialogWindow> exportCyclesPromptWindow;
+    juce::Component::SafePointer<juce::DialogWindow> loopPlaythroughDialog;
     juce::Component::SafePointer<juce::DialogWindow> aboutDialog;
     int patternWarningCounter = 0;
 
