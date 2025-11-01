@@ -173,6 +173,39 @@ private:
         bool hasCommitted = false;
     };
 
+    class EditPatternRepeatComponent : public juce::Component,
+                                       private juce::Button::Listener,
+                                       private juce::TextEditor::Listener
+    {
+    public:
+        using ResultHandler = std::function<void(bool accepted, int newRepeat)>;
+
+        EditPatternRepeatComponent(int currentRepeat, ResultHandler handler);
+        ~EditPatternRepeatComponent() override;
+
+        void setCallOutBox(juce::CallOutBox& box);
+        void focusEditor();
+
+        void resized() override;
+
+    private:
+        void buttonClicked(juce::Button* button) override;
+        void textEditorReturnKeyPressed(juce::TextEditor&) override;
+        void textEditorEscapeKeyPressed(juce::TextEditor&) override;
+
+        void commit(bool accepted);
+        int  parseEditorValue() const;
+
+        juce::Label prompt;
+        juce::TextEditor editor;
+        juce::TextButton okButton{ "OK" };
+        juce::TextButton cancelButton{ "Cancel" };
+
+        ResultHandler onResult;
+        juce::CallOutBox* owner = nullptr;
+        bool hasCommitted = false;
+    };
+
     // ===== Master UI =====
     void handleMasterTap();
     juce::TooltipWindow tooltipWindow;  // must live as long as the editor
@@ -358,6 +391,7 @@ private:
     void handleSlotRateChanged(int slotIndex, SlotUI& ui);
     void handleSlotCountChanged(int slotIndex, SlotUI& ui);
     void initialiseSlotTimingPair(int slotIndex, SlotUI& ui);
+    void setSlotControlsFrozen(bool shouldFreeze);
     static int convertRateToCount(float rateValue)
     {
         const float clampedRate = juce::jlimit(0.0625f, 4.0f, rateValue);
@@ -386,6 +420,10 @@ private:
     void duplicateCurrentPattern();
     void deleteCurrentPattern();
     void renameCurrentPattern();
+    void editCurrentPatternRepeat();
+    void beginPlayThrough();
+    void advancePlayThrough();
+    void finishPlayThrough(bool restorePattern, bool stopTransport);
     void importPatternFromFile();
     void handlePatternImportFile(const juce::File& file);
     void importPatternIntoCurrentTab(const juce::ValueTree& patternTree);
@@ -426,6 +464,11 @@ private:
     juce::ValueTree patternsTree;
     int currentPatternIndex = 0;
     int activePatternIndex = 0;
+
+    bool playThroughActive = false;
+    int  playThroughInitialPattern = -1;
+    int  playThroughCurrentPattern = -1;
+    int  playThroughCyclesRemaining = 0;
 
     bool patternSwitchPending = false;
     juce::ValueTree pendingPatternTree;

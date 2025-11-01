@@ -42,6 +42,30 @@ namespace license
 
 using APVTS = juce::AudioProcessorValueTreeState;
 static const juce::Identifier kPatternNameProperty("name");
+static const juce::Identifier kPatternRepeatProperty("repeat");
+
+static int ensurePatternRepeatProperty(juce::ValueTree pattern)
+{
+    if (!pattern.isValid())
+        return 0;
+
+    const auto valueVar = pattern.getProperty(kPatternRepeatProperty);
+    if (valueVar.isVoid())
+    {
+        pattern.setProperty(kPatternRepeatProperty, 0, nullptr);
+        return 0;
+    }
+
+    const int repeat = juce::jmax(0, valueVar.toString().getIntValue());
+    pattern.setProperty(kPatternRepeatProperty, repeat, nullptr);
+    return repeat;
+}
+
+static int computePatternPlayThroughCycles(juce::ValueTree pattern)
+{
+    const int repeat = ensurePatternRepeatProperty(pattern);
+    return juce::jmax(1, 1 + repeat);
+}
 
 static juce::Font createBoldFont(float size);
 static juce::Font createRegularFont(float size);
@@ -934,6 +958,122 @@ void SlotMachineAudioProcessorEditor::RenamePatternComponent::commit(bool accept
     }
 }
 
+// ===== EditPatternRepeatComponent =====
+SlotMachineAudioProcessorEditor::EditPatternRepeatComponent::EditPatternRepeatComponent(int currentRepeat,
+    ResultHandler handler)
+    : prompt({}, "Enter repeat value:"),
+      onResult(std::move(handler))
+{
+    prompt.setJustificationType(juce::Justification::centredLeft);
+    {
+        juce::Font f{ juce::FontOptions(15.0f) };
+        f.setBold(true);
+        prompt.setFont(f);
+    }
+    addAndMakeVisible(prompt);
+
+    editor.setSelectAllWhenFocused(true);
+    editor.setInputRestrictions(0, "0123456789");
+    editor.setText(juce::String(juce::jmax(0, currentRepeat)), juce::dontSendNotification);
+    editor.addListener(this);
+    addAndMakeVisible(editor);
+
+    okButton.addListener(this);
+    cancelButton.addListener(this);
+    addAndMakeVisible(okButton);
+    addAndMakeVisible(cancelButton);
+
+    setSize(260, 110);
+}
+
+SlotMachineAudioProcessorEditor::EditPatternRepeatComponent::~EditPatternRepeatComponent()
+{
+    if (!hasCommitted && onResult)
+    {
+        auto handler = std::move(onResult);
+        handler(false, parseEditorValue());
+    }
+}
+
+void SlotMachineAudioProcessorEditor::EditPatternRepeatComponent::setCallOutBox(juce::CallOutBox& box)
+{
+    owner = &box;
+}
+
+void SlotMachineAudioProcessorEditor::EditPatternRepeatComponent::focusEditor()
+{
+    juce::MessageManager::callAsync([safe = juce::Component::SafePointer<EditPatternRepeatComponent>(this)]
+    {
+        if (safe != nullptr)
+        {
+            safe->editor.grabKeyboardFocus();
+            safe->editor.selectAll();
+        }
+    });
+}
+
+void SlotMachineAudioProcessorEditor::EditPatternRepeatComponent::resized()
+{
+    auto area = getLocalBounds().reduced(12);
+
+    prompt.setBounds(area.removeFromTop(24));
+    area.removeFromTop(6);
+
+    editor.setBounds(area.removeFromTop(28));
+    area.removeFromTop(12);
+
+    auto buttonsArea = area.removeFromTop(28);
+    auto ok = buttonsArea.removeFromLeft(buttonsArea.getWidth() / 2).reduced(4, 0);
+    auto cancel = buttonsArea.reduced(4, 0);
+    okButton.setBounds(ok);
+    cancelButton.setBounds(cancel);
+}
+
+void SlotMachineAudioProcessorEditor::EditPatternRepeatComponent::buttonClicked(juce::Button* button)
+{
+    if (button == &okButton)
+    {
+        commit(true);
+    }
+    else if (button == &cancelButton)
+    {
+        commit(false);
+    }
+}
+
+void SlotMachineAudioProcessorEditor::EditPatternRepeatComponent::textEditorReturnKeyPressed(juce::TextEditor&)
+{
+    commit(true);
+}
+
+void SlotMachineAudioProcessorEditor::EditPatternRepeatComponent::textEditorEscapeKeyPressed(juce::TextEditor&)
+{
+    commit(false);
+}
+
+int SlotMachineAudioProcessorEditor::EditPatternRepeatComponent::parseEditorValue() const
+{
+    return juce::jmax(0, editor.getText().trim().getIntValue());
+}
+
+void SlotMachineAudioProcessorEditor::EditPatternRepeatComponent::commit(bool accepted)
+{
+    if (hasCommitted)
+        return;
+
+    hasCommitted = true;
+    auto handler = std::move(onResult);
+
+    if (handler)
+        handler(accepted, parseEditorValue());
+
+    if (owner != nullptr)
+    {
+        owner->dismiss();
+        owner = nullptr;
+    }
+}
+
 // ===== Font helpers =====
 static juce::Font createBoldFont(float size)
 {
@@ -1213,22 +1353,35 @@ SlotMachineAudioProcessorEditor::SlotUI::FileButton::FileButton()
 
 bool SlotMachineAudioProcessorEditor::SlotUI::FileButton::isInterestedInFileDrag(const juce::StringArray& files)
 {
+    if (!isEnabled())
+        return false;
+
     return containsSupportedFile(files);
 }
 
 void SlotMachineAudioProcessorEditor::SlotUI::FileButton::fileDragEnter(const juce::StringArray& files, int, int)
 {
+    if (!isEnabled())
+        return;
+
     updateDragHighlight(containsSupportedFile(files));
 }
 
 void SlotMachineAudioProcessorEditor::SlotUI::FileButton::fileDragExit(const juce::StringArray& files)
 {
     juce::ignoreUnused(files);
+
+    if (!isEnabled())
+        return;
+
     updateDragHighlight(false);
 }
 
 void SlotMachineAudioProcessorEditor::SlotUI::FileButton::filesDropped(const juce::StringArray& files, int, int)
 {
+    if (!isEnabled())
+        return;
+
     updateDragHighlight(false);
 
     if (!onFileDropped)
@@ -3474,6 +3627,7 @@ void SlotMachineAudioProcessorEditor::refreshPatternTabs()
     for (int i = 0; i < count; ++i)
     {
         auto child = patternsTree.getChild(i);
+        ensurePatternRepeatProperty(child);
         juce::String name = child.getProperty(kPatternNameProperty).toString();
         if (name.isEmpty())
         {
@@ -3683,6 +3837,16 @@ void SlotMachineAudioProcessorEditor::handlePatternContextMenu(const juce::Mouse
     menu.addItem(1, "New Pattern");
     menu.addItem(2, "Duplicate Pattern", patternCount > 0);
     menu.addItem(3, "Rename Pattern", patternCount > 0);
+
+    int repeatValue = 0;
+    if (patternCount > 0 && juce::isPositiveAndBelow(currentPatternIndex, patternCount))
+    {
+        auto pattern = patternsTree.getChild(currentPatternIndex);
+        repeatValue = ensurePatternRepeatProperty(pattern);
+    }
+
+    menu.addItem(6, "Repeat = " + juce::String(repeatValue), patternCount > 0);
+    menu.addItem(7, "Play Through", patternCount > 0 && !playThroughActive);
     menu.addItem(4, "Delete Pattern", patternCount > 1);
     menu.addSeparator();
     menu.addItem(5, "Import saved pattern", patternCount > 0);
@@ -3705,9 +3869,165 @@ void SlotMachineAudioProcessorEditor::handlePatternContextMenu(const juce::Mouse
             case 3: renameCurrentPattern(); break;
             case 4: deleteCurrentPattern(); break;
             case 5: importPatternFromFile(); break;
+            case 6: editCurrentPatternRepeat(); break;
+            case 7: beginPlayThrough(); break;
             default: break;
             }
         });
+}
+
+void SlotMachineAudioProcessorEditor::setSlotControlsFrozen(bool shouldFreeze)
+{
+    const bool enable = !shouldFreeze;
+    const int timingMode = Opt::getInt(apvts, "optTimingMode", 1);
+    const bool beatsPerCycleMode = (timingMode == 1);
+    const bool countEnabled = enable && beatsPerCycleMode;
+    const bool rateEnabled = enable && !beatsPerCycleMode;
+
+    const float otherAlpha = enable ? 1.0f : 0.35f;
+
+    for (auto& slot : slots)
+    {
+        if (!slot)
+            continue;
+
+        slot->fileBtn.setEnabled(enable);
+        slot->clearBtn.setEnabled(enable);
+        slot->muteBtn.setEnabled(enable);
+        slot->soloBtn.setEnabled(enable);
+        slot->muteLabel.setEnabled(enable);
+        slot->soloLabel.setEnabled(enable);
+        slot->gain.setEnabled(enable);
+        slot->decay.setEnabled(enable);
+        slot->midiChannel.setEnabled(enable);
+
+        if (slot->count.isEnabled() != countEnabled)
+            slot->count.setEnabled(countEnabled);
+        if (slot->rate.isEnabled() != rateEnabled)
+            slot->rate.setEnabled(rateEnabled);
+
+        slot->count.setAlpha(countEnabled ? 1.0f : 0.35f);
+        slot->rate.setAlpha(rateEnabled ? 1.0f : 0.35f);
+
+        slot->fileBtn.setAlpha(otherAlpha);
+        slot->clearBtn.setAlpha(otherAlpha);
+        slot->muteBtn.setAlpha(otherAlpha);
+        slot->soloBtn.setAlpha(otherAlpha);
+        slot->gain.setAlpha(otherAlpha);
+        slot->decay.setAlpha(otherAlpha);
+        slot->midiChannel.setAlpha(otherAlpha);
+        slot->muteLabel.setAlpha(otherAlpha);
+        slot->soloLabel.setAlpha(otherAlpha);
+    }
+}
+
+void SlotMachineAudioProcessorEditor::beginPlayThrough()
+{
+    if (playThroughActive)
+        return;
+
+    if (!patternsTree.isValid())
+        patternsTree = processor.getPatternsTree();
+
+    const int patternCount = patternsTree.getNumChildren();
+    if (patternCount <= 0)
+        return;
+
+    saveCurrentPattern();
+    patternsTree = processor.getPatternsTree();
+
+    if (startToggle.getToggleState())
+        setMasterRun(false);
+
+    playThroughActive = true;
+    playThroughInitialPattern = currentPatternIndex;
+    playThroughCurrentPattern = 0;
+
+    setSlotControlsFrozen(true);
+
+    auto pattern = patternsTree.getChild(playThroughCurrentPattern);
+    playThroughCyclesRemaining = computePatternPlayThroughCycles(pattern);
+
+    processor.resetAllPhases(true);
+    applyPattern(playThroughCurrentPattern, true, false, false);
+    setMasterRun(true);
+}
+
+void SlotMachineAudioProcessorEditor::advancePlayThrough()
+{
+    if (!playThroughActive)
+        return;
+
+    if (!patternsTree.isValid())
+        patternsTree = processor.getPatternsTree();
+
+    const int patternCount = patternsTree.getNumChildren();
+    if (patternCount <= 0)
+    {
+        finishPlayThrough(true, true);
+        return;
+    }
+
+    if (playThroughCurrentPattern < 0 || playThroughCurrentPattern >= patternCount)
+        playThroughCurrentPattern = juce::jlimit(0, patternCount - 1, playThroughCurrentPattern);
+
+    if (playThroughCyclesRemaining > 0)
+        --playThroughCyclesRemaining;
+
+    if (playThroughCyclesRemaining > 0)
+        return;
+
+    const int nextIndex = playThroughCurrentPattern + 1;
+    if (nextIndex < patternCount)
+    {
+        playThroughCurrentPattern = nextIndex;
+        auto nextPattern = patternsTree.getChild(playThroughCurrentPattern);
+        playThroughCyclesRemaining = computePatternPlayThroughCycles(nextPattern);
+        processor.resetAllPhases(true);
+        applyPattern(playThroughCurrentPattern, true, false, false);
+    }
+    else
+    {
+        finishPlayThrough(true, true);
+    }
+}
+
+void SlotMachineAudioProcessorEditor::finishPlayThrough(bool restorePattern, bool stopTransport)
+{
+    if (!playThroughActive)
+        return;
+
+    playThroughActive = false;
+    setSlotControlsFrozen(false);
+
+    const int restoreIndex = playThroughInitialPattern;
+    playThroughInitialPattern = -1;
+    playThroughCurrentPattern = -1;
+    playThroughCyclesRemaining = 0;
+
+    if (restorePattern)
+    {
+        if (!patternsTree.isValid())
+            patternsTree = processor.getPatternsTree();
+
+        const int patternCount = patternsTree.getNumChildren();
+        if (patternCount > 0 && restoreIndex >= 0)
+        {
+            const int targetIndex = juce::jlimit(0, patternCount - 1, restoreIndex);
+            if (targetIndex != currentPatternIndex)
+            {
+                processor.resetAllPhases(true);
+                applyPattern(targetIndex, true, false, false);
+            }
+            else
+            {
+                patternTabs.setCurrentIndex(targetIndex);
+            }
+        }
+    }
+
+    if (stopTransport && startToggle.getToggleState())
+        setMasterRun(false);
 }
 
 void SlotMachineAudioProcessorEditor::reorderPatterns(int fromIndex, int toIndex)
@@ -3841,6 +4161,44 @@ void SlotMachineAudioProcessorEditor::renameCurrentPattern()
             pattern.setProperty(kPatternNameProperty, newName, nullptr);
             refreshPatternTabs();
             patternTabs.setCurrentIndex(patternIndex);
+        });
+
+    auto* componentPtr = component.get();
+    componentPtr->setSize(260, 110);
+
+    auto tabBounds = patternTabs.getTabBoundsInParent(currentPatternIndex);
+    juce::Rectangle<int> anchorArea(0, 0, 1, 1);
+    anchorArea.setCentre(tabBounds.getCentreX(), tabBounds.getBottom());
+
+    auto& callout = juce::CallOutBox::launchAsynchronously(std::move(component),
+        anchorArea, this);
+    componentPtr->setCallOutBox(callout);
+    componentPtr->focusEditor();
+}
+
+void SlotMachineAudioProcessorEditor::editCurrentPatternRepeat()
+{
+    if (!patternsTree.isValid())
+        patternsTree = processor.getPatternsTree();
+
+    const int count = patternsTree.getNumChildren();
+    if (count <= 0)
+        return;
+
+    auto pattern = patternsTree.getChild(currentPatternIndex);
+    if (!pattern.isValid())
+        return;
+
+    const int currentRepeat = ensurePatternRepeatProperty(pattern);
+
+    auto component = std::make_unique<EditPatternRepeatComponent>(currentRepeat,
+        [pattern](bool accepted, int newRepeat) mutable
+        {
+            if (!accepted)
+                return;
+
+            newRepeat = juce::jmax(0, newRepeat);
+            pattern.setProperty(kPatternRepeatProperty, newRepeat, nullptr);
         });
 
     auto* componentPtr = component.get();
@@ -4013,6 +4371,7 @@ void SlotMachineAudioProcessorEditor::importPatternIntoCurrentTab(const juce::Va
         currentName = defaultPatternNameForIndex(currentPatternIndex);
 
     auto importedCopy = patternTree.createCopy();
+    ensurePatternRepeatProperty(importedCopy);
     importedCopy.setProperty(kPatternNameProperty, currentName, nullptr);
 
     patternsTree.removeChild(currentPatternIndex, nullptr);
@@ -4798,6 +5157,9 @@ void SlotMachineAudioProcessorEditor::setMasterRun(bool shouldRun)
     cachedStartGlowWidth = glowWidth;
     lastStartToggleState = shouldRun;
 
+    if (!shouldRun && playThroughActive)
+        finishPlayThrough(true, false);
+
     if (shouldRun)
     {
         animateStartButton(glowColour, pulseColour);
@@ -5333,6 +5695,9 @@ void SlotMachineAudioProcessorEditor::timerCallback()
         pendingPatternTree = {};
     }
 
+    if (playThroughActive && wrapped)
+        advancePlayThrough();
+
     // Decay flash envelope @ ~60 Hz
     cycleFlash = juce::jmax(0.0f, cycleFlash * 0.88f - 0.01f);
 
@@ -5383,8 +5748,8 @@ void SlotMachineAudioProcessorEditor::timerCallback()
         ui->hasFile = processor.slotHasSample(i);
 
         const bool beatsPerCycleMode = (timingMode == 1);
-        const bool countEnabled = beatsPerCycleMode;
-        const bool rateEnabled = !beatsPerCycleMode;
+        const bool countEnabled = beatsPerCycleMode && !playThroughActive;
+        const bool rateEnabled = !beatsPerCycleMode && !playThroughActive;
 
         if (ui->count.isEnabled() != countEnabled)
             ui->count.setEnabled(countEnabled);

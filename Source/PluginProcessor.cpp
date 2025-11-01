@@ -141,6 +141,7 @@ static const juce::Identifier kPatternNodeType("pattern");
 static const juce::Identifier kPatternNameProperty("name");
 static const juce::Identifier kPatternMasterBpmProperty("masterBPM");
 static const juce::Identifier kPatternTimingModeProperty("timingMode");
+static const juce::Identifier kPatternRepeatProperty("repeat");
 static const juce::Identifier kCurrentPatternIndexProperty("currentPatternIndex");
 static constexpr int kCurrentStateVersion = 4;
 
@@ -1891,6 +1892,7 @@ juce::ValueTree SlotMachineAudioProcessor::createDefaultPatternTree(const juce::
 {
     juce::ValueTree pattern(kPatternNodeType);
     pattern.setProperty(kPatternNameProperty, name, nullptr);
+    pattern.setProperty(kPatternRepeatProperty, 0, nullptr);
 
     if (auto* masterParam = dynamic_cast<juce::AudioParameterFloat*>(apvts.getParameter("masterBPM")))
     {
