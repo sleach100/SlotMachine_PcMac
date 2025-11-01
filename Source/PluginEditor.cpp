@@ -345,23 +345,29 @@ namespace
         {
             auto bounds = getLocalBounds().reduced(20);
 
-            auto messageBounds = bounds.removeFromTop(60);
-            instruction.setBounds(messageBounds);
-
-            bounds.removeFromTop(4);
-            auto optionsRow = bounds.removeFromTop(28);
-            optionLabel.setBounds(optionsRow.removeFromLeft(180));
-            optionsRow.removeFromLeft(12);
-            loopOn.setBounds(optionsRow.removeFromLeft(80));
-            optionsRow.removeFromLeft(16);
-            loopOff.setBounds(optionsRow.removeFromLeft(80));
-
-            bounds.removeFromTop(16);
             auto buttonsArea = bounds.removeFromBottom(32);
             auto rightSection = buttonsArea.removeFromRight(180);
             okButton.setBounds(rightSection.removeFromRight(80));
             rightSection.removeFromRight(16);
             cancelButton.setBounds(rightSection.removeFromRight(80));
+
+            bounds.removeFromBottom(12);
+
+            auto messageBounds = bounds.removeFromTop(64);
+            instruction.setBounds(messageBounds);
+
+            bounds.removeFromTop(8);
+            auto labelBounds = bounds.removeFromTop(24);
+            optionLabel.setBounds(labelBounds);
+
+            bounds.removeFromTop(8);
+            auto optionsRow = bounds.removeFromTop(28);
+            const int spacing = 16;
+            const int availableForButtons = juce::jmax(0, optionsRow.getWidth() - spacing);
+            const int buttonWidth = juce::jmax(80, availableForButtons / 2);
+            loopOn.setBounds(optionsRow.removeFromLeft(buttonWidth));
+            optionsRow.removeFromLeft(spacing);
+            loopOff.setBounds(optionsRow.removeFromLeft(buttonWidth));
         }
 
     private:
@@ -4380,7 +4386,7 @@ void SlotMachineAudioProcessorEditor::showLoopPlaythroughDialog()
                 editorSafe->loopPlaythroughDialog = nullptr;
         });
 
-    dialogContent->setSize(360, 170);
+    dialogContent->setSize(360, 220);
 
     juce::DialogWindow::LaunchOptions options;
     options.dialogTitle = "Loop Playthrough";
