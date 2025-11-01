@@ -78,6 +78,8 @@ private:
         int  getCurrentIndex() const { return currentIndex; }
         juce::Rectangle<int> getTabBoundsInParent(int index) const;
 
+        void setReorderingEnabled(bool shouldEnable);
+
         void onTabSelected(std::function<void(int)> handler) { tabSelected = std::move(handler); }
         void onTabBarRightClick(std::function<void(const juce::MouseEvent&)> handler) { rightClick = std::move(handler); }
         void onTabReordered(std::function<void(int, int)> handler) { tabReordered = std::move(handler); }
@@ -136,6 +138,7 @@ private:
         int dragStartScreenX = 0;
         bool dragging = false;
         bool suppressNextClick = false;
+        bool allowReordering = true;
     };
 
     class RenamePatternComponent : public juce::Component,

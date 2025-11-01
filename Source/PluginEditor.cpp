@@ -530,6 +530,17 @@ void SlotMachineAudioProcessorEditor::PatternTabs::setTabs(const juce::StringArr
     repaint();
 }
 
+void SlotMachineAudioProcessorEditor::PatternTabs::setReorderingEnabled(bool shouldEnable)
+{
+    if (allowReordering == shouldEnable)
+        return;
+
+    allowReordering = shouldEnable;
+
+    if (!allowReordering)
+        resetDragState();
+}
+
 void SlotMachineAudioProcessorEditor::PatternTabs::setCurrentIndex(int index, bool notify)
 {
     if (buttons.isEmpty())
@@ -603,6 +614,9 @@ void SlotMachineAudioProcessorEditor::PatternTabs::handleTabMouseDown(TabButton&
 
     resetDragState();
 
+    if (!allowReordering)
+        return;
+
     dragButton = &button;
     dragStartIndex = dragButton->index;
     dragCurrentIndex = dragStartIndex;
@@ -616,6 +630,9 @@ void SlotMachineAudioProcessorEditor::PatternTabs::handleTabMouseDrag(TabButton&
         return;
 
     if (&button != dragButton)
+        return;
+
+    if (!allowReordering)
         return;
 
     if (buttons.size() <= 1)
@@ -654,6 +671,12 @@ void SlotMachineAudioProcessorEditor::PatternTabs::handleTabMouseUp(TabButton& b
 
         if (rightClick)
             rightClick(e);
+        return;
+    }
+
+    if (!allowReordering)
+    {
+        resetDragState(false);
         return;
     }
 
@@ -730,6 +753,9 @@ void SlotMachineAudioProcessorEditor::PatternTabs::updateToggleStates()
 
 void SlotMachineAudioProcessorEditor::PatternTabs::reorderTab(int fromIndex, int toIndex, bool notify)
 {
+    if (!allowReordering)
+        return;
+
     if (fromIndex == toIndex)
         return;
 
@@ -2242,6 +2268,7 @@ SlotMachineAudioProcessorEditor::SlotMachineAudioProcessorEditor(SlotMachineAudi
     configureLockOverlay(lockIconExportMidi);
 
     addAndMakeVisible(patternTabs);
+    patternTabs.setReorderingEnabled(!startToggle.getToggleState());
     patternTabs.onTabSelected([this](int index)
         {
             if (fileDialogActive)
@@ -4757,6 +4784,7 @@ void SlotMachineAudioProcessorEditor::setMasterRun(bool shouldRun)
     }
 
     startToggle.setToggleState(shouldRun, juce::dontSendNotification);
+    patternTabs.setReorderingEnabled(!shouldRun);
 
     const auto glowColour = Opt::rgbParam(apvts, "optGlowColor", 0x6994FC, 1.0f);
     const auto pulseColour = Opt::rgbParam(apvts, "optPulseColor", 0xD5CFEE, 1.0f);
@@ -5266,6 +5294,8 @@ void SlotMachineAudioProcessorEditor::timerCallback()
         || std::abs(glowWidth - cachedStartGlowWidth) > 0.0001f)
     {
         updateStartButtonVisuals(isRunning, glowColour, pulseColour, glowAlpha, glowWidth);
+        if (isRunning != lastStartToggleState)
+            patternTabs.setReorderingEnabled(!isRunning);
         lastStartToggleState = isRunning;
         cachedStartGlowColour = glowColour;
         cachedStartPulseColour = pulseColour;
