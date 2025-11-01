@@ -173,6 +173,39 @@ private:
         bool hasCommitted = false;
     };
 
+    class EditPatternRepeatComponent : public juce::Component,
+                                       private juce::Button::Listener,
+                                       private juce::TextEditor::Listener
+    {
+    public:
+        using ResultHandler = std::function<void(bool accepted, int newRepeat)>;
+
+        EditPatternRepeatComponent(int currentRepeat, ResultHandler handler);
+        ~EditPatternRepeatComponent() override;
+
+        void setCallOutBox(juce::CallOutBox& box);
+        void focusEditor();
+
+        void resized() override;
+
+    private:
+        void buttonClicked(juce::Button* button) override;
+        void textEditorReturnKeyPressed(juce::TextEditor&) override;
+        void textEditorEscapeKeyPressed(juce::TextEditor&) override;
+
+        void commit(bool accepted);
+        int  parseEditorValue() const;
+
+        juce::Label prompt;
+        juce::TextEditor editor;
+        juce::TextButton okButton{ "OK" };
+        juce::TextButton cancelButton{ "Cancel" };
+
+        ResultHandler onResult;
+        juce::CallOutBox* owner = nullptr;
+        bool hasCommitted = false;
+    };
+
     // ===== Master UI =====
     void handleMasterTap();
     juce::TooltipWindow tooltipWindow;  // must live as long as the editor
@@ -386,6 +419,7 @@ private:
     void duplicateCurrentPattern();
     void deleteCurrentPattern();
     void renameCurrentPattern();
+    void editCurrentPatternRepeat();
     void importPatternFromFile();
     void handlePatternImportFile(const juce::File& file);
     void importPatternIntoCurrentTab(const juce::ValueTree& patternTree);

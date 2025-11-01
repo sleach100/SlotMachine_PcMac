@@ -42,6 +42,24 @@ namespace license
 
 using APVTS = juce::AudioProcessorValueTreeState;
 static const juce::Identifier kPatternNameProperty("name");
+static const juce::Identifier kPatternRepeatProperty("repeat");
+
+static int ensurePatternRepeatProperty(juce::ValueTree pattern)
+{
+    if (!pattern.isValid())
+        return 0;
+
+    const auto valueVar = pattern.getProperty(kPatternRepeatProperty);
+    if (valueVar.isVoid())
+    {
+        pattern.setProperty(kPatternRepeatProperty, 0, nullptr);
+        return 0;
+    }
+
+    const int repeat = juce::jmax(0, valueVar.toString().getIntValue());
+    pattern.setProperty(kPatternRepeatProperty, repeat, nullptr);
+    return repeat;
+}
 
 static juce::Font createBoldFont(float size);
 static juce::Font createRegularFont(float size);
@@ -926,6 +944,122 @@ void SlotMachineAudioProcessorEditor::RenamePatternComponent::commit(bool accept
 
     if (handler)
         handler(accepted, editor.getText());
+
+    if (owner != nullptr)
+    {
+        owner->dismiss();
+        owner = nullptr;
+    }
+}
+
+// ===== EditPatternRepeatComponent =====
+SlotMachineAudioProcessorEditor::EditPatternRepeatComponent::EditPatternRepeatComponent(int currentRepeat,
+    ResultHandler handler)
+    : prompt({}, "Enter repeat value:"),
+      onResult(std::move(handler))
+{
+    prompt.setJustificationType(juce::Justification::centredLeft);
+    {
+        juce::Font f{ juce::FontOptions(15.0f) };
+        f.setBold(true);
+        prompt.setFont(f);
+    }
+    addAndMakeVisible(prompt);
+
+    editor.setSelectAllWhenFocused(true);
+    editor.setInputRestrictions(0, "0123456789");
+    editor.setText(juce::String(juce::jmax(0, currentRepeat)), juce::dontSendNotification);
+    editor.addListener(this);
+    addAndMakeVisible(editor);
+
+    okButton.addListener(this);
+    cancelButton.addListener(this);
+    addAndMakeVisible(okButton);
+    addAndMakeVisible(cancelButton);
+
+    setSize(260, 110);
+}
+
+SlotMachineAudioProcessorEditor::EditPatternRepeatComponent::~EditPatternRepeatComponent()
+{
+    if (!hasCommitted && onResult)
+    {
+        auto handler = std::move(onResult);
+        handler(false, parseEditorValue());
+    }
+}
+
+void SlotMachineAudioProcessorEditor::EditPatternRepeatComponent::setCallOutBox(juce::CallOutBox& box)
+{
+    owner = &box;
+}
+
+void SlotMachineAudioProcessorEditor::EditPatternRepeatComponent::focusEditor()
+{
+    juce::MessageManager::callAsync([safe = juce::Component::SafePointer<EditPatternRepeatComponent>(this)]
+    {
+        if (safe != nullptr)
+        {
+            safe->editor.grabKeyboardFocus();
+            safe->editor.selectAll();
+        }
+    });
+}
+
+void SlotMachineAudioProcessorEditor::EditPatternRepeatComponent::resized()
+{
+    auto area = getLocalBounds().reduced(12);
+
+    prompt.setBounds(area.removeFromTop(24));
+    area.removeFromTop(6);
+
+    editor.setBounds(area.removeFromTop(28));
+    area.removeFromTop(12);
+
+    auto buttonsArea = area.removeFromTop(28);
+    auto ok = buttonsArea.removeFromLeft(buttonsArea.getWidth() / 2).reduced(4, 0);
+    auto cancel = buttonsArea.reduced(4, 0);
+    okButton.setBounds(ok);
+    cancelButton.setBounds(cancel);
+}
+
+void SlotMachineAudioProcessorEditor::EditPatternRepeatComponent::buttonClicked(juce::Button* button)
+{
+    if (button == &okButton)
+    {
+        commit(true);
+    }
+    else if (button == &cancelButton)
+    {
+        commit(false);
+    }
+}
+
+void SlotMachineAudioProcessorEditor::EditPatternRepeatComponent::textEditorReturnKeyPressed(juce::TextEditor&)
+{
+    commit(true);
+}
+
+void SlotMachineAudioProcessorEditor::EditPatternRepeatComponent::textEditorEscapeKeyPressed(juce::TextEditor&)
+{
+    commit(false);
+}
+
+int SlotMachineAudioProcessorEditor::EditPatternRepeatComponent::parseEditorValue() const
+{
+    return juce::jmax(0, editor.getText().trim().getIntValue());
+}
+
+void SlotMachineAudioProcessorEditor::EditPatternRepeatComponent::commit(bool accepted)
+{
+    if (hasCommitted)
+        return;
+
+    hasCommitted = true;
+    auto handler = std::move(onResult);
+
+    if (handler)
+        handler(accepted, parseEditorValue());
 
     if (owner != nullptr)
     {
@@ -3474,6 +3608,7 @@ void SlotMachineAudioProcessorEditor::refreshPatternTabs()
     for (int i = 0; i < count; ++i)
     {
         auto child = patternsTree.getChild(i);
+        ensurePatternRepeatProperty(child);
         juce::String name = child.getProperty(kPatternNameProperty).toString();
         if (name.isEmpty())
         {
@@ -3683,6 +3818,15 @@ void SlotMachineAudioProcessorEditor::handlePatternContextMenu(const juce::Mouse
     menu.addItem(1, "New Pattern");
     menu.addItem(2, "Duplicate Pattern", patternCount > 0);
     menu.addItem(3, "Rename Pattern", patternCount > 0);
+
+    int repeatValue = 0;
+    if (patternCount > 0 && juce::isPositiveAndBelow(currentPatternIndex, patternCount))
+    {
+        auto pattern = patternsTree.getChild(currentPatternIndex);
+        repeatValue = ensurePatternRepeatProperty(pattern);
+    }
+
+    menu.addItem(6, "Repeat = " + juce::String(repeatValue), patternCount > 0);
     menu.addItem(4, "Delete Pattern", patternCount > 1);
     menu.addSeparator();
     menu.addItem(5, "Import saved pattern", patternCount > 0);
@@ -3705,6 +3849,7 @@ void SlotMachineAudioProcessorEditor::handlePatternContextMenu(const juce::Mouse
             case 3: renameCurrentPattern(); break;
             case 4: deleteCurrentPattern(); break;
             case 5: importPatternFromFile(); break;
+            case 6: editCurrentPatternRepeat(); break;
             default: break;
             }
         });
@@ -3841,6 +3986,44 @@ void SlotMachineAudioProcessorEditor::renameCurrentPattern()
             pattern.setProperty(kPatternNameProperty, newName, nullptr);
             refreshPatternTabs();
             patternTabs.setCurrentIndex(patternIndex);
+        });
+
+    auto* componentPtr = component.get();
+    componentPtr->setSize(260, 110);
+
+    auto tabBounds = patternTabs.getTabBoundsInParent(currentPatternIndex);
+    juce::Rectangle<int> anchorArea(0, 0, 1, 1);
+    anchorArea.setCentre(tabBounds.getCentreX(), tabBounds.getBottom());
+
+    auto& callout = juce::CallOutBox::launchAsynchronously(std::move(component),
+        anchorArea, this);
+    componentPtr->setCallOutBox(callout);
+    componentPtr->focusEditor();
+}
+
+void SlotMachineAudioProcessorEditor::editCurrentPatternRepeat()
+{
+    if (!patternsTree.isValid())
+        patternsTree = processor.getPatternsTree();
+
+    const int count = patternsTree.getNumChildren();
+    if (count <= 0)
+        return;
+
+    auto pattern = patternsTree.getChild(currentPatternIndex);
+    if (!pattern.isValid())
+        return;
+
+    const int currentRepeat = ensurePatternRepeatProperty(pattern);
+
+    auto component = std::make_unique<EditPatternRepeatComponent>(currentRepeat,
+        [pattern](bool accepted, int newRepeat) mutable
+        {
+            if (!accepted)
+                return;
+
+            newRepeat = juce::jmax(0, newRepeat);
+            pattern.setProperty(kPatternRepeatProperty, newRepeat, nullptr);
         });
 
     auto* componentPtr = component.get();
@@ -4013,6 +4196,7 @@ void SlotMachineAudioProcessorEditor::importPatternIntoCurrentTab(const juce::Va
         currentName = defaultPatternNameForIndex(currentPatternIndex);
 
     auto importedCopy = patternTree.createCopy();
+    ensurePatternRepeatProperty(importedCopy);
     importedCopy.setProperty(kPatternNameProperty, currentName, nullptr);
 
     patternsTree.removeChild(currentPatternIndex, nullptr);
