@@ -5319,6 +5319,13 @@ void SlotMachineAudioProcessorEditor::timerCallback()
 
     if (patternSwitchPending && (!isRunning || wrapped))
     {
+        if (isRunning)
+        {
+            // Ensure the newly applied pattern starts from the downbeat rather than
+            // continuing from the previous tab's fractional position.
+            processor.resetAllPhases(true);
+        }
+
         if (pendingPatternTree.isValid())
             applyPatternTreeNow(pendingPatternTree, isRunning);
 
