@@ -61,6 +61,12 @@ static int ensurePatternRepeatProperty(juce::ValueTree pattern)
     return repeat;
 }
 
+static int computePatternPlayThroughCycles(juce::ValueTree pattern)
+{
+    const int repeat = ensurePatternRepeatProperty(pattern);
+    return juce::jmax(1, 1 + repeat);
+}
+
 static juce::Font createBoldFont(float size);
 static juce::Font createRegularFont(float size);
 
@@ -1347,22 +1353,35 @@ SlotMachineAudioProcessorEditor::SlotUI::FileButton::FileButton()
 
 bool SlotMachineAudioProcessorEditor::SlotUI::FileButton::isInterestedInFileDrag(const juce::StringArray& files)
 {
+    if (!isEnabled())
+        return false;
+
     return containsSupportedFile(files);
 }
 
 void SlotMachineAudioProcessorEditor::SlotUI::FileButton::fileDragEnter(const juce::StringArray& files, int, int)
 {
+    if (!isEnabled())
+        return;
+
     updateDragHighlight(containsSupportedFile(files));
 }
 
 void SlotMachineAudioProcessorEditor::SlotUI::FileButton::fileDragExit(const juce::StringArray& files)
 {
     juce::ignoreUnused(files);
+
+    if (!isEnabled())
+        return;
+
     updateDragHighlight(false);
 }
 
 void SlotMachineAudioProcessorEditor::SlotUI::FileButton::filesDropped(const juce::StringArray& files, int, int)
 {
+    if (!isEnabled())
+        return;
+
     updateDragHighlight(false);
 
     if (!onFileDropped)
@@ -3827,6 +3846,7 @@ void SlotMachineAudioProcessorEditor::handlePatternContextMenu(const juce::Mouse
     }
 
     menu.addItem(6, "Repeat = " + juce::String(repeatValue), patternCount > 0);
+    menu.addItem(7, "Play Through", patternCount > 0 && !playThroughActive);
     menu.addItem(4, "Delete Pattern", patternCount > 1);
     menu.addSeparator();
     menu.addItem(5, "Import saved pattern", patternCount > 0);
@@ -3850,9 +3870,164 @@ void SlotMachineAudioProcessorEditor::handlePatternContextMenu(const juce::Mouse
             case 4: deleteCurrentPattern(); break;
             case 5: importPatternFromFile(); break;
             case 6: editCurrentPatternRepeat(); break;
+            case 7: beginPlayThrough(); break;
             default: break;
             }
         });
+}
+
+void SlotMachineAudioProcessorEditor::setSlotControlsFrozen(bool shouldFreeze)
+{
+    const bool enable = !shouldFreeze;
+    const int timingMode = Opt::getInt(apvts, "optTimingMode", 1);
+    const bool beatsPerCycleMode = (timingMode == 1);
+    const bool countEnabled = enable && beatsPerCycleMode;
+    const bool rateEnabled = enable && !beatsPerCycleMode;
+
+    const float otherAlpha = enable ? 1.0f : 0.35f;
+
+    for (auto& slot : slots)
+    {
+        if (!slot)
+            continue;
+
+        slot->fileBtn.setEnabled(enable);
+        slot->clearBtn.setEnabled(enable);
+        slot->muteBtn.setEnabled(enable);
+        slot->soloBtn.setEnabled(enable);
+        slot->muteLabel.setEnabled(enable);
+        slot->soloLabel.setEnabled(enable);
+        slot->gain.setEnabled(enable);
+        slot->decay.setEnabled(enable);
+        slot->midiChannel.setEnabled(enable);
+
+        if (slot->count.isEnabled() != countEnabled)
+            slot->count.setEnabled(countEnabled);
+        if (slot->rate.isEnabled() != rateEnabled)
+            slot->rate.setEnabled(rateEnabled);
+
+        slot->count.setAlpha(countEnabled ? 1.0f : 0.35f);
+        slot->rate.setAlpha(rateEnabled ? 1.0f : 0.35f);
+
+        slot->fileBtn.setAlpha(otherAlpha);
+        slot->clearBtn.setAlpha(otherAlpha);
+        slot->muteBtn.setAlpha(otherAlpha);
+        slot->soloBtn.setAlpha(otherAlpha);
+        slot->gain.setAlpha(otherAlpha);
+        slot->decay.setAlpha(otherAlpha);
+        slot->midiChannel.setAlpha(otherAlpha);
+        slot->muteLabel.setAlpha(otherAlpha);
+        slot->soloLabel.setAlpha(otherAlpha);
+    }
+}
+
+void SlotMachineAudioProcessorEditor::beginPlayThrough()
+{
+    if (playThroughActive)
+        return;
+
+    if (!patternsTree.isValid())
+        patternsTree = processor.getPatternsTree();
+
+    const int patternCount = patternsTree.getNumChildren();
+    if (patternCount <= 0)
+        return;
+
+    saveCurrentPattern();
+    patternsTree = processor.getPatternsTree();
+
+    if (startToggle.getToggleState())
+        setMasterRun(false);
+
+    playThroughActive = true;
+    playThroughInitialPattern = currentPatternIndex;
+    playThroughCurrentPattern = 0;
+
+    setSlotControlsFrozen(true);
+
+    auto pattern = patternsTree.getChild(playThroughCurrentPattern);
+    playThroughCyclesRemaining = computePatternPlayThroughCycles(pattern);
+
+    processor.resetAllPhases(true);
+    applyPattern(playThroughCurrentPattern, true, false, false);
+    setMasterRun(true);
+}
+
+void SlotMachineAudioProcessorEditor::advancePlayThrough()
+{
+    if (!playThroughActive)
+        return;
+
+    if (!patternsTree.isValid())
+        patternsTree = processor.getPatternsTree();
+
+    const int patternCount = patternsTree.getNumChildren();
+    if (patternCount <= 0)
+    {
+        finishPlayThrough(true, true);
+        return;
+    }
+
+    if (playThroughCurrentPattern < 0 || playThroughCurrentPattern >= patternCount)
+        playThroughCurrentPattern = juce::jlimit(0, patternCount - 1, playThroughCurrentPattern);
+
+    if (playThroughCyclesRemaining > 0)
+        --playThroughCyclesRemaining;
+
+    if (playThroughCyclesRemaining > 0)
+        return;
+
+    const int nextIndex = playThroughCurrentPattern + 1;
+    if (nextIndex < patternCount)
+    {
+        playThroughCurrentPattern = nextIndex;
+        auto nextPattern = patternsTree.getChild(playThroughCurrentPattern);
+        playThroughCyclesRemaining = computePatternPlayThroughCycles(nextPattern);
+        processor.resetAllPhases(true);
+        applyPattern(playThroughCurrentPattern, true, false, false);
+    }
+    else
+    {
+        finishPlayThrough(true, true);
+    }
+}
+
+void SlotMachineAudioProcessorEditor::finishPlayThrough(bool restorePattern, bool stopTransport)
+{
+    if (!playThroughActive)
+        return;
+
+    playThroughActive = false;
+    setSlotControlsFrozen(false);
+
+    const int restoreIndex = playThroughInitialPattern;
+    playThroughInitialPattern = -1;
+    playThroughCurrentPattern = -1;
+    playThroughCyclesRemaining = 0;
+
+    if (restorePattern)
+    {
+        if (!patternsTree.isValid())
+            patternsTree = processor.getPatternsTree();
+
+        const int patternCount = patternsTree.getNumChildren();
+        if (patternCount > 0 && restoreIndex >= 0)
+        {
+            const int targetIndex = juce::jlimit(0, patternCount - 1, restoreIndex);
+            if (targetIndex != currentPatternIndex)
+            {
+                processor.resetAllPhases(true);
+                applyPattern(targetIndex, true, false, false);
+            }
+            else
+            {
+                patternTabs.setCurrentIndex(targetIndex);
+            }
+        }
+    }
+
+    if (stopTransport && startToggle.getToggleState())
+        setMasterRun(false);
 }
 
 void SlotMachineAudioProcessorEditor::reorderPatterns(int fromIndex, int toIndex)
@@ -4982,6 +5157,9 @@ void SlotMachineAudioProcessorEditor::setMasterRun(bool shouldRun)
     cachedStartGlowWidth = glowWidth;
     lastStartToggleState = shouldRun;
 
+    if (!shouldRun && playThroughActive)
+        finishPlayThrough(true, false);
+
     if (shouldRun)
     {
         animateStartButton(glowColour, pulseColour);
@@ -5517,6 +5695,9 @@ void SlotMachineAudioProcessorEditor::timerCallback()
         pendingPatternTree = {};
     }
 
+    if (playThroughActive && wrapped)
+        advancePlayThrough();
+
     // Decay flash envelope @ ~60 Hz
     cycleFlash = juce::jmax(0.0f, cycleFlash * 0.88f - 0.01f);
 
@@ -5567,8 +5748,8 @@ void SlotMachineAudioProcessorEditor::timerCallback()
         ui->hasFile = processor.slotHasSample(i);
 
         const bool beatsPerCycleMode = (timingMode == 1);
-        const bool countEnabled = beatsPerCycleMode;
-        const bool rateEnabled = !beatsPerCycleMode;
+        const bool countEnabled = beatsPerCycleMode && !playThroughActive;
+        const bool rateEnabled = !beatsPerCycleMode && !playThroughActive;
 
         if (ui->count.isEnabled() != countEnabled)
             ui->count.setEnabled(countEnabled);

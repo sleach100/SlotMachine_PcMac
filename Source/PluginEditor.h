@@ -391,6 +391,7 @@ private:
     void handleSlotRateChanged(int slotIndex, SlotUI& ui);
     void handleSlotCountChanged(int slotIndex, SlotUI& ui);
     void initialiseSlotTimingPair(int slotIndex, SlotUI& ui);
+    void setSlotControlsFrozen(bool shouldFreeze);
     static int convertRateToCount(float rateValue)
     {
         const float clampedRate = juce::jlimit(0.0625f, 4.0f, rateValue);
@@ -420,6 +421,9 @@ private:
     void deleteCurrentPattern();
     void renameCurrentPattern();
     void editCurrentPatternRepeat();
+    void beginPlayThrough();
+    void advancePlayThrough();
+    void finishPlayThrough(bool restorePattern, bool stopTransport);
     void importPatternFromFile();
     void handlePatternImportFile(const juce::File& file);
     void importPatternIntoCurrentTab(const juce::ValueTree& patternTree);
@@ -460,6 +464,11 @@ private:
     juce::ValueTree patternsTree;
     int currentPatternIndex = 0;
     int activePatternIndex = 0;
+
+    bool playThroughActive = false;
+    int  playThroughInitialPattern = -1;
+    int  playThroughCurrentPattern = -1;
+    int  playThroughCyclesRemaining = 0;
 
     bool patternSwitchPending = false;
     juce::ValueTree pendingPatternTree;
