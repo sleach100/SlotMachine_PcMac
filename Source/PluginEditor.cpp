@@ -3522,6 +3522,7 @@ void SlotMachineAudioProcessorEditor::applyPattern(int index, bool updateTabs, b
     {
         pendingPatternTree = pattern;
         pendingPatternIndex = index;
+        ++pendingPatternRequestId;
         patternSwitchPending = true;
         loadedPatternIndex = clampedLoaded;
         processor.setCurrentPatternIndex(loadedPatternIndex);
@@ -5292,32 +5293,49 @@ void SlotMachineAudioProcessorEditor::timerCallback()
 
     if (patternSwitchPending && (!isRunning || wrapped))
     {
-        if (pendingPatternTree.isValid())
-        {
-            applyPatternTreeNow(pendingPatternTree, isRunning);
+        const int requestId = pendingPatternRequestId;
+        const int targetIndex = pendingPatternIndex;
 
-            if (pendingPatternIndex >= 0)
+        juce::ValueTree treeToApply;
+        if (patternsTree.isValid()
+            && juce::isPositiveAndBelow(targetIndex, patternsTree.getNumChildren()))
+        {
+            treeToApply = patternsTree.getChild(targetIndex);
+        }
+        else
+        {
+            treeToApply = pendingPatternTree;
+        }
+
+        if (treeToApply.isValid())
+        {
+            applyPatternTreeNow(treeToApply, isRunning);
+
+            if (targetIndex >= 0)
             {
                 if (patternsTree.isValid())
                 {
                     const int count = patternsTree.getNumChildren();
                     if (count > 0)
-                        loadedPatternIndex = juce::jlimit(0, count - 1, pendingPatternIndex);
+                        loadedPatternIndex = juce::jlimit(0, count - 1, targetIndex);
                     else
                         loadedPatternIndex = 0;
                 }
                 else
                 {
-                    loadedPatternIndex = pendingPatternIndex;
+                    loadedPatternIndex = targetIndex;
                 }
 
                 processor.setCurrentPatternIndex(loadedPatternIndex);
             }
         }
 
-        patternSwitchPending = false;
-        pendingPatternTree = {};
-        pendingPatternIndex = -1;
+        if (requestId == pendingPatternRequestId)
+        {
+            patternSwitchPending = false;
+            pendingPatternTree = {};
+            pendingPatternIndex = -1;
+        }
     }
 
     // Decay flash envelope @ ~60 Hz

@@ -427,6 +427,7 @@ private:
     bool patternSwitchPending = false;
     juce::ValueTree pendingPatternTree;
     int pendingPatternIndex = -1;
+    int pendingPatternRequestId = 0;
     bool fileDialogActive = false;
     bool suppressNextFileBtnClick = false;
     juce::Component::SafePointer<juce::DialogWindow> exportCyclesPromptWindow;
