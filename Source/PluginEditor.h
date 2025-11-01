@@ -422,9 +422,11 @@ private:
 
     juce::ValueTree patternsTree;
     int currentPatternIndex = 0;
+    int loadedPatternIndex = 0;
 
     bool patternSwitchPending = false;
     juce::ValueTree pendingPatternTree;
+    int pendingPatternIndex = -1;
     bool fileDialogActive = false;
     bool suppressNextFileBtnClick = false;
     juce::Component::SafePointer<juce::DialogWindow> exportCyclesPromptWindow;

@@ -3401,6 +3401,7 @@ void SlotMachineAudioProcessorEditor::initialisePatterns()
         return;
 
     currentPatternIndex = juce::jlimit(0, count - 1, processor.getCurrentPatternIndex());
+    loadedPatternIndex = currentPatternIndex;
     processor.setCurrentPatternIndex(currentPatternIndex);
 
     refreshPatternTabs();
@@ -3416,8 +3417,11 @@ void SlotMachineAudioProcessorEditor::saveCurrentPattern()
     if (count <= 0)
         return;
 
-    currentPatternIndex = juce::jlimit(0, count - 1, currentPatternIndex);
-    processor.storeCurrentStateInPattern(patternsTree.getChild(currentPatternIndex));
+    int indexToSave = patternSwitchPending ? loadedPatternIndex : currentPatternIndex;
+    indexToSave = juce::jlimit(0, count - 1, indexToSave);
+
+    if (auto pattern = patternsTree.getChild(indexToSave); pattern.isValid())
+        processor.storeCurrentStateInPattern(pattern);
 }
 
 void SlotMachineAudioProcessorEditor::refreshPatternTabs()
@@ -3433,8 +3437,13 @@ void SlotMachineAudioProcessorEditor::refreshPatternTabs()
         processor.setCurrentPatternIndex(currentPatternIndex);
     }
 
-    juce::StringArray names;
     const int count = patternsTree.getNumChildren();
+    if (count > 0)
+        loadedPatternIndex = juce::jlimit(0, count - 1, loadedPatternIndex);
+    else
+        loadedPatternIndex = 0;
+
+    juce::StringArray names;
     names.ensureStorageAllocated(count);
 
     for (int i = 0; i < count; ++i)
@@ -3460,6 +3469,19 @@ void SlotMachineAudioProcessorEditor::applyPatternTreeNow(const juce::ValueTree&
 {
     juce::Array<int> failedSlots;
     processor.applyPatternTree(pattern, &failedSlots, allowTailRelease);
+
+    if (patternsTree.isValid())
+    {
+        const int count = patternsTree.getNumChildren();
+        if (count > 0)
+            loadedPatternIndex = juce::jlimit(0, count - 1, currentPatternIndex);
+        else
+            loadedPatternIndex = 0;
+    }
+    else
+    {
+        loadedPatternIndex = currentPatternIndex;
+    }
 
     refreshSlotFileLabels(failedSlots);
     showPatternWarning(failedSlots);
@@ -3496,12 +3518,14 @@ void SlotMachineAudioProcessorEditor::applyPattern(int index, bool updateTabs, b
     if (shouldDefer)
     {
         pendingPatternTree = pattern;
+        pendingPatternIndex = index;
         patternSwitchPending = true;
         return;
     }
 
     patternSwitchPending = false;
     pendingPatternTree = {};
+    pendingPatternIndex = -1;
     applyPatternTreeNow(pattern, isRunning);
 }
 
@@ -3705,6 +3729,15 @@ void SlotMachineAudioProcessorEditor::reorderPatterns(int fromIndex, int toIndex
         ++currentPatternIndex;
 
     currentPatternIndex = juce::jlimit(0, juce::jmax(0, patternsTree.getNumChildren() - 1), currentPatternIndex);
+
+    if (loadedPatternIndex == fromIndex)
+        loadedPatternIndex = newIndex;
+    else if (fromIndex < toIndex && loadedPatternIndex > fromIndex && loadedPatternIndex <= toIndex)
+        --loadedPatternIndex;
+    else if (fromIndex > toIndex && loadedPatternIndex < fromIndex && loadedPatternIndex >= toIndex)
+        ++loadedPatternIndex;
+
+    loadedPatternIndex = juce::jlimit(0, juce::jmax(0, patternsTree.getNumChildren() - 1), loadedPatternIndex);
 
     processor.setCurrentPatternIndex(currentPatternIndex);
     refreshPatternTabs();
@@ -3977,11 +4010,13 @@ void SlotMachineAudioProcessorEditor::clearExtraPatternsBeforeLoad()
     {
         currentPatternIndex = juce::jlimit(0, patternCount - 1, currentPatternIndex);
         processor.setCurrentPatternIndex(currentPatternIndex);
+        loadedPatternIndex = currentPatternIndex;
     }
     else
     {
         currentPatternIndex = 0;
         processor.setCurrentPatternIndex(currentPatternIndex);
+        loadedPatternIndex = currentPatternIndex;
     }
 
     refreshPatternTabs();
@@ -4013,6 +4048,7 @@ void SlotMachineAudioProcessorEditor::resetPatternsToSingleDefault()
 
     currentPatternIndex = 0;
     processor.setCurrentPatternIndex(currentPatternIndex);
+    loadedPatternIndex = currentPatternIndex;
 
     refreshPatternTabs();
     patternTabs.setCurrentIndex(currentPatternIndex);
@@ -5252,10 +5288,29 @@ void SlotMachineAudioProcessorEditor::timerCallback()
     if (patternSwitchPending && (!isRunning || wrapped))
     {
         if (pendingPatternTree.isValid())
+        {
             applyPatternTreeNow(pendingPatternTree, isRunning);
+
+            if (pendingPatternIndex >= 0)
+            {
+                if (patternsTree.isValid())
+                {
+                    const int count = patternsTree.getNumChildren();
+                    if (count > 0)
+                        loadedPatternIndex = juce::jlimit(0, count - 1, pendingPatternIndex);
+                    else
+                        loadedPatternIndex = 0;
+                }
+                else
+                {
+                    loadedPatternIndex = pendingPatternIndex;
+                }
+            }
+        }
 
         patternSwitchPending = false;
         pendingPatternTree = {};
+        pendingPatternIndex = -1;
     }
 
     // Decay flash envelope @ ~60 Hz
