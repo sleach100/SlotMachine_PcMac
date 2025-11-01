@@ -3402,6 +3402,7 @@ void SlotMachineAudioProcessorEditor::initialisePatterns()
 
     currentPatternIndex = juce::jlimit(0, count - 1, processor.getCurrentPatternIndex());
     processor.setCurrentPatternIndex(currentPatternIndex);
+    activePatternIndex = currentPatternIndex;
 
     refreshPatternTabs();
     applyPattern(currentPatternIndex, true, false);
@@ -3417,7 +3418,10 @@ void SlotMachineAudioProcessorEditor::saveCurrentPattern()
         return;
 
     currentPatternIndex = juce::jlimit(0, count - 1, currentPatternIndex);
-    processor.storeCurrentStateInPattern(patternsTree.getChild(currentPatternIndex));
+    activePatternIndex = juce::jlimit(0, count - 1, activePatternIndex);
+
+    if (auto pattern = patternsTree.getChild(activePatternIndex); pattern.isValid())
+        processor.storeCurrentStateInPattern(pattern);
 }
 
 void SlotMachineAudioProcessorEditor::refreshPatternTabs()
@@ -3431,10 +3435,13 @@ void SlotMachineAudioProcessorEditor::refreshPatternTabs()
         patternsTree.addChild(pattern, -1, nullptr);
         currentPatternIndex = 0;
         processor.setCurrentPatternIndex(currentPatternIndex);
+        activePatternIndex = currentPatternIndex;
     }
 
     juce::StringArray names;
     const int count = patternsTree.getNumChildren();
+    currentPatternIndex = juce::jlimit(0, juce::jmax(0, count - 1), currentPatternIndex);
+    activePatternIndex = juce::jlimit(0, juce::jmax(0, count - 1), activePatternIndex);
     names.ensureStorageAllocated(count);
 
     for (int i = 0; i < count; ++i)
@@ -3464,6 +3471,16 @@ void SlotMachineAudioProcessorEditor::applyPatternTreeNow(const juce::ValueTree&
     refreshSlotFileLabels(failedSlots);
     showPatternWarning(failedSlots);
     repaint();
+
+    if (patternsTree.isValid())
+    {
+        const int count = patternsTree.getNumChildren();
+        activePatternIndex = juce::jlimit(0, juce::jmax(0, count - 1), currentPatternIndex);
+    }
+    else
+    {
+        activePatternIndex = currentPatternIndex;
+    }
 }
 
 void SlotMachineAudioProcessorEditor::applyPattern(int index, bool updateTabs, bool saveExisting, bool deferIfRunning)
@@ -3697,14 +3714,31 @@ void SlotMachineAudioProcessorEditor::reorderPatterns(int fromIndex, int toIndex
 
     const int newIndex = patternsTree.indexOf(child);
 
-    if (currentPatternIndex == fromIndex)
-        currentPatternIndex = newIndex;
-    else if (fromIndex < toIndex && currentPatternIndex > fromIndex && currentPatternIndex <= toIndex)
-        --currentPatternIndex;
-    else if (fromIndex > toIndex && currentPatternIndex < fromIndex && currentPatternIndex >= toIndex)
-        ++currentPatternIndex;
+    auto remapIndex = [fromIndex, toIndex, newIndex](int index)
+    {
+        if (index == fromIndex)
+            return newIndex;
 
-    currentPatternIndex = juce::jlimit(0, juce::jmax(0, patternsTree.getNumChildren() - 1), currentPatternIndex);
+        if (fromIndex < toIndex)
+        {
+            if (index > fromIndex && index <= toIndex)
+                return index - 1;
+        }
+        else if (fromIndex > toIndex)
+        {
+            if (index < fromIndex && index >= toIndex)
+                return index + 1;
+        }
+
+        return index;
+    };
+
+    currentPatternIndex = remapIndex(currentPatternIndex);
+    activePatternIndex = remapIndex(activePatternIndex);
+
+    const int maxIndex = juce::jmax(0, patternsTree.getNumChildren() - 1);
+    currentPatternIndex = juce::jlimit(0, maxIndex, currentPatternIndex);
+    activePatternIndex = juce::jlimit(0, maxIndex, activePatternIndex);
 
     processor.setCurrentPatternIndex(currentPatternIndex);
     refreshPatternTabs();
@@ -3745,6 +3779,7 @@ void SlotMachineAudioProcessorEditor::duplicateCurrentPattern()
 
     currentPatternIndex = newIndex;
     processor.setCurrentPatternIndex(currentPatternIndex);
+    activePatternIndex = currentPatternIndex;
     refreshPatternTabs();
     patternTabs.setCurrentIndex(currentPatternIndex);
     juce::Array<int> none;
@@ -3977,11 +4012,13 @@ void SlotMachineAudioProcessorEditor::clearExtraPatternsBeforeLoad()
     {
         currentPatternIndex = juce::jlimit(0, patternCount - 1, currentPatternIndex);
         processor.setCurrentPatternIndex(currentPatternIndex);
+        activePatternIndex = currentPatternIndex;
     }
     else
     {
         currentPatternIndex = 0;
         processor.setCurrentPatternIndex(currentPatternIndex);
+        activePatternIndex = currentPatternIndex;
     }
 
     refreshPatternTabs();
@@ -4013,6 +4050,7 @@ void SlotMachineAudioProcessorEditor::resetPatternsToSingleDefault()
 
     currentPatternIndex = 0;
     processor.setCurrentPatternIndex(currentPatternIndex);
+    activePatternIndex = currentPatternIndex;
 
     refreshPatternTabs();
     patternTabs.setCurrentIndex(currentPatternIndex);

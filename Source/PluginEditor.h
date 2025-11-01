@@ -422,6 +422,7 @@ private:
 
     juce::ValueTree patternsTree;
     int currentPatternIndex = 0;
+    int activePatternIndex = 0;
 
     bool patternSwitchPending = false;
     juce::ValueTree pendingPatternTree;
