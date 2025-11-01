@@ -3483,6 +3483,8 @@ void SlotMachineAudioProcessorEditor::applyPatternTreeNow(const juce::ValueTree&
         loadedPatternIndex = currentPatternIndex;
     }
 
+    processor.setCurrentPatternIndex(loadedPatternIndex);
+
     refreshSlotFileLabels(failedSlots);
     showPatternWarning(failedSlots);
     repaint();
@@ -3509,8 +3511,9 @@ void SlotMachineAudioProcessorEditor::applyPattern(int index, bool updateTabs, b
     const bool isRunning = startToggle.getToggleState();
     const bool shouldDefer = deferIfRunning && isRunning;
 
+    const int clampedLoaded = juce::jlimit(0, count - 1, loadedPatternIndex);
+
     currentPatternIndex = index;
-    processor.setCurrentPatternIndex(currentPatternIndex);
 
     if (updateTabs)
         patternTabs.setCurrentIndex(currentPatternIndex);
@@ -3520,6 +3523,8 @@ void SlotMachineAudioProcessorEditor::applyPattern(int index, bool updateTabs, b
         pendingPatternTree = pattern;
         pendingPatternIndex = index;
         patternSwitchPending = true;
+        loadedPatternIndex = clampedLoaded;
+        processor.setCurrentPatternIndex(loadedPatternIndex);
         return;
     }
 
@@ -5305,6 +5310,8 @@ void SlotMachineAudioProcessorEditor::timerCallback()
                 {
                     loadedPatternIndex = pendingPatternIndex;
                 }
+
+                processor.setCurrentPatternIndex(loadedPatternIndex);
             }
         }
 
