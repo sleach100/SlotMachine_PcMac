@@ -67,6 +67,8 @@ static int computePatternPlayThroughCycles(juce::ValueTree pattern)
     return juce::jmax(1, 1 + repeat);
 }
 
+constexpr float kPlayThroughWrapGuardThreshold = 0.02f;
+
 static juce::Font createBoldFont(float size);
 static juce::Font createRegularFont(float size);
 
@@ -283,6 +285,137 @@ namespace
         juce::Label cyclesLabel;
         juce::TextEditor cyclesEditor;
         juce::Label errorLabel;
+        juce::TextButton okButton;
+        juce::TextButton cancelButton;
+
+        ConfirmHandler onConfirm;
+        CancelHandler onCancel;
+        bool hasResolved = false;
+    };
+
+    class LoopPlaythroughDialog : public juce::Component,
+                                  private juce::Button::Listener
+    {
+    public:
+        using ConfirmHandler = std::function<void(bool)>;
+        using CancelHandler = std::function<void()>;
+
+        LoopPlaythroughDialog(bool initialValue,
+            ConfirmHandler onConfirmFn,
+            CancelHandler onCancelFn)
+            : onConfirm(std::move(onConfirmFn))
+            , onCancel(std::move(onCancelFn))
+        {
+            instruction.setText("Choose how Play Through should behave when it reaches the end of the pattern list.",
+                juce::dontSendNotification);
+            instruction.setJustificationType(juce::Justification::centredLeft);
+            addAndMakeVisible(instruction);
+
+            optionLabel.setText("Loop Playthrough =", juce::dontSendNotification);
+            optionLabel.setJustificationType(juce::Justification::centredLeft);
+            addAndMakeVisible(optionLabel);
+
+            loopOn.setButtonText("True");
+            loopOn.setRadioGroupId(1);
+            loopOn.setToggleState(initialValue, juce::dontSendNotification);
+            addAndMakeVisible(loopOn);
+
+            loopOff.setButtonText("False");
+            loopOff.setRadioGroupId(1);
+            loopOff.setToggleState(!initialValue, juce::dontSendNotification);
+            addAndMakeVisible(loopOff);
+
+            okButton.addListener(this);
+            okButton.setButtonText("OK");
+            addAndMakeVisible(okButton);
+
+            cancelButton.addListener(this);
+            cancelButton.setButtonText("Cancel");
+            addAndMakeVisible(cancelButton);
+        }
+
+        ~LoopPlaythroughDialog() override
+        {
+            if (!hasResolved)
+            {
+                if (auto cancelCopy = onCancel)
+                    cancelCopy();
+            }
+        }
+
+        void resized() override
+        {
+            auto bounds = getLocalBounds().reduced(20);
+
+            auto buttonsArea = bounds.removeFromBottom(32);
+            auto rightSection = buttonsArea.removeFromRight(180);
+            okButton.setBounds(rightSection.removeFromRight(80));
+            rightSection.removeFromRight(16);
+            cancelButton.setBounds(rightSection.removeFromRight(80));
+
+            bounds.removeFromBottom(12);
+
+            auto messageBounds = bounds.removeFromTop(64);
+            instruction.setBounds(messageBounds);
+
+            bounds.removeFromTop(8);
+            auto labelBounds = bounds.removeFromTop(24);
+            optionLabel.setBounds(labelBounds);
+
+            bounds.removeFromTop(8);
+            auto optionsRow = bounds.removeFromTop(28);
+            const int spacing = 16;
+            const int availableForButtons = juce::jmax(0, optionsRow.getWidth() - spacing);
+            const int buttonWidth = juce::jmax(80, availableForButtons / 2);
+            loopOn.setBounds(optionsRow.removeFromLeft(buttonWidth));
+            optionsRow.removeFromLeft(spacing);
+            loopOff.setBounds(optionsRow.removeFromLeft(buttonWidth));
+        }
+
+    private:
+        void buttonClicked(juce::Button* button) override
+        {
+            if (button == &okButton)
+                handleOk();
+            else if (button == &cancelButton)
+                handleCancel();
+        }
+
+        void handleOk()
+        {
+            hasResolved = true;
+
+            const bool shouldLoop = loopOn.getToggleState();
+            auto confirmCopy = onConfirm;
+
+            if (auto* window = findParentComponentOfClass<juce::DialogWindow>())
+                window->exitModalState(1);
+
+            if (confirmCopy != nullptr)
+            {
+                juce::MessageManager::callAsync([confirmCopy, shouldLoop]() mutable
+                {
+                    confirmCopy(shouldLoop);
+                });
+            }
+        }
+
+        void handleCancel()
+        {
+            hasResolved = true;
+
+            auto cancelCopy = onCancel;
+            if (auto* window = findParentComponentOfClass<juce::DialogWindow>())
+                window->exitModalState(0);
+
+            if (cancelCopy != nullptr)
+                cancelCopy();
+        }
+
+        juce::Label instruction;
+        juce::Label optionLabel;
+        juce::ToggleButton loopOn;
+        juce::ToggleButton loopOff;
         juce::TextButton okButton;
         juce::TextButton cancelButton;
 
@@ -3846,6 +3979,7 @@ void SlotMachineAudioProcessorEditor::handlePatternContextMenu(const juce::Mouse
     }
 
     menu.addItem(6, "Repeat = " + juce::String(repeatValue), patternCount > 0);
+    menu.addItem(8, "Loop Playthrough = " + juce::String(loopPlaythroughEnabled ? "True" : "False"));
     menu.addItem(7, "Play Through", patternCount > 0 && !playThroughActive);
     menu.addItem(4, "Delete Pattern", patternCount > 1);
     menu.addSeparator();
@@ -3871,6 +4005,7 @@ void SlotMachineAudioProcessorEditor::handlePatternContextMenu(const juce::Mouse
             case 5: importPatternFromFile(); break;
             case 6: editCurrentPatternRepeat(); break;
             case 7: beginPlayThrough(); break;
+            case 8: showLoopPlaythroughDialog(); break;
             default: break;
             }
         });
@@ -3947,6 +4082,8 @@ void SlotMachineAudioProcessorEditor::beginPlayThrough()
 
     auto pattern = patternsTree.getChild(playThroughCurrentPattern);
     playThroughCyclesRemaining = computePatternPlayThroughCycles(pattern);
+    playThroughSkipNextWrap = true;
+    playThroughWrapGuardPhase = lastPhase;
 
     processor.resetAllPhases(true);
     applyPattern(playThroughCurrentPattern, true, false, false);
@@ -3988,7 +4125,18 @@ void SlotMachineAudioProcessorEditor::advancePlayThrough()
     }
     else
     {
-        finishPlayThrough(true, true);
+        if (loopPlaythroughEnabled)
+        {
+            playThroughCurrentPattern = 0;
+            auto nextPattern = patternsTree.getChild(playThroughCurrentPattern);
+            playThroughCyclesRemaining = computePatternPlayThroughCycles(nextPattern);
+            processor.resetAllPhases(true);
+            applyPattern(playThroughCurrentPattern, true, false, false);
+        }
+        else
+        {
+            finishPlayThrough(true, true);
+        }
     }
 }
 
@@ -4004,6 +4152,8 @@ void SlotMachineAudioProcessorEditor::finishPlayThrough(bool restorePattern, boo
     playThroughInitialPattern = -1;
     playThroughCurrentPattern = -1;
     playThroughCyclesRemaining = 0;
+    playThroughSkipNextWrap = false;
+    playThroughWrapGuardPhase = 0.0f;
 
     if (restorePattern)
     {
@@ -4212,6 +4362,57 @@ void SlotMachineAudioProcessorEditor::editCurrentPatternRepeat()
         anchorArea, this);
     componentPtr->setCallOutBox(callout);
     componentPtr->focusEditor();
+}
+
+void SlotMachineAudioProcessorEditor::showLoopPlaythroughDialog()
+{
+    if (auto* existing = loopPlaythroughDialog.getComponent())
+    {
+        if (auto* peer = existing->getPeer())
+            peer->toFront(true);
+        else
+            existing->grabKeyboardFocus();
+        return;
+    }
+
+    auto editorSafe = juce::Component::SafePointer<SlotMachineAudioProcessorEditor>(this);
+    auto dialogContent = std::make_unique<LoopPlaythroughDialog>(
+        loopPlaythroughEnabled,
+        [editorSafe](bool shouldLoop)
+        {
+            if (editorSafe != nullptr)
+            {
+                editorSafe->loopPlaythroughDialog = nullptr;
+                editorSafe->setLoopPlaythroughEnabled(shouldLoop);
+            }
+        },
+        [editorSafe]()
+        {
+            if (editorSafe != nullptr)
+                editorSafe->loopPlaythroughDialog = nullptr;
+        });
+
+    dialogContent->setSize(360, 220);
+
+    juce::DialogWindow::LaunchOptions options;
+    options.dialogTitle = "Loop Playthrough";
+    options.dialogBackgroundColour = getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId);
+    options.content.setOwned(dialogContent.release());
+    options.componentToCentreAround = this;
+    options.escapeKeyTriggersCloseButton = true;
+    options.useNativeTitleBar = true;
+    options.resizable = false;
+
+    if (auto* window = options.launchAsync())
+    {
+        loopPlaythroughDialog = window;
+        window->centreAroundComponent(this, window->getWidth(), window->getHeight());
+    }
+}
+
+void SlotMachineAudioProcessorEditor::setLoopPlaythroughEnabled(bool shouldLoop)
+{
+    loopPlaythroughEnabled = shouldLoop;
 }
 
 void SlotMachineAudioProcessorEditor::importPatternFromFile()
@@ -5696,7 +5897,21 @@ void SlotMachineAudioProcessorEditor::timerCallback()
     }
 
     if (playThroughActive && wrapped)
-        advancePlayThrough();
+    {
+        if (playThroughSkipNextWrap)
+        {
+            const bool shouldIgnoreWrap = playThroughWrapGuardPhase > kPlayThroughWrapGuardThreshold;
+            playThroughSkipNextWrap = false;
+            playThroughWrapGuardPhase = 0.0f;
+
+            if (!shouldIgnoreWrap)
+                advancePlayThrough();
+        }
+        else
+        {
+            advancePlayThrough();
+        }
+    }
 
     // Decay flash envelope @ ~60 Hz
     cycleFlash = juce::jmax(0.0f, cycleFlash * 0.88f - 0.01f);
