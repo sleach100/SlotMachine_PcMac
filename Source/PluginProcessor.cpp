@@ -2041,7 +2041,7 @@ bool SlotMachineAudioProcessor::exportAudioCycles(const juce::File& destination,
 
     OfflinePatternData patternData = createOfflinePatternDataFromCurrentState(*this);
     RenderedPatternAudio rendered;
-    if (!renderPatternAudio(*this, patternData, cyclesToExport, engineSampleRate, rendered, errorMessage))
+    if (!::renderPatternAudio(*this, patternData, cyclesToExport, engineSampleRate, rendered, errorMessage))
         return false;
 
     return writeAudioFile(destination, rendered.buffer, rendered.samples, engineSampleRate, targetSampleRate, errorMessage);
@@ -2093,7 +2093,7 @@ bool SlotMachineAudioProcessor::exportAudioPlaythroughCycles(const juce::File& d
         const int patternCycles = computePatternPlaythroughCycles(pattern);
 
         RenderedPatternAudio rendered;
-        if (!renderPatternAudio(*this, data, patternCycles, engineSampleRate, rendered, errorMessage))
+        if (!::renderPatternAudio(*this, data, patternCycles, engineSampleRate, rendered, errorMessage))
             return false;
 
         samplesPerPlaythrough += rendered.samples;
