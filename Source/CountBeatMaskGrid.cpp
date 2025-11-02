@@ -39,6 +39,9 @@ CountBeatMaskGrid::CountBeatMaskGrid(Options opts,
     , mask(limitMaskToBeats(initialMask, juce::jlimit(1, 64, options.beats)))
     , maskChanged(std::move(onMaskChanged))
 {
+    setWantsKeyboardFocus(true);
+    setFocusContainer(true);
+
     options.beats = juce::jlimit(1, 64, options.beats);
     if (options.columns <= 0)
         options.columns = normaliseColumns(options.columns, options.beats);
@@ -48,6 +51,7 @@ CountBeatMaskGrid::CountBeatMaskGrid(Options opts,
     mask = limitMaskToBeats(mask, options.beats);
 
     buildButtons();
+    updateButtonStatesFromMask();
 
     const int columns = juce::jmax(1, options.columns);
     const int rows = (options.beats + columns - 1) / columns;
@@ -70,9 +74,22 @@ void CountBeatMaskGrid::buildButtons()
         button->setColour(juce::TextButton::buttonOnColourId, juce::Colours::orange);
         button->setColour(juce::TextButton::textColourOffId, juce::Colours::whitesmoke);
         button->setColour(juce::TextButton::textColourOnId, juce::Colours::black);
+        button->setWantsKeyboardFocus(false);
         button->addListener(this);
         addAndMakeVisible(button.get());
         buttons.add(button.release());
+    }
+}
+
+void CountBeatMaskGrid::updateButtonStatesFromMask()
+{
+    for (int beat = 0; beat < buttons.size(); ++beat)
+    {
+        if (auto* button = buttons[beat])
+        {
+            const bool selected = ((mask >> beat) & 1ull) != 0;
+            button->setToggleState(selected, juce::dontSendNotification);
+        }
     }
 }
 
@@ -92,6 +109,12 @@ void CountBeatMaskGrid::resized()
     }
 }
 
+void CountBeatMaskGrid::visibilityChanged()
+{
+    if (isVisible())
+        grabKeyboardFocus();
+}
+
 void CountBeatMaskGrid::buttonClicked(juce::Button* button)
 {
     auto* textButton = dynamic_cast<juce::TextButton*>(button);
@@ -107,13 +130,35 @@ void CountBeatMaskGrid::buttonClicked(juce::Button* button)
     if (bit == 0)
         return;
 
+    uint64_t newMask = mask;
     if (selected)
-        mask |= bit;
+        newMask |= bit;
     else
-        mask &= ~bit;
+        newMask &= ~bit;
 
-    mask = limitMaskToBeats(mask, options.beats);
+    setMask(newMask, true);
+}
 
-    if (maskChanged)
-        maskChanged(limitMaskToBeats(mask, options.beats));
+void CountBeatMaskGrid::setMask(uint64_t newMask, bool sendNotification)
+{
+    mask = limitMaskToBeats(newMask, options.beats);
+    updateButtonStatesFromMask();
+
+    if (sendNotification && maskChanged)
+        maskChanged(mask);
+}
+
+bool CountBeatMaskGrid::keyPressed(const juce::KeyPress& key)
+{
+    const bool modifierDown = key.getModifiers().isCtrlDown() || key.getModifiers().isCommandDown();
+    const bool isInvertKey = key.getKeyCode() == juce::KeyPress::iKey || key.getTextCharacter() == 'i' || key.getTextCharacter() == 'I';
+
+    if (modifierDown && isInvertKey)
+    {
+        const uint64_t allActive = maskForBeatsInternal(options.beats);
+        setMask((~mask) & allActive, true);
+        return true;
+    }
+
+    return false;
 }
