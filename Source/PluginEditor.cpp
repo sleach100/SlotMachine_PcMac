@@ -43,6 +43,8 @@ namespace license
 using APVTS = juce::AudioProcessorValueTreeState;
 static const juce::Identifier kPatternNameProperty("name");
 static const juce::Identifier kPatternRepeatProperty("repeat");
+static const juce::Identifier kLastAudioExportPlaythroughProperty("lastAudioExportPlaythrough");
+static const juce::Identifier kLastMidiExportPlaythroughProperty("lastMidiExportPlaythrough");
 
 static int ensurePatternRepeatProperty(juce::ValueTree pattern)
 {
@@ -2455,45 +2457,6 @@ private:
 };
 
 
-// ===== MIDI export helpers =====
-namespace MidiExport
-{
-    static int igcd(int a, int b) { while (b != 0) { int t = a % b; a = b; b = t; } return a < 0 ? -a : a; }
-    static int ilcm(int a, int b) { return (a == 0 || b == 0) ? 0 : (a / igcd(a, b)) * b; }
-
-    // Continued fraction rational approximation
-    static void approximateRational(double x, int maxDen, int& num, int& den)
-    {
-        int a0 = (int)std::floor(x);
-        if (a0 > maxDen) { num = a0; den = 1; return; }
-        int n0 = 1, d0 = 0;
-        int n1 = a0, d1 = 1;
-        double frac = x - (double)a0;
-        while (frac > 1e-12 && d1 <= maxDen)
-        {
-            double inv = 1.0 / frac;
-            int ai = (int)std::floor(inv);
-            int n2 = n0 + ai * n1;
-            int d2 = d0 + ai * d1;
-            if (d2 > maxDen) break;
-            n0 = n1; d0 = d1;
-            n1 = n2; d1 = d2;
-            frac = inv - (double)ai;
-        }
-        num = n1; den = d1;
-    }
-
-    struct SlotDef
-    {
-        int index = 0;      // 0-based slot index
-        int note = 36;      // MIDI note
-        int channel = 1;    // NEW: 1..16
-        double rate = 1.0;  // hits per beat
-        int count = 4;      // beats per shared cycle
-        float gain = 0.8f;  // 0..1 for velocity
-    };
-}
-
 // ===== Editor =====
 SlotMachineAudioProcessorEditor::SlotMachineAudioProcessorEditor(SlotMachineAudioProcessor& p, APVTS& state)
     : juce::AudioProcessorEditor(&p), processor(p), apvts(state), tooltipWindow(this, 600)   // <— add this here
@@ -2508,6 +2471,9 @@ SlotMachineAudioProcessorEditor::SlotMachineAudioProcessorEditor(SlotMachineAudi
     slotScale = juce::jlimit(0.75f, 1.0f, Opt::getFloat(apvts, "optSlotScale", 0.8f));
     const int initialTimingMode = Opt::getInt(apvts, "optTimingMode", 1);
     lastTimingMode = initialTimingMode;
+
+    lastAudioExportPlaythrough = (bool)apvts.state.getProperty(kLastAudioExportPlaythroughProperty, false);
+    lastMidiExportPlaythrough = (bool)apvts.state.getProperty(kLastMidiExportPlaythroughProperty, false);
 
     constexpr int slotColumns = 4;
     const int slotRows = juce::jmax(1, (kNumSlots + slotColumns - 1) / slotColumns);
@@ -4828,7 +4794,7 @@ void SlotMachineAudioProcessorEditor::buttonClicked(juce::Button* b)
                 beginAudioExportWithCycles(cycles, exportPlaythrough);
             },
             true,
-            false);
+            lastAudioExportPlaythrough);
         return;
     }
 
@@ -4836,12 +4802,12 @@ void SlotMachineAudioProcessorEditor::buttonClicked(juce::Button* b)
     if (b == &btnExportMidi)
     {
         promptForExportCycles("Export MIDI", 1,
-            [this](int cycles, bool)
+            [this](int cycles, bool exportPlaythrough)
             {
-                beginMidiExportWithCycles(cycles);
+                beginMidiExportWithCycles(cycles, exportPlaythrough);
             },
-            false,
-            false);
+            true,
+            lastMidiExportPlaythrough);
         return;
     }
 
@@ -5022,6 +4988,9 @@ void SlotMachineAudioProcessorEditor::beginAudioExportWithCycles(int cyclesReque
         return;
     }
 
+    lastAudioExportPlaythrough = exportPlaythrough;
+    apvts.state.setProperty(kLastAudioExportPlaythroughProperty, exportPlaythrough, nullptr);
+
     juce::String chooserTitle;
     if (exportPlaythrough)
     {
@@ -5078,7 +5047,7 @@ void SlotMachineAudioProcessorEditor::beginAudioExportWithCycles(int cyclesReque
         });
 }
 
-void SlotMachineAudioProcessorEditor::beginMidiExportWithCycles(int cyclesRequested)
+void SlotMachineAudioProcessorEditor::beginMidiExportWithCycles(int cyclesRequested, bool exportPlaythrough)
 {
     if (cyclesRequested <= 0)
     {
@@ -5089,213 +5058,60 @@ void SlotMachineAudioProcessorEditor::beginMidiExportWithCycles(int cyclesReques
         return;
     }
 
-    using namespace MidiExport;
+    lastMidiExportPlaythrough = exportPlaythrough;
+    apvts.state.setProperty(kLastMidiExportPlaythroughProperty, exportPlaythrough, nullptr);
 
-    std::vector<SlotDef> active;
-    active.reserve(kNumSlots);
-
-    const int timingMode = Opt::getInt(apvts, "optTimingMode", 1);
-
-    bool anySolo = false;
-    std::vector<bool> soloMask(kNumSlots, false);
-    for (int i = 0; i < kNumSlots; ++i)
+    juce::String chooserTitle;
+    if (exportPlaythrough)
     {
-        const bool solo = apvts.getRawParameterValue("slot" + juce::String(i + 1) + "_Solo")->load();
-        soloMask[(size_t)i] = solo;
-        anySolo = anySolo || solo;
-    }
-
-    for (int i = 0; i < kNumSlots; ++i)
-    {
-        const bool mute = apvts.getRawParameterValue("slot" + juce::String(i + 1) + "_Mute")->load();
-        const float rate = *apvts.getRawParameterValue("slot" + juce::String(i + 1) + "_Rate");
-        int count = 4;
-        if (auto* countParam = apvts.getRawParameterValue("slot" + juce::String(i + 1) + "_Count"))
-            count = juce::jlimit<int>(1, kMaxBeatsPerSlot, (int)std::round(countParam->load()));
-        const float gainPercent = *apvts.getRawParameterValue("slot" + juce::String(i + 1) + "_Gain");
-        const float midiChoice = *apvts.getRawParameterValue("slot" + juce::String(i + 1) + "_MidiChannel");
-
-        if (mute)
-            continue;
-        if (anySolo && !soloMask[(size_t)i])
-            continue;
-        if (!processor.slotHasSample(i))
-            continue;
-
-        SlotDef s;
-        s.index = i;
-        s.note = 60;
-        s.channel = juce::jlimit(1, 16, 1 + (int)std::round(midiChoice));
-        s.rate = juce::jmax(0.0001f, rate);
-        s.count = juce::jmax(1, count);
-        s.gain = gainPercent * 0.01f;
-        active.push_back(s);
-    }
-
-    if (active.empty())
-    {
-        juce::AlertWindow::showMessageBoxAsync(
-            juce::AlertWindow::WarningIcon,
-            "Export MIDI",
-            "No active slots to export (check Mute/Solo & samples).");
-        return;
-    }
-
-    const double bpm = (double)*apvts.getRawParameterValue("masterBPM");
-    const int ppq = 9600;
-
-    const int maxDen = 32;
-    int cycleBeats = 1;
-    if (timingMode == 0)
-    {
-        for (const auto& sdef : active)
-        {
-            int num = 0;
-            int den = 1;
-            MidiExport::approximateRational(sdef.rate, maxDen, num, den);
-            if (num <= 0)
-                continue;
-
-            int g = MidiExport::igcd(num, den);
-            num /= g;
-            den /= g;
-            cycleBeats = MidiExport::ilcm(cycleBeats, den);
-        }
+        const juce::String cycleLabel = juce::String(cyclesRequested) + (cyclesRequested == 1 ? " cycle" : " cycles");
+        chooserTitle = "Export Tab Playthrough (" + cycleLabel + ") MIDI file";
     }
     else
     {
-        cycleBeats = SlotMachineAudioProcessor::kCountModeBaseBeats;
+        chooserTitle = "Export " + juce::String(cyclesRequested) + "-cycle MIDI file";
     }
 
-    if (cycleBeats <= 0 || cycleBeats > 512)
-        cycleBeats = juce::jlimit(1, 512, cycleBeats);
-
-    const int cycleTicks = cycleBeats * ppq;
-    const int maxCycles = juce::jmax(1, std::numeric_limits<int>::max() / juce::jmax(1, cycleTicks));
-    const int cyclesToExport = juce::jlimit(1, maxCycles, cyclesRequested);
-
-    if (cyclesToExport != cyclesRequested)
-    {
-        juce::AlertWindow::showMessageBoxAsync(
-            juce::AlertWindow::WarningIcon,
-            "Export MIDI",
-            "The requested number of cycles is too large for a MIDI file. Exporting "
-                + juce::String(cyclesToExport)
-                + " cycles instead.");
-    }
-
-    const int totalTicks = cycleTicks * cyclesToExport;
-
-    juce::MidiMessageSequence seq;
-
-    if (bpm > 0.0)
-    {
-        const double usPerQuarter = 60000000.0 / bpm;
-        seq.addEvent(juce::MidiMessage::tempoMetaEvent((int)std::round(usPerQuarter)));
-    }
-
-    seq.addEvent(juce::MidiMessage::timeSignatureMetaEvent(4, 2));
-
-    for (const auto& sdef : active)
-    {
-        const int vel = juce::jlimit(1, 127, (int)std::round(sdef.gain * 127.0f));
-        const int noteLength = juce::jmax(1, ppq / 64);
-
-        if (timingMode == 0)
-        {
-            int num = 0;
-            int den = 1;
-            MidiExport::approximateRational(sdef.rate, maxDen, num, den);
-            int g = MidiExport::igcd(num, den);
-            num /= g;
-            den /= g;
-
-            if (num <= 0)
-                continue;
-
-            const int hits = (int)((num * cycleBeats) / den);
-            const double invRate = 1.0 / (double)sdef.rate;
-
-            for (int hit = 0; hit < hits; ++hit)
-            {
-                const double beat = (double)hit * invRate;
-                const double tick = beat * (double)ppq;
-                const int baseTick = juce::jlimit(0, cycleTicks - 1, (int)std::llround(tick));
-
-                for (int cycle = 0; cycle < cyclesToExport; ++cycle)
-                {
-                    const int cycleOffset = cycle * cycleTicks;
-                    const int startTick = juce::jlimit(0, totalTicks - 1, cycleOffset + baseTick);
-                    const int offTick = juce::jmin(totalTicks, startTick + noteLength);
-
-                    seq.addEvent(juce::MidiMessage::noteOn(sdef.channel, sdef.note, (juce::uint8)vel), startTick);
-                    seq.addEvent(juce::MidiMessage::noteOff(sdef.channel, sdef.note), offTick);
-                }
-            }
-        }
-        else
-        {
-            const int count = juce::jmax(1, sdef.count);
-            const double stepBeats = (double)cycleBeats / (double)count;
-
-            for (int n = 0; n < count; ++n)
-            {
-                const double beat = (double)n * stepBeats;
-                const int baseTick = juce::jlimit(0, cycleTicks - 1, (int)std::llround(beat * (double)ppq));
-
-                for (int cycle = 0; cycle < cyclesToExport; ++cycle)
-                {
-                    const int cycleOffset = cycle * cycleTicks;
-                    const int startTick = juce::jlimit(0, totalTicks - 1, cycleOffset + baseTick);
-                    const int offTick = juce::jmin(totalTicks, startTick + noteLength);
-
-                    seq.addEvent(juce::MidiMessage::noteOn(sdef.channel, sdef.note, (juce::uint8)vel), startTick);
-                    seq.addEvent(juce::MidiMessage::noteOff(sdef.channel, sdef.note), offTick);
-                }
-            }
-        }
-    }
-
-    seq.addEvent(juce::MidiMessage::endOfTrack(), totalTicks);
-
-    const juce::String cycleLabel = cyclesToExport == 1 ? "1-cycle" : juce::String(cyclesToExport) + "-cycle";
     auto chooser = std::make_shared<juce::FileChooser>(
-        "Export " + cycleLabel + " MIDI file",
+        chooserTitle,
         juce::File(),
         "*.mid");
 
     fileDialogActive = true;
     chooser->launchAsync(juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles,
-        [this, seq, ppq, chooser](const juce::FileChooser& fc) mutable
+        [this, chooser, cyclesRequested, exportPlaythrough](const juce::FileChooser& fc) mutable
         {
+            juce::ignoreUnused(chooser);
             fileDialogActive = false;
 
-            auto f = fc.getResult();
-            if (f.getFullPathName().isEmpty())
+            auto file = fc.getResult();
+            if (file.getFullPathName().isEmpty())
                 return;
 
-            if (!f.hasFileExtension(".mid"))
-                f = f.withFileExtension(".mid");
+            if (!file.hasFileExtension(".mid"))
+                file = file.withFileExtension(".mid");
 
-            juce::MidiFile mf;
-            mf.setTicksPerQuarterNote(ppq);
-            mf.addTrack(seq);
+            juce::String error;
+            const bool ok = exportPlaythrough
+                ? processor.exportMidiPlaythroughCycles(file, cyclesRequested, error)
+                : processor.exportMidiCycles(file, cyclesRequested, error);
 
-            juce::FileOutputStream os(f);
-            if (os.openedOk())
+            if (ok)
             {
-                mf.writeTo(os);
                 juce::AlertWindow::showMessageBoxAsync(
                     juce::AlertWindow::InfoIcon,
                     "Export MIDI",
-                    "Saved: " + f.getFullPathName());
+                    "Saved: " + file.getFullPathName());
             }
             else
             {
+                if (error.isEmpty())
+                    error = "Unable to export MIDI.";
+
                 juce::AlertWindow::showMessageBoxAsync(
                     juce::AlertWindow::WarningIcon,
                     "Export MIDI",
-                    "Couldn't write file:\n" + f.getFullPathName());
+                    error);
             }
         });
 }

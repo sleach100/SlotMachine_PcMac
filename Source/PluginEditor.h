@@ -385,7 +385,7 @@ private:
         bool includePlaythroughOptions,
         bool initialPlaythroughSelection);
     void beginAudioExportWithCycles(int cyclesRequested, bool exportPlaythrough);
-    void beginMidiExportWithCycles(int cyclesRequested);
+    void beginMidiExportWithCycles(int cyclesRequested, bool exportPlaythrough);
     void openVisualizerWindow();
     void closeVisualizerWindow();
     void handleVisualizerWindowCloseRequest();
@@ -485,6 +485,8 @@ private:
     juce::Component::SafePointer<juce::DialogWindow> loopPlaythroughDialog;
     juce::Component::SafePointer<juce::DialogWindow> aboutDialog;
     int patternWarningCounter = 0;
+    bool lastAudioExportPlaythrough = false;
+    bool lastMidiExportPlaythrough = false;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SlotMachineAudioProcessorEditor)
 };

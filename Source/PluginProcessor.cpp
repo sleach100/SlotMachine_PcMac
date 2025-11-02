@@ -332,6 +332,11 @@ static OfflinePatternData createOfflinePatternDataFromCurrentState(SlotMachineAu
             slotData.pan = param->load();
         if (auto* param = processor.apvts.getRawParameterValue(base + "Decay"))
             slotData.decayUi = param->load();
+        if (auto* param = processor.apvts.getRawParameterValue(base + "MidiChannel"))
+        {
+            const int choiceIndex = juce::jlimit(0, 15, (int)std::round(param->load()));
+            slotData.midiChannel = juce::jlimit(1, 16, choiceIndex + 1);
+        }
 
         slotData.filePath = processor.getSlotFilePath(slot);
         slotData.countMask = processor.getSlotCountMask(slot);
@@ -378,6 +383,11 @@ static OfflinePatternData createOfflinePatternDataFromValueTree(SlotMachineAudio
             slotData.decayUi = decayValue;
 
         slotData.filePath = pattern.getProperty(base + "File").toString();
+
+        int midiChoiceIndex = juce::jlimit(0, 15, slot);
+        if (pattern.hasProperty(base + "MidiChannel"))
+            midiChoiceIndex = juce::jlimit(0, 15, varToInt(pattern.getProperty(base + "MidiChannel"), midiChoiceIndex));
+        slotData.midiChannel = juce::jlimit(1, 16, midiChoiceIndex + 1);
 
         const juce::var maskVar = pattern.getProperty(base + "CountMask");
         uint64_t mask = parseCountMaskVar(maskVar);
@@ -813,6 +823,330 @@ bool renderPatternAudio(SlotMachineAudioProcessor& processor,
 
     rendered.buffer = std::move(renderBuffer);
     rendered.samples = totalSamplesTarget;
+    return true;
+}
+
+bool renderPatternMidi(SlotMachineAudioProcessor& processor,
+    const OfflinePatternData& patternData,
+    int cyclesToExport,
+    double bpm,
+    int ppq,
+    RenderedPatternMidi& out,
+    juce::String& errorMessage)
+{
+    struct OfflineSlot
+    {
+        std::unique_ptr<SlotMachineAudioProcessor::SlotVoice> voice;
+        int num = 0;
+        int den = 1;
+        int count = 0;
+        float gain = 1.0f;
+        uint64_t mask = kDefaultCountMask;
+        int midiChannel = 1;
+        double noteLengthBeats = 0.25;
+        std::vector<double> triggerBeats;
+    };
+
+    errorMessage.clear();
+    out.sequence.clear();
+    out.totalTicks = 0;
+
+    const double engineSampleRate = processor.currentSampleRate;
+    if (engineSampleRate <= 0.0)
+    {
+        errorMessage = "Audio engine is not initialised.";
+        return false;
+    }
+
+    if (cyclesToExport <= 0)
+    {
+        errorMessage = "Number of cycles must be positive.";
+        return false;
+    }
+
+    if (ppq <= 0)
+    {
+        errorMessage = "PPQ must be positive.";
+        return false;
+    }
+
+    const double patternBpm = patternData.bpm;
+    if (patternBpm <= 0.0)
+    {
+        errorMessage = "Master BPM must be greater than zero.";
+        return false;
+    }
+
+    const double tempoForMeta = (bpm > 0.0) ? bpm : patternBpm;
+    const int timingMode = patternData.timingMode;
+    const double secondsPerBeat = 60.0 / patternBpm;
+    const double countModeCycleBeats = (double)SlotMachineAudioProcessor::kCountModeBaseBeats;
+
+    bool anySolo = false;
+    for (const auto& slot : patternData.slots)
+        anySolo = anySolo || slot.solo;
+
+    const int maxDen = 32;
+    int cycleLengthNumerator = 1;
+    int cycleLengthDenominator = 1;
+    bool hasCycleLength = false;
+    juce::StringArray missingFiles;
+
+    std::vector<OfflineSlot> slotsToRender;
+    slotsToRender.reserve(SlotMachineAudioProcessor::kNumSlots);
+
+    for (int i = 0; i < SlotMachineAudioProcessor::kNumSlots; ++i)
+    {
+        const auto& slotData = patternData.slots[(size_t)i];
+        if (slotData.mute)
+            continue;
+
+        if (anySolo && !slotData.solo)
+            continue;
+
+        const juce::String path = slotData.filePath;
+        if (path.isEmpty())
+            continue;
+
+        auto voice = std::make_unique<SlotMachineAudioProcessor::SlotVoice>();
+        voice->prepare(engineSampleRate);
+
+        bool loaded = false;
+        juce::String missingIdentifier = path;
+
+#if __has_include("BinaryData.h")
+        {
+            int resourceSize = 0;
+            if (const void* data = BinaryData::getNamedResource(path.toRawUTF8(), resourceSize))
+            {
+                if (resourceSize > 0)
+                {
+                    voice->loadFromMemory(data, resourceSize, path);
+                    loaded = voice->hasSample();
+                }
+            }
+        }
+#endif
+
+        if (!loaded)
+        {
+            const juce::File audioFile(path);
+
+            if (!audioFile.existsAsFile())
+            {
+                missingFiles.add(missingIdentifier);
+                continue;
+            }
+
+            voice->loadFile(audioFile);
+            loaded = voice->hasSample();
+            missingIdentifier = audioFile.getFullPathName();
+        }
+
+        if (!loaded)
+        {
+            missingFiles.add(missingIdentifier);
+            continue;
+        }
+
+        const float rateParam = slotData.rate;
+        const int count = juce::jlimit(1, 64, slotData.count);
+        const float gainPercent = slotData.gainPercent;
+        const float decayUi = slotData.decayUi;
+
+        voice->setDecayMs(decayUiToMilliseconds(decayUi));
+
+        OfflineSlot offline;
+        offline.voice = std::move(voice);
+        offline.gain = juce::jlimit(0.0f, 1.0f, gainPercent * 0.01f);
+        offline.mask = slotData.countMask;
+        offline.midiChannel = juce::jlimit(1, 16, slotData.midiChannel);
+
+        int noteSamples = offline.voice->sample.getNumSamples();
+        if (offline.voice->envMaxSamples > 0)
+            noteSamples = juce::jmin(noteSamples, offline.voice->envMaxSamples);
+        noteSamples = juce::jmax(1, noteSamples);
+
+        const double noteSeconds = (double)noteSamples / engineSampleRate;
+        double noteLengthBeats = noteSeconds / secondsPerBeat;
+        if (noteLengthBeats <= 0.0)
+            noteLengthBeats = 1.0 / (double)ppq;
+        offline.noteLengthBeats = noteLengthBeats;
+
+        if (timingMode == 0)
+        {
+            const double rate = juce::jmax(0.0001f, rateParam);
+            int num = 0, den = 1;
+            approximateRational(rate, maxDen, num, den);
+            const int g = igcd(num, den);
+            if (g != 0)
+            {
+                num /= g;
+                den /= g;
+            }
+
+            if (num <= 0 || den <= 0)
+                continue;
+
+            accumulateCycleLength(den, num, cycleLengthNumerator, cycleLengthDenominator, hasCycleLength);
+
+            offline.num = num;
+            offline.den = den;
+        }
+        else
+        {
+            offline.count = count;
+        }
+
+        slotsToRender.push_back(std::move(offline));
+    }
+
+    if (!missingFiles.isEmpty())
+    {
+        errorMessage = "Missing audio files:\n" + missingFiles.joinIntoString("\n");
+        return false;
+    }
+
+    if (slotsToRender.empty())
+    {
+        errorMessage = "No active slots to export.";
+        return false;
+    }
+
+    double cycleBeats = 1.0;
+    if (timingMode == 0)
+    {
+        if (!hasCycleLength)
+        {
+            cycleLengthNumerator = 1;
+            cycleLengthDenominator = 1;
+        }
+
+        cycleBeats = juce::jlimit(1.0e-6, 512.0,
+            (double)cycleLengthNumerator / (double)cycleLengthDenominator);
+    }
+    else
+    {
+        cycleBeats = juce::jlimit(1.0e-6, 512.0, countModeCycleBeats);
+    }
+
+    const double totalBeats = cycleBeats * (double)cyclesToExport;
+
+    bool anyTriggers = false;
+
+    for (auto& slot : slotsToRender)
+    {
+        auto* voicePtr = slot.voice.get();
+        if (voicePtr == nullptr)
+            continue;
+
+        if (!voicePtr->hasSample())
+            continue;
+
+        if (timingMode == 0)
+        {
+            const int hitsPerCycle = juce::jmax(1, slot.num);
+            const double spacingBeats = (hitsPerCycle > 0 ? cycleBeats / (double)hitsPerCycle : 0.0);
+            if (spacingBeats <= 0.0)
+                continue;
+
+            slot.triggerBeats.clear();
+            slot.triggerBeats.reserve(hitsPerCycle * juce::jmax(1, cyclesToExport));
+
+            for (int cycle = 0; cycle < cyclesToExport; ++cycle)
+            {
+                const double cycleBeatOffset = (double)cycle * cycleBeats;
+
+                for (int hit = 0; hit < hitsPerCycle; ++hit)
+                {
+                    const double beatPosition = cycleBeatOffset + spacingBeats * (double)hit;
+                    if (beatPosition < 0.0 || beatPosition > totalBeats)
+                        continue;
+
+                    slot.triggerBeats.push_back(beatPosition);
+                    anyTriggers = true;
+                }
+            }
+        }
+        else
+        {
+            const int hitsPerCycle = juce::jmax(1, slot.count);
+            const double stepBeats = (hitsPerCycle > 0 ? countModeCycleBeats / (double)hitsPerCycle : 0.0);
+            if (stepBeats <= 0.0)
+                continue;
+
+            const uint64_t mask = slot.mask & SlotMachineAudioProcessor::maskForBeats(slot.count);
+            if (mask == 0)
+                continue;
+
+            slot.triggerBeats.clear();
+            slot.triggerBeats.reserve(hitsPerCycle * juce::jmax(1, cyclesToExport));
+
+            for (int cycle = 0; cycle < cyclesToExport; ++cycle)
+            {
+                const double cycleBeatOffset = (double)cycle * cycleBeats;
+
+                for (int hit = 0; hit < hitsPerCycle; ++hit)
+                {
+                    if (((mask >> hit) & 1ull) == 0)
+                        continue;
+
+                    const double beatPosition = cycleBeatOffset + stepBeats * (double)hit;
+                    if (beatPosition < 0.0 || beatPosition > totalBeats)
+                        continue;
+
+                    slot.triggerBeats.push_back(beatPosition);
+                    anyTriggers = true;
+                }
+            }
+        }
+    }
+
+    if (!anyTriggers)
+    {
+        errorMessage = "Export length is zero.";
+        return false;
+    }
+
+    out.sequence.addEvent(juce::MidiMessage::tempoMetaEvent((int)std::round(60000000.0 / tempoForMeta)), 0.0);
+    out.sequence.addEvent(juce::MidiMessage::timeSignatureMetaEvent(4, 2), 0.0);
+
+    int64_t maxTick = 0;
+    const int noteNumber = 60;
+
+    for (const auto& slot : slotsToRender)
+    {
+        const int midiChannel = juce::jlimit(1, 16, slot.midiChannel);
+        const int velocity = juce::jlimit(1, 127, (int)std::round(slot.gain * 127.0f));
+        const double noteTicksExact = juce::jmax(1.0, slot.noteLengthBeats * (double)ppq);
+        const int noteTicks = juce::jmax(1, (int)std::llround(noteTicksExact));
+
+        for (double beatPosition : slot.triggerBeats)
+        {
+            const double startTickDouble = beatPosition * (double)ppq;
+            const int startTick = juce::jmax(0, (int)std::llround(startTickDouble));
+            const int offTick = juce::jmax(startTick + 1, startTick + noteTicks);
+
+            out.sequence.addEvent(juce::MidiMessage::noteOn(midiChannel, noteNumber, (juce::uint8)velocity), (double)startTick);
+            out.sequence.addEvent(juce::MidiMessage::noteOff(midiChannel, noteNumber), (double)offTick);
+
+            maxTick = std::max<int64_t>(maxTick, offTick);
+        }
+    }
+
+    const int totalTicksFromBeats = juce::jmax(1, (int)std::llround(totalBeats * (double)ppq));
+    maxTick = std::max<int64_t>(maxTick, totalTicksFromBeats);
+
+    if (maxTick > (int64_t)std::numeric_limits<int>::max())
+    {
+        errorMessage = "Export length is too large.";
+        return false;
+    }
+
+    out.sequence.sort();
+    out.sequence.addEvent(juce::MidiMessage::endOfTrack(), (double)maxTick);
+    out.totalTicks = (int)maxTick;
+
     return true;
 }
 
@@ -2144,6 +2478,158 @@ bool SlotMachineAudioProcessor::exportAudioPlaythroughCycles(const juce::File& d
     }
 
     return writeAudioFile(destination, combinedBuffer, totalSamples, engineSampleRate, targetSampleRate, errorMessage);
+}
+
+bool SlotMachineAudioProcessor::exportMidiCycles(const juce::File& destination, int cyclesToExport, juce::String& errorMessage)
+{
+    errorMessage.clear();
+
+    const int ppq = 960;
+
+    OfflinePatternData patternData = createOfflinePatternDataFromCurrentState(*this);
+    const double bpm = patternData.bpm;
+
+    RenderedPatternMidi rendered;
+    if (!::renderPatternMidi(*this, patternData, cyclesToExport, bpm, ppq, rendered, errorMessage))
+        return false;
+
+    if (rendered.totalTicks <= 0 || rendered.sequence.getNumEvents() == 0)
+    {
+        errorMessage = "Export length is zero.";
+        return false;
+    }
+
+    rendered.sequence.updateMatchedPairs();
+
+    juce::MidiFile mf;
+    mf.setTicksPerQuarterNote(ppq);
+    mf.addTrack(rendered.sequence);
+
+    juce::FileOutputStream os(destination);
+    if (!os.openedOk())
+    {
+        errorMessage = "Couldn't open file for writing:\n" + destination.getFullPathName();
+        return false;
+    }
+
+    if (!mf.writeTo(os))
+    {
+        errorMessage = "Failed to write MIDI data.";
+        return false;
+    }
+
+    return true;
+}
+
+bool SlotMachineAudioProcessor::exportMidiPlaythroughCycles(const juce::File& destination, int playthroughCycles, juce::String& errorMessage)
+{
+    errorMessage.clear();
+
+    if (playthroughCycles <= 0)
+    {
+        errorMessage = "Number of cycles must be positive.";
+        return false;
+    }
+
+    const int ppq = 960;
+
+    auto patterns = getPatternsTree();
+    const int patternCount = patterns.getNumChildren();
+    if (patternCount <= 0)
+    {
+        errorMessage = "No patterns to export.";
+        return false;
+    }
+
+    std::vector<RenderedPatternMidi> renderedPatterns;
+    renderedPatterns.reserve((size_t)patternCount);
+
+    int64_t ticksPerPlaythrough = 0;
+
+    for (int i = 0; i < patternCount; ++i)
+    {
+        auto pattern = patterns.getChild(i);
+        OfflinePatternData data = createOfflinePatternDataFromValueTree(*this, pattern);
+        const double bpm = data.bpm;
+        const int patternCycles = computePatternPlaythroughCycles(pattern);
+
+        RenderedPatternMidi rendered;
+        if (!::renderPatternMidi(*this, data, patternCycles, bpm, ppq, rendered, errorMessage))
+            return false;
+
+        if (rendered.totalTicks <= 0 || rendered.sequence.getNumEvents() == 0)
+            continue;
+
+        ticksPerPlaythrough += (int64_t)rendered.totalTicks;
+        if (ticksPerPlaythrough <= 0 || ticksPerPlaythrough > (int64_t)std::numeric_limits<int>::max())
+        {
+            errorMessage = "Export length is too large.";
+            return false;
+        }
+
+        renderedPatterns.emplace_back();
+        renderedPatterns.back().totalTicks = rendered.totalTicks;
+        renderedPatterns.back().sequence = rendered.sequence;
+    }
+
+    if (renderedPatterns.empty() || ticksPerPlaythrough <= 0)
+    {
+        errorMessage = "Export length is zero.";
+        return false;
+    }
+
+    const int64_t totalTicks64 = ticksPerPlaythrough * (int64_t)playthroughCycles;
+    if (totalTicks64 <= 0 || totalTicks64 > (int64_t)std::numeric_limits<int>::max())
+    {
+        errorMessage = "Export length is too large.";
+        return false;
+    }
+
+    juce::MidiMessageSequence combined;
+    int64_t offset = 0;
+
+    for (int cycle = 0; cycle < playthroughCycles; ++cycle)
+    {
+        for (const auto& rendered : renderedPatterns)
+        {
+            for (int eventIndex = 0; eventIndex < rendered.sequence.getNumEvents(); ++eventIndex)
+            {
+                if (auto* event = rendered.sequence.getEventPointer(eventIndex))
+                {
+                    const auto& message = event->message;
+                    if (message.isEndOfTrackMetaEvent())
+                        continue;
+
+                    combined.addEvent(message, message.getTimeStamp() + (double)offset);
+                }
+            }
+
+            offset += rendered.totalTicks;
+        }
+    }
+
+    combined.sort();
+    combined.updateMatchedPairs();
+    combined.addEvent(juce::MidiMessage::endOfTrack(), (double)totalTicks64);
+
+    juce::MidiFile mf;
+    mf.setTicksPerQuarterNote(ppq);
+    mf.addTrack(combined);
+
+    juce::FileOutputStream os(destination);
+    if (!os.openedOk())
+    {
+        errorMessage = "Couldn't open file for writing:\n" + destination.getFullPathName();
+        return false;
+    }
+
+    if (!mf.writeTo(os))
+    {
+        errorMessage = "Failed to write MIDI data.";
+        return false;
+    }
+
+    return true;
 }
 
 

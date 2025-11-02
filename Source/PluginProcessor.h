@@ -119,6 +119,8 @@ public:
     double getMasterPhase() const;
     bool exportAudioCycles(const juce::File& file, int cyclesToExport, juce::String& errorMessage);
     bool exportAudioPlaythroughCycles(const juce::File& file, int playthroughCycles, juce::String& errorMessage);
+    bool exportMidiCycles(const juce::File& file, int cyclesToExport, juce::String& errorMessage);
+    bool exportMidiPlaythroughCycles(const juce::File& file, int playthroughCycles, juce::String& errorMessage);
 
     // Count beat masks
     uint64_t getSlotCountMask(int index) const;
@@ -144,6 +146,14 @@ private:
         int cyclesToExport,
         double engineSampleRate,
         RenderedPatternAudio& rendered,
+        juce::String& errorMessage);
+    friend bool renderPatternMidi(
+        SlotMachineAudioProcessor& processor,
+        const OfflinePatternData& patternData,
+        int cyclesToExport,
+        double bpm,
+        int ppq,
+        struct RenderedPatternMidi& out,
         juce::String& errorMessage);
 
     std::array<std::atomic<int>, kNumSlots> pendingManualTriggers;
@@ -278,6 +288,7 @@ struct OfflinePatternSlotData
     float pan = 0.0f;
     float decayUi = 50.0f;
     uint64_t countMask = std::numeric_limits<uint64_t>::max();
+    int midiChannel = 1;
 };
 
 struct OfflinePatternData
@@ -291,4 +302,10 @@ struct RenderedPatternAudio
 {
     juce::AudioBuffer<float> buffer;
     int samples = 0;
+};
+
+struct RenderedPatternMidi
+{
+    juce::MidiMessageSequence sequence;
+    int totalTicks = 0;
 };
