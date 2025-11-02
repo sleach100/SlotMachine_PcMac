@@ -266,32 +266,6 @@ static juce::String serialiseCountMaskValue(uint64_t mask)
     return text.paddedLeft('0', 16);
 }
 
-struct OfflinePatternSlotData
-{
-    bool mute = false;
-    bool solo = false;
-    juce::String filePath;
-    float rate = 1.0f;
-    int count = 4;
-    float gainPercent = 100.0f;
-    float pan = 0.0f;
-    float decayUi = 50.0f;
-    uint64_t countMask = kDefaultCountMask;
-};
-
-struct OfflinePatternData
-{
-    double bpm = 120.0;
-    int timingMode = 1;
-    std::array<OfflinePatternSlotData, SlotMachineAudioProcessor::kNumSlots> slots{};
-};
-
-struct RenderedPatternAudio
-{
-    juce::AudioBuffer<float> buffer;
-    int samples = 0;
-};
-
 static bool varToBool(const juce::var& value, bool defaultValue)
 {
     if (value.isVoid())
@@ -301,10 +275,10 @@ static bool varToBool(const juce::var& value, bool defaultValue)
         return (bool)value;
 
     if (value.isInt())
-        return value != 0;
+        return (int)value != 0;
 
     if (value.isDouble())
-        return value != 0.0;
+        return (double)value != 0.0;
 
     if (value.isString())
         return value.toString().getIntValue() != 0;

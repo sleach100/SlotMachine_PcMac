@@ -8,6 +8,7 @@
 
 #include "WaveformUtils.h"
 
+struct OfflinePatternSlotData;
 struct OfflinePatternData;
 struct RenderedPatternAudio;
 
@@ -264,4 +265,30 @@ private:
     void refreshSlotCountMasksFromState();
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SlotMachineAudioProcessor)
+};
+
+struct OfflinePatternSlotData
+{
+    bool mute = false;
+    bool solo = false;
+    juce::String filePath;
+    float rate = 1.0f;
+    int count = 4;
+    float gainPercent = 100.0f;
+    float pan = 0.0f;
+    float decayUi = 50.0f;
+    uint64_t countMask = std::numeric_limits<uint64_t>::max();
+};
+
+struct OfflinePatternData
+{
+    double bpm = 120.0;
+    int timingMode = 1;
+    std::array<OfflinePatternSlotData, SlotMachineAudioProcessor::kNumSlots> slots{};
+};
+
+struct RenderedPatternAudio
+{
+    juce::AudioBuffer<float> buffer;
+    int samples = 0;
 };
