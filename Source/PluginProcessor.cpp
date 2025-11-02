@@ -435,7 +435,7 @@ static int computePatternPlaythroughCycles(const juce::ValueTree& pattern)
     return juce::jmax(1, 1 + repeat);
 }
 
-static bool renderPatternAudio(SlotMachineAudioProcessor& processor,
+bool renderPatternAudio(SlotMachineAudioProcessor& processor,
     const OfflinePatternData& patternData,
     int cyclesToExport,
     double engineSampleRate,
