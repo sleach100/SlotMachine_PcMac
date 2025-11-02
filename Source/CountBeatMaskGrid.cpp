@@ -40,7 +40,7 @@ CountBeatMaskGrid::CountBeatMaskGrid(Options opts,
     , maskChanged(std::move(onMaskChanged))
 {
     setWantsKeyboardFocus(true);
-    setFocusContainer(true);
+    setFocusContainerType(juce::Component::FocusContainerType::keyboardFocusContainer);
 
     options.beats = juce::jlimit(1, 64, options.beats);
     if (options.columns <= 0)
@@ -150,8 +150,12 @@ void CountBeatMaskGrid::setMask(uint64_t newMask, bool sendNotification)
 
 bool CountBeatMaskGrid::keyPressed(const juce::KeyPress& key)
 {
-    const bool modifierDown = key.getModifiers().isCtrlDown() || key.getModifiers().isCommandDown();
-    const bool isInvertKey = key.getKeyCode() == juce::KeyPress::iKey || key.getTextCharacter() == 'i' || key.getTextCharacter() == 'I';
+    const auto modifiers = key.getModifiers();
+    const bool modifierDown = modifiers.isCtrlDown() || modifiers.isCommandDown();
+
+    const auto keyCode = juce::CharacterFunctions::toLowerCase(static_cast<juce::juce_wchar>(key.getKeyCode()));
+    const auto textChar = juce::CharacterFunctions::toLowerCase(key.getTextCharacter());
+    const bool isInvertKey = (keyCode == 'i') || (textChar == 'i');
 
     if (modifierDown && isInvertKey)
     {
