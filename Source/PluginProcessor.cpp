@@ -398,6 +398,99 @@ static int computePatternPlaythroughCycles(const juce::ValueTree& pattern)
     return juce::jmax(1, 1 + repeat);
 }
 
+static bool writeAudioFile(const juce::File& destination,
+    const juce::AudioBuffer<float>& sourceBuffer,
+    int samplesToWrite,
+    double sourceSampleRate,
+    double targetSampleRate,
+    juce::String& errorMessage)
+{
+    errorMessage.clear();
+
+    if (samplesToWrite <= 0)
+    {
+        errorMessage = "Export length is zero.";
+        return false;
+    }
+
+    const int numChannels = sourceBuffer.getNumChannels();
+    const juce::AudioBuffer<float>* bufferToWrite = &sourceBuffer;
+    juce::AudioBuffer<float> resampledBuffer;
+    int outputSamples = samplesToWrite;
+
+    if (targetSampleRate > 0.0 && std::abs(targetSampleRate - sourceSampleRate) > 1.0e-6)
+    {
+        const double resampleRatio = targetSampleRate / sourceSampleRate;
+        outputSamples = juce::jmax(1, juce::roundToIntAccurate((double)samplesToWrite * resampleRatio));
+        resampledBuffer.setSize(numChannels, outputSamples);
+
+        const double sampleRatio = sourceSampleRate / targetSampleRate;
+        const int maxSourceIndex = juce::jmax(0, samplesToWrite - 1);
+
+        for (int channel = 0; channel < numChannels; ++channel)
+        {
+            const float* src = sourceBuffer.getReadPointer(channel);
+            float* dst = resampledBuffer.getWritePointer(channel);
+
+            for (int i = 0; i < outputSamples; ++i)
+            {
+                const double srcIndex = (double)i * sampleRatio;
+                int index = (int)srcIndex;
+                double frac = srcIndex - (double)index;
+
+                index = juce::jlimit(0, maxSourceIndex, index);
+                const int nextIndex = juce::jlimit(0, maxSourceIndex, index + 1);
+
+                const float s0 = src[index];
+                const float s1 = src[nextIndex];
+                dst[i] = s0 + (s1 - s0) * (float)frac;
+            }
+        }
+
+        bufferToWrite = &resampledBuffer;
+    }
+
+    if (destination.existsAsFile())
+    {
+        if (!destination.deleteFile())
+        {
+            errorMessage = "Couldn't overwrite existing file:\n" + destination.getFullPathName();
+            return false;
+        }
+    }
+
+    std::unique_ptr<juce::FileOutputStream> stream(destination.createOutputStream());
+    if (stream == nullptr || !stream->openedOk())
+    {
+        errorMessage = "Couldn't open file for writing:\n" + destination.getFullPathName();
+        return false;
+    }
+
+    juce::WavAudioFormat format;
+    std::unique_ptr<juce::AudioFormatWriter> writer(format.createWriterFor(stream.get(), targetSampleRate > 0.0 ? targetSampleRate : sourceSampleRate,
+        (unsigned int)bufferToWrite->getNumChannels(), 24, {}, 0));
+
+    if (writer == nullptr)
+    {
+        errorMessage = "Couldn't create WAV writer.";
+        return false;
+    }
+
+    stream.release();
+
+    const bool ok = writer->writeFromAudioSampleBuffer(*bufferToWrite, 0, outputSamples);
+    writer.reset();
+
+    if (!ok)
+    {
+        errorMessage = "Failed to write audio data.";
+        return false;
+    }
+
+    return true;
+}
+}
+
 bool renderPatternAudio(SlotMachineAudioProcessor& processor,
     const OfflinePatternData& patternData,
     int cyclesToExport,
@@ -723,100 +816,7 @@ bool renderPatternAudio(SlotMachineAudioProcessor& processor,
     return true;
 }
 
-static bool writeAudioFile(const juce::File& destination,
-    const juce::AudioBuffer<float>& sourceBuffer,
-    int samplesToWrite,
-    double sourceSampleRate,
-    double targetSampleRate,
-    juce::String& errorMessage)
-{
-    errorMessage.clear();
-
-    if (samplesToWrite <= 0)
-    {
-        errorMessage = "Export length is zero.";
-        return false;
-    }
-
-    const int numChannels = sourceBuffer.getNumChannels();
-    const juce::AudioBuffer<float>* bufferToWrite = &sourceBuffer;
-    juce::AudioBuffer<float> resampledBuffer;
-    int outputSamples = samplesToWrite;
-
-    if (targetSampleRate > 0.0 && std::abs(targetSampleRate - sourceSampleRate) > 1.0e-6)
-    {
-        const double resampleRatio = targetSampleRate / sourceSampleRate;
-        outputSamples = juce::jmax(1, juce::roundToIntAccurate((double)samplesToWrite * resampleRatio));
-        resampledBuffer.setSize(numChannels, outputSamples);
-
-        const double sampleRatio = sourceSampleRate / targetSampleRate;
-        const int maxSourceIndex = juce::jmax(0, samplesToWrite - 1);
-
-        for (int channel = 0; channel < numChannels; ++channel)
-        {
-            const float* src = sourceBuffer.getReadPointer(channel);
-            float* dst = resampledBuffer.getWritePointer(channel);
-
-            for (int i = 0; i < outputSamples; ++i)
-            {
-                const double srcIndex = (double)i * sampleRatio;
-                int index = (int)srcIndex;
-                double frac = srcIndex - (double)index;
-
-                index = juce::jlimit(0, maxSourceIndex, index);
-                const int nextIndex = juce::jlimit(0, maxSourceIndex, index + 1);
-
-                const float s0 = src[index];
-                const float s1 = src[nextIndex];
-                dst[i] = s0 + (s1 - s0) * (float)frac;
-            }
-        }
-
-        bufferToWrite = &resampledBuffer;
-    }
-
-    if (destination.existsAsFile())
-    {
-        if (!destination.deleteFile())
-        {
-            errorMessage = "Couldn't overwrite existing file:\n" + destination.getFullPathName();
-            return false;
-        }
-    }
-
-    std::unique_ptr<juce::FileOutputStream> stream(destination.createOutputStream());
-    if (stream == nullptr || !stream->openedOk())
-    {
-        errorMessage = "Couldn't open file for writing:\n" + destination.getFullPathName();
-        return false;
-    }
-
-    juce::WavAudioFormat format;
-    std::unique_ptr<juce::AudioFormatWriter> writer(format.createWriterFor(stream.get(), targetSampleRate > 0.0 ? targetSampleRate : sourceSampleRate,
-        (unsigned int)bufferToWrite->getNumChannels(), 24, {}, 0));
-
-    if (writer == nullptr)
-    {
-        errorMessage = "Couldn't create WAV writer.";
-        return false;
-    }
-
-    stream.release();
-
-    const bool ok = writer->writeFromAudioSampleBuffer(*bufferToWrite, 0, outputSamples);
-    writer.reset();
-
-    if (!ok)
-    {
-        errorMessage = "Failed to write audio data.";
-        return false;
-    }
-
-    return true;
-}
-}
-
-// 
+//
 // SlotVoice implementation
 void SlotMachineAudioProcessor::SlotVoice::prepare(double sr)
 {
