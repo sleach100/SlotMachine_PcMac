@@ -23,10 +23,14 @@ public:
     ~CountBeatMaskGrid() override = default;
 
     void resized() override;
+    void visibilityChanged() override;
+    bool keyPressed(const juce::KeyPress& key) override;
 
 private:
     void buildButtons();
     void buttonClicked(juce::Button* button) override;
+    void setMask(uint64_t newMask, bool sendNotification);
+    void updateButtonStatesFromMask();
 
     static uint64_t limitMaskToBeats(uint64_t mask, int beats);
 
