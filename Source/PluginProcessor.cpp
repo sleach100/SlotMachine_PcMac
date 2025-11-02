@@ -292,17 +292,6 @@ struct RenderedPatternAudio
     int samples = 0;
 };
 
-struct OfflineSlot
-{
-    std::unique_ptr<SlotMachineAudioProcessor::SlotVoice> voice;
-    int num = 0;
-    int den = 1;
-    int count = 0;
-    float gain = 1.0f;
-    uint64_t mask = kDefaultCountMask;
-    std::vector<int> triggers;
-};
-
 static bool varToBool(const juce::var& value, bool defaultValue)
 {
     if (value.isVoid())
@@ -442,6 +431,17 @@ bool renderPatternAudio(SlotMachineAudioProcessor& processor,
     RenderedPatternAudio& rendered,
     juce::String& errorMessage)
 {
+    struct OfflineSlot
+    {
+        std::unique_ptr<SlotMachineAudioProcessor::SlotVoice> voice;
+        int num = 0;
+        int den = 1;
+        int count = 0;
+        float gain = 1.0f;
+        uint64_t mask = kDefaultCountMask;
+        std::vector<int> triggers;
+    };
+
     errorMessage.clear();
 
     if (engineSampleRate <= 0.0)
