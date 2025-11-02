@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <limits>
 #include <cstdint>
+#include <memory>
 
 #if __has_include("BinaryData.h")
 #include "BinaryData.h"
@@ -293,7 +294,7 @@ struct RenderedPatternAudio
 
 struct OfflineSlot
 {
-    SlotMachineAudioProcessor::SlotVoice voice;
+    std::unique_ptr<SlotMachineAudioProcessor::SlotVoice> voice;
     int num = 0;
     int den = 1;
     int count = 0;
@@ -486,8 +487,8 @@ static bool renderPatternAudio(SlotMachineAudioProcessor& processor,
         if (path.isEmpty())
             continue;
 
-        SlotMachineAudioProcessor::SlotVoice voice;
-        voice.prepare(engineSampleRate);
+        auto voice = std::make_unique<SlotMachineAudioProcessor::SlotVoice>();
+        voice->prepare(engineSampleRate);
 
         bool loaded = false;
         juce::String missingIdentifier = path;
@@ -499,8 +500,8 @@ static bool renderPatternAudio(SlotMachineAudioProcessor& processor,
             {
                 if (resourceSize > 0)
                 {
-                    voice.loadFromMemory(data, resourceSize, path);
-                    loaded = voice.hasSample();
+                    voice->loadFromMemory(data, resourceSize, path);
+                    loaded = voice->hasSample();
                 }
             }
         }
@@ -516,8 +517,8 @@ static bool renderPatternAudio(SlotMachineAudioProcessor& processor,
                 continue;
             }
 
-            voice.loadFile(audioFile);
-            loaded = voice.hasSample();
+            voice->loadFile(audioFile);
+            loaded = voice->hasSample();
             missingIdentifier = audioFile.getFullPathName();
         }
 
@@ -533,8 +534,8 @@ static bool renderPatternAudio(SlotMachineAudioProcessor& processor,
         const float pan = slotData.pan;
         const float decayUi = slotData.decayUi;
 
-        voice.setPan(pan);
-        voice.setDecayMs(decayUiToMilliseconds(decayUi));
+        voice->setPan(pan);
+        voice->setDecayMs(decayUiToMilliseconds(decayUi));
 
         OfflineSlot offline;
         offline.voice = std::move(voice);
@@ -614,9 +615,13 @@ static bool renderPatternAudio(SlotMachineAudioProcessor& processor,
 
     for (auto& slot : slotsToRender)
     {
-        slot.voice.stopImmediate();
+        auto* voicePtr = slot.voice.get();
+        if (voicePtr == nullptr)
+            continue;
 
-        if (!slot.voice.hasSample())
+        voicePtr->stopImmediate();
+
+        if (!voicePtr->hasSample())
             continue;
 
         if (timingMode == 0)
@@ -626,7 +631,7 @@ static bool renderPatternAudio(SlotMachineAudioProcessor& processor,
             if (spacingBeats <= 0.0)
                 continue;
 
-            const int sampleLength = slot.voice.sample.getNumSamples();
+            const int sampleLength = voicePtr->sample.getNumSamples();
 
             slot.triggers.clear();
             slot.triggers.reserve(hitsPerCycle * juce::jmax(1, cyclesToExport));
@@ -663,7 +668,7 @@ static bool renderPatternAudio(SlotMachineAudioProcessor& processor,
             if (mask == 0)
                 continue;
 
-            const int sampleLength = slot.voice.sample.getNumSamples();
+            const int sampleLength = voicePtr->sample.getNumSamples();
 
             slot.triggers.clear();
             slot.triggers.reserve(hitsPerCycle * juce::jmax(1, cyclesToExport));
@@ -706,12 +711,16 @@ static bool renderPatternAudio(SlotMachineAudioProcessor& processor,
 
     for (auto& slot : slotsToRender)
     {
+        auto* voicePtr = slot.voice.get();
+        if (voicePtr == nullptr || !voicePtr->hasSample())
+            continue;
+
         for (int triggerSample : slot.triggers)
         {
             if (triggerSample < 0 || triggerSample >= totalSamplesNeeded)
                 continue;
 
-            slot.voice.trigger();
+            voicePtr->trigger();
 
             const int remaining = totalSamplesNeeded - triggerSample;
             if (remaining <= 0)
@@ -720,7 +729,7 @@ static bool renderPatternAudio(SlotMachineAudioProcessor& processor,
             juce::AudioBuffer<float> view(renderBuffer.getArrayOfWritePointers(),
                 renderBuffer.getNumChannels(), triggerSample, remaining);
 
-            slot.voice.mixInto(view, view.getNumSamples(), slot.gain);
+            voicePtr->mixInto(view, view.getNumSamples(), slot.gain);
         }
     }
 
@@ -2114,7 +2123,10 @@ bool SlotMachineAudioProcessor::exportAudioPlaythroughCycles(const juce::File& d
             return false;
 
         samplesPerPlaythrough += rendered.samples;
-        renderedPatterns.push_back(std::move(rendered));
+        renderedPatterns.emplace_back();
+        auto& stored = renderedPatterns.back();
+        stored.samples = rendered.samples;
+        stored.buffer.makeCopyOf(rendered.buffer);
     }
 
     if (samplesPerPlaythrough <= 0)
