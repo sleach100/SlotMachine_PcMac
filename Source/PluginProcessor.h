@@ -8,6 +8,9 @@
 
 #include "WaveformUtils.h"
 
+struct OfflinePatternData;
+struct RenderedPatternAudio;
+
 class SlotMachineAudioProcessor : public juce::AudioProcessor
 {
 public:
@@ -135,6 +138,13 @@ public:
     int    getBeatsPerBar() const noexcept { return numeratorAtomic.load(std::memory_order_relaxed); }
 
 private:
+    friend bool renderPatternAudio(SlotMachineAudioProcessor& processor,
+        const OfflinePatternData& patternData,
+        int cyclesToExport,
+        double engineSampleRate,
+        RenderedPatternAudio& rendered,
+        juce::String& errorMessage);
+
     std::array<std::atomic<int>, kNumSlots> pendingManualTriggers;
     std::array<std::atomic<uint64_t>, kNumSlots> countBeatMasks{};
     double currentCycleBeats = 1.0;
