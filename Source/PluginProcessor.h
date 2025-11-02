@@ -114,6 +114,7 @@ public:
     double   getSlotPhase(int index) const;
     double getMasterPhase() const;
     bool exportAudioCycles(const juce::File& file, int cyclesToExport, juce::String& errorMessage);
+    bool exportAudioPlaythroughCycles(const juce::File& file, int playthroughCycles, juce::String& errorMessage);
 
     // Count beat masks
     uint64_t getSlotCountMask(int index) const;

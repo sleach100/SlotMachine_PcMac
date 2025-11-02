@@ -381,8 +381,10 @@ private:
     void showOptionsDialog();
     void promptForExportCycles(const juce::String& dialogTitle,
         int defaultCycles,
-        std::function<void(int)> onConfirm);
-    void beginAudioExportWithCycles(int cyclesRequested);
+        std::function<void(int, bool)> onConfirm,
+        bool includePlaythroughOptions,
+        bool initialPlaythroughSelection);
+    void beginAudioExportWithCycles(int cyclesRequested, bool exportPlaythrough);
     void beginMidiExportWithCycles(int cyclesRequested);
     void openVisualizerWindow();
     void closeVisualizerWindow();

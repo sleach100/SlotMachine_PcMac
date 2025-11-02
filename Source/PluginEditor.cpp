@@ -126,14 +126,17 @@ namespace
                                private juce::TextEditor::Listener
     {
     public:
-        using ConfirmHandler = std::function<void(int)>;
+        using ConfirmHandler = std::function<void(int, bool)>;
         using CancelHandler = std::function<void()>;
 
         ExportCyclesDialog(int defaultCycles,
+            bool includePlaythroughOptions,
+            bool playthroughInitiallySelected,
             ConfirmHandler onConfirmFn,
             CancelHandler onCancelFn)
             : onConfirm(std::move(onConfirmFn))
             , onCancel(std::move(onCancelFn))
+            , includePlaythrough(includePlaythroughOptions)
         {
             instruction.setText("How many cycles would you like to export?", juce::dontSendNotification);
             instruction.setJustificationType(juce::Justification::centredLeft);
@@ -150,6 +153,19 @@ namespace
             cyclesEditor.setSelectAllWhenFocused(true);
             cyclesEditor.addListener(this);
             addAndMakeVisible(cyclesEditor);
+
+            if (includePlaythrough)
+            {
+                exportCurrentTabButton.setButtonText("Export currently selected Tab");
+                exportCurrentTabButton.setRadioGroupId(1);
+                exportCurrentTabButton.setToggleState(!playthroughInitiallySelected, juce::dontSendNotification);
+                addAndMakeVisible(exportCurrentTabButton);
+
+                exportPlaythroughButton.setButtonText("Export Tab Playthrough");
+                exportPlaythroughButton.setRadioGroupId(1);
+                exportPlaythroughButton.setToggleState(playthroughInitiallySelected, juce::dontSendNotification);
+                addAndMakeVisible(exportPlaythroughButton);
+            }
 
             errorLabel.setJustificationType(juce::Justification::centredLeft);
             errorLabel.setColour(juce::Label::textColourId, juce::Colours::orange);
@@ -186,6 +202,18 @@ namespace
             cyclesLabel.setBounds(inputRow.removeFromLeft(labelWidth));
             inputRow.removeFromLeft(12);
             cyclesEditor.setBounds(inputRow.removeFromLeft(120));
+
+            if (includePlaythrough)
+            {
+                bounds.removeFromTop(12);
+                auto optionBounds = bounds.removeFromTop(48);
+                const int spacing = 8;
+                const int availableHeight = optionBounds.getHeight();
+                auto currentBounds = optionBounds.removeFromTop(availableHeight / 2);
+                exportCurrentTabButton.setBounds(currentBounds);
+                optionBounds.removeFromTop(spacing);
+                exportPlaythroughButton.setBounds(optionBounds);
+            }
 
             bounds.removeFromTop(6);
             errorLabel.setBounds(bounds.removeFromTop(20));
@@ -255,9 +283,11 @@ namespace
 
             if (confirmCopy != nullptr)
             {
-                juce::MessageManager::callAsync([confirmCopy, cycles]() mutable
+                const bool exportPlaythroughSelected = includePlaythrough && exportPlaythroughButton.getToggleState();
+
+                juce::MessageManager::callAsync([confirmCopy, cycles, exportPlaythroughSelected]() mutable
                 {
-                    confirmCopy(cycles);
+                    confirmCopy(cycles, exportPlaythroughSelected);
                 });
             }
         }
@@ -284,6 +314,8 @@ namespace
         juce::Label instruction;
         juce::Label cyclesLabel;
         juce::TextEditor cyclesEditor;
+        juce::ToggleButton exportCurrentTabButton;
+        juce::ToggleButton exportPlaythroughButton;
         juce::Label errorLabel;
         juce::TextButton okButton;
         juce::TextButton cancelButton;
@@ -291,6 +323,7 @@ namespace
         ConfirmHandler onConfirm;
         CancelHandler onCancel;
         bool hasResolved = false;
+        bool includePlaythrough = false;
     };
 
     class LoopPlaythroughDialog : public juce::Component,
@@ -4790,10 +4823,12 @@ void SlotMachineAudioProcessorEditor::buttonClicked(juce::Button* b)
     if (b == &btnExportAudio)
     {
         promptForExportCycles("Export Audio", 1,
-            [this](int cycles)
+            [this](int cycles, bool exportPlaythrough)
             {
-                beginAudioExportWithCycles(cycles);
-            });
+                beginAudioExportWithCycles(cycles, exportPlaythrough);
+            },
+            true,
+            false);
         return;
     }
 
@@ -4801,10 +4836,12 @@ void SlotMachineAudioProcessorEditor::buttonClicked(juce::Button* b)
     if (b == &btnExportMidi)
     {
         promptForExportCycles("Export MIDI", 1,
-            [this](int cycles)
+            [this](int cycles, bool)
             {
                 beginMidiExportWithCycles(cycles);
-            });
+            },
+            false,
+            false);
         return;
     }
 
@@ -4921,7 +4958,9 @@ void SlotMachineAudioProcessorEditor::showOptionsDialog()
 
 void SlotMachineAudioProcessorEditor::promptForExportCycles(const juce::String& dialogTitle,
     int defaultCycles,
-    std::function<void(int)> onConfirm)
+    std::function<void(int, bool)> onConfirm,
+    bool includePlaythroughOptions,
+    bool initialPlaythroughSelection)
 {
     if (auto* existing = exportCyclesPromptWindow.getComponent())
     {
@@ -4935,14 +4974,16 @@ void SlotMachineAudioProcessorEditor::promptForExportCycles(const juce::String& 
     auto editorSafe = juce::Component::SafePointer<SlotMachineAudioProcessorEditor>(this);
     auto dialogContent = std::make_unique<ExportCyclesDialog>(
         defaultCycles,
-        [editorSafe, handler = std::move(onConfirm)](int cycles) mutable
+        includePlaythroughOptions,
+        initialPlaythroughSelection,
+        [editorSafe, handler = std::move(onConfirm)](int cycles, bool exportPlaythrough) mutable
         {
             if (editorSafe != nullptr)
             {
                 editorSafe->exportCyclesPromptWindow = nullptr;
 
                 if (handler)
-                    handler(cycles);
+                    handler(cycles, exportPlaythrough);
             }
         },
         [editorSafe]()
@@ -4951,7 +4992,8 @@ void SlotMachineAudioProcessorEditor::promptForExportCycles(const juce::String& 
                 editorSafe->exportCyclesPromptWindow = nullptr;
         });
 
-    dialogContent->setSize(360, 180);
+    const int dialogHeight = includePlaythroughOptions ? 240 : 180;
+    dialogContent->setSize(360, dialogHeight);
 
     juce::DialogWindow::LaunchOptions options;
     options.dialogTitle = dialogTitle;
@@ -4969,7 +5011,7 @@ void SlotMachineAudioProcessorEditor::promptForExportCycles(const juce::String& 
     }
 }
 
-void SlotMachineAudioProcessorEditor::beginAudioExportWithCycles(int cyclesRequested)
+void SlotMachineAudioProcessorEditor::beginAudioExportWithCycles(int cyclesRequested, bool exportPlaythrough)
 {
     if (cyclesRequested <= 0)
     {
@@ -4980,15 +5022,26 @@ void SlotMachineAudioProcessorEditor::beginAudioExportWithCycles(int cyclesReque
         return;
     }
 
+    juce::String chooserTitle;
+    if (exportPlaythrough)
+    {
+        const juce::String cycleLabel = juce::String(cyclesRequested) + (cyclesRequested == 1 ? " cycle" : " cycles");
+        chooserTitle = "Export Tab Playthrough (" + cycleLabel + ") audio file";
+    }
+    else
+    {
+        chooserTitle = "Export " + juce::String(cyclesRequested) + "-cycle audio file";
+    }
+
     auto chooser = std::make_shared<juce::FileChooser>(
-        "Export " + juce::String(cyclesRequested) + "-cycle audio file",
+        chooserTitle,
         juce::File(),
         "*.wav");
 
     fileDialogActive = true;
     chooser->launchAsync(juce::FileBrowserComponent::saveMode
                              | juce::FileBrowserComponent::canSelectFiles,
-        [this, chooser, cyclesRequested](const juce::FileChooser& fc) mutable
+        [this, chooser, cyclesRequested, exportPlaythrough](const juce::FileChooser& fc) mutable
         {
             juce::ignoreUnused(chooser);
             fileDialogActive = false;
@@ -5001,7 +5054,11 @@ void SlotMachineAudioProcessorEditor::beginAudioExportWithCycles(int cyclesReque
                 file = file.withFileExtension(".wav");
 
             juce::String error;
-            if (processor.exportAudioCycles(file, cyclesRequested, error))
+            const bool ok = exportPlaythrough
+                ? processor.exportAudioPlaythroughCycles(file, cyclesRequested, error)
+                : processor.exportAudioCycles(file, cyclesRequested, error);
+
+            if (ok)
             {
                 juce::AlertWindow::showMessageBoxAsync(
                     juce::AlertWindow::InfoIcon,
