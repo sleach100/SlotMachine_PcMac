@@ -4080,6 +4080,7 @@ void SlotMachineAudioProcessorEditor::beginPlayThrough()
 
     auto pattern = patternsTree.getChild(playThroughCurrentPattern);
     playThroughCyclesRemaining = computePatternPlayThroughCycles(pattern);
+    playThroughSkipNextWrap = true;
 
     processor.resetAllPhases(true);
     applyPattern(playThroughCurrentPattern, true, false, false);
@@ -4148,6 +4149,7 @@ void SlotMachineAudioProcessorEditor::finishPlayThrough(bool restorePattern, boo
     playThroughInitialPattern = -1;
     playThroughCurrentPattern = -1;
     playThroughCyclesRemaining = 0;
+    playThroughSkipNextWrap = false;
 
     if (restorePattern)
     {
@@ -5891,7 +5893,16 @@ void SlotMachineAudioProcessorEditor::timerCallback()
     }
 
     if (playThroughActive && wrapped)
-        advancePlayThrough();
+    {
+        if (playThroughSkipNextWrap)
+        {
+            playThroughSkipNextWrap = false;
+        }
+        else
+        {
+            advancePlayThrough();
+        }
+    }
 
     // Decay flash envelope @ ~60 Hz
     cycleFlash = juce::jmax(0.0f, cycleFlash * 0.88f - 0.01f);

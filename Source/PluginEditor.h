@@ -471,6 +471,7 @@ private:
     int  playThroughInitialPattern = -1;
     int  playThroughCurrentPattern = -1;
     int  playThroughCyclesRemaining = 0;
+    bool playThroughSkipNextWrap = false;
     bool loopPlaythroughEnabled = false;
 
     bool patternSwitchPending = false;
