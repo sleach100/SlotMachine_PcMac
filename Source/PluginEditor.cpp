@@ -67,6 +67,8 @@ static int computePatternPlayThroughCycles(juce::ValueTree pattern)
     return juce::jmax(1, 1 + repeat);
 }
 
+constexpr float kPlayThroughWrapGuardThreshold = 0.02f;
+
 static juce::Font createBoldFont(float size);
 static juce::Font createRegularFont(float size);
 
@@ -4081,6 +4083,7 @@ void SlotMachineAudioProcessorEditor::beginPlayThrough()
     auto pattern = patternsTree.getChild(playThroughCurrentPattern);
     playThroughCyclesRemaining = computePatternPlayThroughCycles(pattern);
     playThroughSkipNextWrap = true;
+    playThroughWrapGuardPhase = lastPhase;
 
     processor.resetAllPhases(true);
     applyPattern(playThroughCurrentPattern, true, false, false);
@@ -4150,6 +4153,7 @@ void SlotMachineAudioProcessorEditor::finishPlayThrough(bool restorePattern, boo
     playThroughCurrentPattern = -1;
     playThroughCyclesRemaining = 0;
     playThroughSkipNextWrap = false;
+    playThroughWrapGuardPhase = 0.0f;
 
     if (restorePattern)
     {
@@ -5896,7 +5900,12 @@ void SlotMachineAudioProcessorEditor::timerCallback()
     {
         if (playThroughSkipNextWrap)
         {
+            const bool shouldIgnoreWrap = playThroughWrapGuardPhase > kPlayThroughWrapGuardThreshold;
             playThroughSkipNextWrap = false;
+            playThroughWrapGuardPhase = 0.0f;
+
+            if (!shouldIgnoreWrap)
+                advancePlayThrough();
         }
         else
         {
