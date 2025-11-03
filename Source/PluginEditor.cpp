@@ -128,6 +128,8 @@ namespace
                                private juce::TextEditor::Listener
     {
     public:
+        class ToggleLabel;
+
         using ConfirmHandler = std::function<void(int, bool)>;
         using CancelHandler = std::function<void()>;
 
@@ -158,19 +160,29 @@ namespace
 
             if (includePlaythrough)
             {
-                exportToggleLookAndFeel.setBaseFont(createRegularFont(15.0f));
-
-                exportCurrentTabButton.setButtonText("Export currently selected Tab");
+                exportCurrentTabButton.setButtonText({});
+                exportCurrentTabButton.setAccessibleName("Export currently selected Tab");
                 exportCurrentTabButton.setRadioGroupId(1);
                 exportCurrentTabButton.setToggleState(!playthroughInitiallySelected, juce::dontSendNotification);
-                exportCurrentTabButton.setLookAndFeel(&exportToggleLookAndFeel);
                 addAndMakeVisible(exportCurrentTabButton);
 
-                exportPlaythroughButton.setButtonText("Export Tab Playthrough");
+                exportCurrentTabLabel.setText("Export currently selected Tab", juce::dontSendNotification);
+                exportCurrentTabLabel.setFont(createRegularFont(15.0f));
+                exportCurrentTabLabel.setJustificationType(juce::Justification::centredLeft);
+                exportCurrentTabLabel.setTarget(&exportCurrentTabButton);
+                addAndMakeVisible(exportCurrentTabLabel);
+
+                exportPlaythroughButton.setButtonText({});
+                exportPlaythroughButton.setAccessibleName("Export Tab Playthrough");
                 exportPlaythroughButton.setRadioGroupId(1);
                 exportPlaythroughButton.setToggleState(playthroughInitiallySelected, juce::dontSendNotification);
-                exportPlaythroughButton.setLookAndFeel(&exportToggleLookAndFeel);
                 addAndMakeVisible(exportPlaythroughButton);
+
+                exportPlaythroughLabel.setText("Export Tab Playthrough", juce::dontSendNotification);
+                exportPlaythroughLabel.setFont(createRegularFont(15.0f));
+                exportPlaythroughLabel.setJustificationType(juce::Justification::centredLeft);
+                exportPlaythroughLabel.setTarget(&exportPlaythroughButton);
+                addAndMakeVisible(exportPlaythroughLabel);
             }
 
             errorLabel.setJustificationType(juce::Justification::centredLeft);
@@ -188,9 +200,6 @@ namespace
 
         ~ExportCyclesDialog() override
         {
-            exportCurrentTabButton.setLookAndFeel(nullptr);
-            exportPlaythroughButton.setLookAndFeel(nullptr);
-
             if (!hasResolved)
             {
                 if (auto cancelCopy = onCancel)
@@ -218,10 +227,21 @@ namespace
                 auto optionBounds = bounds.removeFromTop(48);
                 const int spacing = 8;
                 const int availableHeight = optionBounds.getHeight();
+
+                auto layoutToggleRow = [](juce::Rectangle<int> area, juce::ToggleButton& toggle, ToggleLabel& label)
+                {
+                    auto row = area;
+                    auto toggleBounds = row.removeFromLeft(row.getHeight());
+                    toggle.setBounds(toggleBounds.reduced(0, juce::jmax(0, (toggleBounds.getHeight() - 20) / 2)));
+                    row.removeFromLeft(8);
+                    label.setBounds(row);
+                };
+
                 auto currentBounds = optionBounds.removeFromTop(availableHeight / 2);
-                exportCurrentTabButton.setBounds(currentBounds);
+                layoutToggleRow(currentBounds, exportCurrentTabButton, exportCurrentTabLabel);
+
                 optionBounds.removeFromTop(spacing);
-                exportPlaythroughButton.setBounds(optionBounds);
+                layoutToggleRow(optionBounds, exportPlaythroughButton, exportPlaythroughLabel);
             }
 
             bounds.removeFromTop(6);
@@ -323,31 +343,35 @@ namespace
         juce::Label instruction;
         juce::Label cyclesLabel;
         juce::TextEditor cyclesEditor;
-        class ExportToggleLookAndFeel : public juce::LookAndFeel_V4
+        class ToggleLabel : public juce::Label
         {
         public:
-            void setBaseFont(juce::Font newFont)
+            ToggleLabel()
             {
-                baseFont = std::move(newFont);
+                setMouseCursor(juce::MouseCursor::PointingHandCursor);
             }
 
-            juce::Font getToggleButtonFont(juce::ToggleButton&) override
+            void setTarget(juce::ToggleButton* buttonToToggle)
             {
-                return baseFont;
+                target = buttonToToggle;
             }
 
-            juce::Font getTextButtonFont(juce::TextButton&, int buttonHeight) override
+            void mouseUp(const juce::MouseEvent& event) override
             {
-                juce::ignoreUnused(buttonHeight);
-                return baseFont;
+                juce::Label::mouseUp(event);
+
+                if (target != nullptr && event.mouseWasClicked())
+                    target->triggerClick();
             }
 
         private:
-            juce::Font baseFont{ juce::FontOptions(15.0f) };
-        } exportToggleLookAndFeel;
+            juce::ToggleButton* target = nullptr;
+        };
 
         juce::ToggleButton exportCurrentTabButton;
+        ToggleLabel exportCurrentTabLabel;
         juce::ToggleButton exportPlaythroughButton;
+        ToggleLabel exportPlaythroughLabel;
         juce::Label errorLabel;
         juce::TextButton okButton;
         juce::TextButton cancelButton;
