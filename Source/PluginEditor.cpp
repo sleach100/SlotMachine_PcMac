@@ -224,24 +224,30 @@ namespace
             if (includePlaythrough)
             {
                 bounds.removeFromTop(12);
-                auto optionBounds = bounds.removeFromTop(48);
+                const int toggleSize = 20;
                 const int spacing = 8;
-                const int availableHeight = optionBounds.getHeight();
+                const int rowHeight = 24;
+                auto optionBounds = bounds.removeFromTop(rowHeight * 2 + spacing);
 
-                auto layoutToggleRow = [](juce::Rectangle<int> area, juce::ToggleButton& toggle, ToggleLabel& label)
+                auto layoutToggleRow = [toggleSize](juce::Rectangle<int> area, juce::ToggleButton& toggle, ToggleLabel& label)
                 {
-                    auto row = area;
-                    auto toggleBounds = row.removeFromLeft(row.getHeight());
-                    toggle.setBounds(toggleBounds.reduced(0, juce::jmax(0, (toggleBounds.getHeight() - 20) / 2)));
-                    row.removeFromLeft(8);
-                    label.setBounds(row);
+                    auto toggleBounds = juce::Rectangle<int>(area.getX(),
+                        area.getCentreY() - (toggleSize / 2),
+                        toggleSize,
+                        toggleSize);
+                    toggle.setBounds(toggleBounds);
+
+                    auto labelBounds = area;
+                    labelBounds.setX(toggleBounds.getRight() + 8);
+                    label.setBounds(labelBounds);
                 };
 
-                auto currentBounds = optionBounds.removeFromTop(availableHeight / 2);
+                auto currentBounds = optionBounds.removeFromTop(rowHeight);
                 layoutToggleRow(currentBounds, exportCurrentTabButton, exportCurrentTabLabel);
 
                 optionBounds.removeFromTop(spacing);
-                layoutToggleRow(optionBounds, exportPlaythroughButton, exportPlaythroughLabel);
+                auto playthroughBounds = optionBounds.removeFromTop(rowHeight);
+                layoutToggleRow(playthroughBounds, exportPlaythroughButton, exportPlaythroughLabel);
             }
 
             bounds.removeFromTop(6);
