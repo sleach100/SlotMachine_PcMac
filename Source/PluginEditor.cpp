@@ -161,7 +161,7 @@ namespace
             if (includePlaythrough)
             {
                 exportCurrentTabButton.setButtonText({});
-                exportCurrentTabButton.setAccessibleName("Export currently selected Tab");
+                exportCurrentTabButton.getProperties().set("accessibilityName", "Export currently selected Tab");
                 exportCurrentTabButton.setRadioGroupId(1);
                 exportCurrentTabButton.setToggleState(!playthroughInitiallySelected, juce::dontSendNotification);
                 addAndMakeVisible(exportCurrentTabButton);
@@ -173,7 +173,7 @@ namespace
                 addAndMakeVisible(exportCurrentTabLabel);
 
                 exportPlaythroughButton.setButtonText({});
-                exportPlaythroughButton.setAccessibleName("Export Tab Playthrough");
+                exportPlaythroughButton.getProperties().set("accessibilityName", "Export Tab Playthrough");
                 exportPlaythroughButton.setRadioGroupId(1);
                 exportPlaythroughButton.setToggleState(playthroughInitiallySelected, juce::dontSendNotification);
                 addAndMakeVisible(exportPlaythroughButton);
