@@ -331,8 +331,9 @@ namespace
                 baseFont = std::move(newFont);
             }
 
-            juce::Font getToggleButtonFont(juce::ToggleButton&) override
+            juce::Font getTextButtonFont(juce::TextButton&, int buttonHeight) override
             {
+                juce::ignoreUnused(buttonHeight);
                 return baseFont;
             }
 
