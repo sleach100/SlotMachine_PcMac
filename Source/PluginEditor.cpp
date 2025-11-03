@@ -128,6 +128,8 @@ namespace
                                private juce::TextEditor::Listener
     {
     public:
+        class ToggleLabel;
+
         using ConfirmHandler = std::function<void(int, bool)>;
         using CancelHandler = std::function<void()>;
 
@@ -158,15 +160,29 @@ namespace
 
             if (includePlaythrough)
             {
-                exportCurrentTabButton.setButtonText("Export currently selected Tab");
+                exportCurrentTabButton.setButtonText({});
+                exportCurrentTabButton.getProperties().set("accessibilityName", "Export currently selected Tab");
                 exportCurrentTabButton.setRadioGroupId(1);
                 exportCurrentTabButton.setToggleState(!playthroughInitiallySelected, juce::dontSendNotification);
                 addAndMakeVisible(exportCurrentTabButton);
 
-                exportPlaythroughButton.setButtonText("Export Tab Playthrough");
+                exportCurrentTabLabel.setText("Export currently selected Tab", juce::dontSendNotification);
+                exportCurrentTabLabel.setFont(createRegularFont(15.0f));
+                exportCurrentTabLabel.setJustificationType(juce::Justification::centredLeft);
+                exportCurrentTabLabel.setTarget(&exportCurrentTabButton);
+                addAndMakeVisible(exportCurrentTabLabel);
+
+                exportPlaythroughButton.setButtonText({});
+                exportPlaythroughButton.getProperties().set("accessibilityName", "Export Tab Playthrough");
                 exportPlaythroughButton.setRadioGroupId(1);
                 exportPlaythroughButton.setToggleState(playthroughInitiallySelected, juce::dontSendNotification);
                 addAndMakeVisible(exportPlaythroughButton);
+
+                exportPlaythroughLabel.setText("Export Tab Playthrough", juce::dontSendNotification);
+                exportPlaythroughLabel.setFont(createRegularFont(15.0f));
+                exportPlaythroughLabel.setJustificationType(juce::Justification::centredLeft);
+                exportPlaythroughLabel.setTarget(&exportPlaythroughButton);
+                addAndMakeVisible(exportPlaythroughLabel);
             }
 
             errorLabel.setJustificationType(juce::Justification::centredLeft);
@@ -208,13 +224,31 @@ namespace
             if (includePlaythrough)
             {
                 bounds.removeFromTop(12);
-                auto optionBounds = bounds.removeFromTop(48);
+                const int toggleSize = 20;
                 const int spacing = 8;
-                const int availableHeight = optionBounds.getHeight();
-                auto currentBounds = optionBounds.removeFromTop(availableHeight / 2);
-                exportCurrentTabButton.setBounds(currentBounds);
+                const int rowHeight = 24;
+                auto optionBounds = bounds.removeFromTop(rowHeight * 2 + spacing);
+
+                auto layoutToggleRow = [toggleSize](juce::Rectangle<int> area, juce::ToggleButton& toggle, ToggleLabel& label)
+                {
+                    auto toggleBounds = juce::Rectangle<int>(area.getX(),
+                        area.getCentreY() - (toggleSize / 2),
+                        toggleSize,
+                        toggleSize);
+                    toggle.setBounds(toggleBounds);
+
+                    auto labelBounds = area;
+                    constexpr int labelIndent = 12;
+                    labelBounds.setX(toggleBounds.getRight() + labelIndent);
+                    label.setBounds(labelBounds);
+                };
+
+                auto currentBounds = optionBounds.removeFromTop(rowHeight);
+                layoutToggleRow(currentBounds, exportCurrentTabButton, exportCurrentTabLabel);
+
                 optionBounds.removeFromTop(spacing);
-                exportPlaythroughButton.setBounds(optionBounds);
+                auto playthroughBounds = optionBounds.removeFromTop(rowHeight);
+                layoutToggleRow(playthroughBounds, exportPlaythroughButton, exportPlaythroughLabel);
             }
 
             bounds.removeFromTop(6);
@@ -316,8 +350,35 @@ namespace
         juce::Label instruction;
         juce::Label cyclesLabel;
         juce::TextEditor cyclesEditor;
+        class ToggleLabel : public juce::Label
+        {
+        public:
+            ToggleLabel()
+            {
+                setMouseCursor(juce::MouseCursor::PointingHandCursor);
+            }
+
+            void setTarget(juce::ToggleButton* buttonToToggle)
+            {
+                target = buttonToToggle;
+            }
+
+            void mouseUp(const juce::MouseEvent& event) override
+            {
+                juce::Label::mouseUp(event);
+
+                if (target != nullptr && event.mouseWasClicked())
+                    target->triggerClick();
+            }
+
+        private:
+            juce::ToggleButton* target = nullptr;
+        };
+
         juce::ToggleButton exportCurrentTabButton;
+        ToggleLabel exportCurrentTabLabel;
         juce::ToggleButton exportPlaythroughButton;
+        ToggleLabel exportPlaythroughLabel;
         juce::Label errorLabel;
         juce::TextButton okButton;
         juce::TextButton cancelButton;
@@ -3969,6 +4030,11 @@ void SlotMachineAudioProcessorEditor::handlePatternContextMenu(const juce::Mouse
     menu.addItem(1, "New Pattern");
     menu.addItem(2, "Duplicate Pattern", patternCount > 0);
     menu.addItem(3, "Rename Pattern", patternCount > 0);
+    menu.addItem(4, "Delete Pattern", patternCount > 1);
+    menu.addItem(5, "Import Saved Pattern", patternCount > 0);
+
+    menu.addSeparator();
+    menu.addItem(7, "Play Through", patternCount > 0 && !playThroughActive);
 
     int repeatValue = 0;
     if (patternCount > 0 && juce::isPositiveAndBelow(currentPatternIndex, patternCount))
@@ -3979,10 +4045,6 @@ void SlotMachineAudioProcessorEditor::handlePatternContextMenu(const juce::Mouse
 
     menu.addItem(6, "Repeat = " + juce::String(repeatValue), patternCount > 0);
     menu.addItem(8, "Loop Playthrough = " + juce::String(loopPlaythroughEnabled ? "True" : "False"));
-    menu.addItem(7, "Play Through", patternCount > 0 && !playThroughActive);
-    menu.addItem(4, "Delete Pattern", patternCount > 1);
-    menu.addSeparator();
-    menu.addItem(5, "Import saved pattern", patternCount > 0);
 
     auto options = juce::PopupMenu::Options().withTargetComponent(&patternTabs);
 
