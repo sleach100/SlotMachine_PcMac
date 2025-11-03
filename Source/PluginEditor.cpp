@@ -3969,6 +3969,11 @@ void SlotMachineAudioProcessorEditor::handlePatternContextMenu(const juce::Mouse
     menu.addItem(1, "New Pattern");
     menu.addItem(2, "Duplicate Pattern", patternCount > 0);
     menu.addItem(3, "Rename Pattern", patternCount > 0);
+    menu.addItem(4, "Delete Pattern", patternCount > 1);
+    menu.addItem(5, "Import Saved Pattern", patternCount > 0);
+
+    menu.addSeparator();
+    menu.addItem(7, "Play Through", patternCount > 0 && !playThroughActive);
 
     int repeatValue = 0;
     if (patternCount > 0 && juce::isPositiveAndBelow(currentPatternIndex, patternCount))
@@ -3979,10 +3984,6 @@ void SlotMachineAudioProcessorEditor::handlePatternContextMenu(const juce::Mouse
 
     menu.addItem(6, "Repeat = " + juce::String(repeatValue), patternCount > 0);
     menu.addItem(8, "Loop Playthrough = " + juce::String(loopPlaythroughEnabled ? "True" : "False"));
-    menu.addItem(7, "Play Through", patternCount > 0 && !playThroughActive);
-    menu.addItem(4, "Delete Pattern", patternCount > 1);
-    menu.addSeparator();
-    menu.addItem(5, "Import saved pattern", patternCount > 0);
 
     auto options = juce::PopupMenu::Options().withTargetComponent(&patternTabs);
 
