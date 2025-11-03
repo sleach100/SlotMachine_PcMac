@@ -238,7 +238,8 @@ namespace
                     toggle.setBounds(toggleBounds);
 
                     auto labelBounds = area;
-                    labelBounds.setX(toggleBounds.getRight() + 8);
+                    constexpr int labelIndent = 12;
+                    labelBounds.setX(toggleBounds.getRight() + labelIndent);
                     label.setBounds(labelBounds);
                 };
 
