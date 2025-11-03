@@ -150,7 +150,7 @@ namespace BinaryData
     const int            MuteON_pngSize = 9965;
 
     extern const char*   SlotMachineUserManual_html;
-    const int            SlotMachineUserManual_htmlSize = 673573;
+    const int            SlotMachineUserManual_htmlSize = 674745;
 
     extern const char*   SlotMachine_ico;
     const int            SlotMachine_icoSize = 4286;

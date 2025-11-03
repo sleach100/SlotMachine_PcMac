@@ -189,12 +189,8 @@
   </td>
  </tr>
 </table>
-<h3>Starting the App</h3>
-<ul>
-  <li>Launch the executable directly.</li>
-  <li>On startup, S.L.O.T Machine initializes with a blank pattern and 120 BPM setting.</li>
-</ul>
 
+<h3 style="color: #3399ff;">&nbsp;</h3>
 <h3 style="color:#3399FF;">Master Controls</h3>
 
 
@@ -214,7 +210,7 @@
   <tr><td style="border:1pt solid black;">Load</td><td style="border:1pt solid black;">Loads saved patterns from disk.</td></tr>
   <tr><td style="border:1pt solid black;">Visualize</td><td style="border:1pt solid black;">In Count mode, this button brings up the visualizer.  In the Visualizer window, each slot is represented by a polygon with a number of sides equal to its Count. The moving bead represents that slot’s playback phase.  This is a powerful tool.  If polyrhythms don’t make sense to you, they will after you turn on the visualizer.</td></tr>
 </table>
-
+<h3 style="color: #3399ff;">&nbsp;</h3>
 <h3 style="color:#3399FF;">Slot Controls (Per-Channel)</h3>
 <p>Each of the 16 slots acts like an independent drum pad with its own playback parameters:</p>
 <table style="border:1pt solid black; border-collapse:collapse;">
@@ -235,27 +231,39 @@
   <tr><td style="border:1pt solid black;">Decay</td><td style="border:1pt solid black;">Controls how quickly the sound fades after triggering (10 ms–4000 ms).  Used to shorten the playback of the sample.</td></tr>
   <tr><td style="border:1pt solid black;">Click to trigger</td><td style="border:1pt solid black;">Click in the slot to manually trigger.  Great for auditioning sounds.</td></tr>
 </table>
+<h3 style="color: #3399ff;">&nbsp;</h3>
 <h3 style="color:#3399FF;">Pattern Management</h3>
 <ul>
   <li>Multiple pattern tabs let you create and organize different grooves.</li>
   <li>Right-click the tab bar to rename, duplicate, create, or import new patterns.</li>
   <li>You can save the current pattern’s state and recall it instantly. <strong>SAVE</strong> will save all tabs. <strong>LOAD</strong> will restore all tabs in the saved file.</li>
   <li><strong>IMPORT</strong> lets you import a saved pattern from a file. If there’s more than one tab saved, you can choose which tab to import.</li>
-  <li>Switching patterns while playing will finish the current pattern, then begin playing the newly selected tab.</li>
+  <li>Switching patterns while playing will finish the current pattern, then begin playing the newly selected tab.  Perfect for manual switching of patterns during live playback.</li>
+</ul>
+<ul style="margin-left:1em;">
+<h3 style="color:#3399FF;">Playthrough</h3>
+</ul>
+<ul style="margin-left:4em;">
+<li><span style="color: #000000;">Selecting Playthrough from the Tab menu will will begin playing the first Tabs pattern, repeating the selected Repeat value, and then continue playing the next Tabs pattern until all Tabs have been played.&nbsp; Pressing the Stop button at any time will end Playthrough.&nbsp; This feature allows you to create full length songs by combining multiple patterns.</span></li>
+<li><span style="color: #000000;">Each tab contains a Repeat value (Repeat = X).&nbsp; Repeat defaults to 0.&nbsp; During playthrough, the Tabs pattern will repeat X number of times before proceding to the next Tab.</span></li>
+<li><span style="color: #000000;">Loop Playthrough = True/False.&nbsp; If set to True, the Playthrough loop until the user presses the Stop button.</span></li>
 </ul>
 <h3 style="color:#3399FF;">Exporting</h3>
+<h4>Audio Export</h4>
+<ul>
+  <li>Choose between exporting the currently selected Tab or Tab Playthrough.</li>
+  <li>Renders your current groove to a stereo audio file.</li>
+  <li>Exports one or more full cycles including per-slot rate, decay, and gain settings.</li>
+  <li>Great for transferring grooves to DAWs like FL Studio, Ableton, or Logic.</li>
+</ul>
 <h4>MIDI Export</h4>
 <ul>
+  <li>Choose between exporting the currently selected Tab or Tab Playthrough.</li>
   <li>Generates a Type 1 MIDI file with up to 16 channels — one per slot.</li>
   <li>Each slot outputs a single note (C5, MIDI note 60) per active beat.</li>
   <li>Great for transferring grooves to DAWs like FL Studio, Ableton, or Logic.</li>
 </ul>
 
-<h4>Audio Export</h4>
-<ul>
-  <li>Renders your current groove to a stereo audio file.</li>
-  <li>Exports one or more full cycles including per-slot rate, decay, and gain settings.</li>
-</ul>
 <h4>Visual Options</h4>
 <ul>
   <li>Customize glow and pulse colors for the interface.</li>
