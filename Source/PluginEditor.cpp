@@ -158,14 +158,18 @@ namespace
 
             if (includePlaythrough)
             {
+                exportToggleLookAndFeel.setBaseFont(createRegularFont(15.0f));
+
                 exportCurrentTabButton.setButtonText("Export currently selected Tab");
                 exportCurrentTabButton.setRadioGroupId(1);
                 exportCurrentTabButton.setToggleState(!playthroughInitiallySelected, juce::dontSendNotification);
+                exportCurrentTabButton.setLookAndFeel(&exportToggleLookAndFeel);
                 addAndMakeVisible(exportCurrentTabButton);
 
                 exportPlaythroughButton.setButtonText("Export Tab Playthrough");
                 exportPlaythroughButton.setRadioGroupId(1);
                 exportPlaythroughButton.setToggleState(playthroughInitiallySelected, juce::dontSendNotification);
+                exportPlaythroughButton.setLookAndFeel(&exportToggleLookAndFeel);
                 addAndMakeVisible(exportPlaythroughButton);
             }
 
@@ -184,6 +188,9 @@ namespace
 
         ~ExportCyclesDialog() override
         {
+            exportCurrentTabButton.setLookAndFeel(nullptr);
+            exportPlaythroughButton.setLookAndFeel(nullptr);
+
             if (!hasResolved)
             {
                 if (auto cancelCopy = onCancel)
@@ -316,6 +323,23 @@ namespace
         juce::Label instruction;
         juce::Label cyclesLabel;
         juce::TextEditor cyclesEditor;
+        class ExportToggleLookAndFeel : public juce::LookAndFeel_V4
+        {
+        public:
+            void setBaseFont(juce::Font newFont)
+            {
+                baseFont = std::move(newFont);
+            }
+
+            juce::Font getToggleButtonFont(juce::ToggleButton&) override
+            {
+                return baseFont;
+            }
+
+        private:
+            juce::Font baseFont{ juce::FontOptions(15.0f) };
+        } exportToggleLookAndFeel;
+
         juce::ToggleButton exportCurrentTabButton;
         juce::ToggleButton exportPlaythroughButton;
         juce::Label errorLabel;
