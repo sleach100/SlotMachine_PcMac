@@ -231,16 +231,19 @@ namespace
 
                 auto layoutToggleRow = [toggleSize](juce::Rectangle<int> area, juce::ToggleButton& toggle, ToggleLabel& label)
                 {
-                    auto toggleBounds = juce::Rectangle<int>(area.getX(),
-                        area.getCentreY() - (toggleSize / 2),
-                        toggleSize,
-                        toggleSize);
-                    toggle.setBounds(toggleBounds);
+                        auto toggleBounds = juce::Rectangle<int>(area.getX(),
+                            area.getCentreY() - (toggleSize / 2),
+                            toggleSize + 4, // give a little breathing room
+                            toggleSize + 2); // helps with anti-alias edges
+                        toggleBounds.translate(-2, 0); // shift left slightly to avoid right-edge clip
+                        toggle.setBounds(toggleBounds);
+                        toggle.setPaintingIsUnclipped(true); // allow full draw
 
-                    auto labelBounds = area;
-                    constexpr int labelIndent = 12;
-                    labelBounds.setX(toggleBounds.getRight() + labelIndent);
-                    label.setBounds(labelBounds);
+                        auto labelBounds = area;
+                        constexpr int labelIndent = 14;
+                        labelBounds.setX(toggleBounds.getRight() + labelIndent);
+                        label.setBounds(labelBounds);
+
                 };
 
                 auto currentBounds = optionBounds.removeFromTop(rowHeight);
