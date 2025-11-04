@@ -426,6 +426,8 @@ private:
     void showLoopPlaythroughDialog();
     void setLoopPlaythroughEnabled(bool shouldLoop);
     void beginPlayThrough();
+    void beginPlayThroughFromCurrentTab();
+    void beginPlayThroughAtIndex(int startIndex);
     void advancePlayThrough();
     void finishPlayThrough(bool restorePattern, bool stopTransport);
     void importPatternFromFile();
