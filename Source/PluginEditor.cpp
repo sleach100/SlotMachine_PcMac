@@ -173,12 +173,12 @@ namespace
                 addAndMakeVisible(exportCurrentTabLabel);
 
                 exportPlaythroughButton.setButtonText({});
-                exportPlaythroughButton.getProperties().set("accessibilityName", "Export Tab Playthrough");
+                exportPlaythroughButton.getProperties().set("accessibilityName", "Export Tab Play Through");
                 exportPlaythroughButton.setRadioGroupId(1);
                 exportPlaythroughButton.setToggleState(playthroughInitiallySelected, juce::dontSendNotification);
                 addAndMakeVisible(exportPlaythroughButton);
 
-                exportPlaythroughLabel.setText("Export Tab Playthrough", juce::dontSendNotification);
+                exportPlaythroughLabel.setText("Export Tab Play Through", juce::dontSendNotification);
                 exportPlaythroughLabel.setFont(createRegularFont(15.0f));
                 exportPlaythroughLabel.setJustificationType(juce::Justification::centredLeft);
                 exportPlaythroughLabel.setTarget(&exportPlaythroughButton);
@@ -5057,7 +5057,7 @@ void SlotMachineAudioProcessorEditor::beginAudioExportWithCycles(int cyclesReque
     if (exportPlaythrough)
     {
         const juce::String cycleLabel = juce::String(cyclesRequested) + (cyclesRequested == 1 ? " cycle" : " cycles");
-        chooserTitle = "Export Tab Playthrough (" + cycleLabel + ") audio file";
+        chooserTitle = "Export Tab Play Through (" + cycleLabel + ") audio file";
     }
     else
     {
@@ -5127,7 +5127,7 @@ void SlotMachineAudioProcessorEditor::beginMidiExportWithCycles(int cyclesReques
     if (exportPlaythrough)
     {
         const juce::String cycleLabel = juce::String(cyclesRequested) + (cyclesRequested == 1 ? " cycle" : " cycles");
-        chooserTitle = "Export Tab Playthrough (" + cycleLabel + ") MIDI file";
+        chooserTitle = "Export Tab Play Through (" + cycleLabel + ") MIDI file";
     }
     else
     {
