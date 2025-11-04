@@ -4038,6 +4038,7 @@ void SlotMachineAudioProcessorEditor::handlePatternContextMenu(const juce::Mouse
 
     menu.addSeparator();
     menu.addItem(7, "Play Through", patternCount > 0 && !playThroughActive);
+    menu.addItem(9, "Play Through from current Tab", patternCount > 0 && !playThroughActive);
 
     int repeatValue = 0;
     if (patternCount > 0 && juce::isPositiveAndBelow(currentPatternIndex, patternCount))
@@ -4069,6 +4070,7 @@ void SlotMachineAudioProcessorEditor::handlePatternContextMenu(const juce::Mouse
             case 5: importPatternFromFile(); break;
             case 6: editCurrentPatternRepeat(); break;
             case 7: beginPlayThrough(); break;
+            case 9: beginPlayThroughFromCurrentTab(); break;
             case 8: showLoopPlaythroughDialog(); break;
             default: break;
             }
@@ -4122,25 +4124,38 @@ void SlotMachineAudioProcessorEditor::setSlotControlsFrozen(bool shouldFreeze)
 
 void SlotMachineAudioProcessorEditor::beginPlayThrough()
 {
+    beginPlayThroughAtIndex(0);
+}
+
+void SlotMachineAudioProcessorEditor::beginPlayThroughFromCurrentTab()
+{
+    beginPlayThroughAtIndex(currentPatternIndex);
+}
+
+void SlotMachineAudioProcessorEditor::beginPlayThroughAtIndex(int startIndex)
+{
     if (playThroughActive)
         return;
 
     if (!patternsTree.isValid())
         patternsTree = processor.getPatternsTree();
 
-    const int patternCount = patternsTree.getNumChildren();
+    int patternCount = patternsTree.getNumChildren();
     if (patternCount <= 0)
         return;
 
     saveCurrentPattern();
     patternsTree = processor.getPatternsTree();
+    patternCount = patternsTree.getNumChildren();
+    if (patternCount <= 0)
+        return;
 
     if (startToggle.getToggleState())
         setMasterRun(false);
 
     playThroughActive = true;
     playThroughInitialPattern = currentPatternIndex;
-    playThroughCurrentPattern = 0;
+    playThroughCurrentPattern = juce::jlimit(0, patternCount - 1, startIndex);
 
     setSlotControlsFrozen(true);
 
