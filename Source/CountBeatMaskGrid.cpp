@@ -177,7 +177,8 @@ void CountBeatMaskGrid::updateButtonColours()
         {
             button->setColour(juce::TextButton::buttonColourId, buttonOffColour);
             button->setColour(juce::TextButton::buttonOnColourId, buttonOnColour);
-            button->setColour(juce::TextButton::outlineColourId, juce::Colours::transparentWhite);
+            button->setColour(juce::TextButton::textColourOffId, juce::Colours::whitesmoke);
+            button->setColour(juce::TextButton::textColourOnId, juce::Colours::black);
         }
     }
 
