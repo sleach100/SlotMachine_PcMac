@@ -54,8 +54,7 @@ CountBeatMaskGrid::CountBeatMaskGrid(Options opts,
 
     buttonOffColour = juce::Colours::dimgrey.withAlpha(0.85f);
     buttonOnColour = juce::Colours::orange;
-    highlightOffColour = buttonOffColour.interpolatedWith(juce::Colours::orange, 0.55f);
-    highlightOnColour = buttonOnColour.brighter(0.35f);
+    highlightFrameColour = juce::Colours::white;
 
     buildButtons();
     updateButtonStatesFromMask();
@@ -177,10 +176,28 @@ void CountBeatMaskGrid::updateButtonColours()
     {
         if (auto* button = buttons[index])
         {
-            const bool isHighlighted = (index == highlightedBeat);
-            button->setColour(juce::TextButton::buttonColourId, isHighlighted ? highlightOffColour : buttonOffColour);
-            button->setColour(juce::TextButton::buttonOnColourId, isHighlighted ? highlightOnColour : buttonOnColour);
+            button->setColour(juce::TextButton::buttonColourId, buttonOffColour);
+            button->setColour(juce::TextButton::buttonOnColourId, buttonOnColour);
+            button->setColour(juce::TextButton::outlineColourId, juce::Colours::transparentWhite);
         }
+    }
+
+    repaint();
+}
+
+void CountBeatMaskGrid::paintOverChildren(juce::Graphics& g)
+{
+    if (highlightedBeat < 0 || highlightedBeat >= buttons.size())
+        return;
+
+    if (auto* button = buttons[highlightedBeat])
+    {
+        auto bounds = button->getBounds().toFloat();
+        const float expansion = juce::jmax(0.0f, highlightFrameThickness * 0.5f);
+        bounds = bounds.expanded(expansion);
+
+        g.setColour(highlightFrameColour);
+        g.drawRoundedRectangle(bounds, 4.0f, highlightFrameThickness);
     }
 }
 

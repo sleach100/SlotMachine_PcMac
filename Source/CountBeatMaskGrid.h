@@ -27,6 +27,7 @@ public:
     void resized() override;
     void visibilityChanged() override;
     bool keyPressed(const juce::KeyPress& key) override;
+    void paintOverChildren(juce::Graphics& g) override;
 
 private:
     void buildButtons();
@@ -47,6 +48,6 @@ private:
     int highlightedBeat = -1;
     juce::Colour buttonOffColour;
     juce::Colour buttonOnColour;
-    juce::Colour highlightOffColour;
-    juce::Colour highlightOnColour;
+    juce::Colour highlightFrameColour;
+    float highlightFrameThickness = 2.0f;
 };
