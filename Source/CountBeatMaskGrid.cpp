@@ -34,10 +34,12 @@ uint64_t CountBeatMaskGrid::limitMaskToBeats(uint64_t currentMask, int beats)
 
 CountBeatMaskGrid::CountBeatMaskGrid(Options opts,
                                      uint64_t initialMask,
-                                     std::function<void(uint64_t)> onMaskChanged)
+                                     std::function<void(uint64_t)> onMaskChanged,
+                                     std::function<int()> beatHighlightProvider)
     : options(opts)
     , mask(limitMaskToBeats(initialMask, juce::jlimit(1, 64, options.beats)))
     , maskChanged(std::move(onMaskChanged))
+    , highlightProvider(std::move(beatHighlightProvider))
 {
     setWantsKeyboardFocus(true);
     setFocusContainerType(juce::Component::FocusContainerType::keyboardFocusContainer);
@@ -50,14 +52,23 @@ CountBeatMaskGrid::CountBeatMaskGrid(Options opts,
 
     mask = limitMaskToBeats(mask, options.beats);
 
+    buttonOffColour = juce::Colours::dimgrey.withAlpha(0.85f);
+    buttonOnColour = juce::Colours::orange;
+    highlightOffColour = buttonOffColour.interpolatedWith(juce::Colours::orange, 0.55f);
+    highlightOnColour = buttonOnColour.brighter(0.35f);
+
     buildButtons();
     updateButtonStatesFromMask();
+    updateButtonColours();
 
     const int columns = juce::jmax(1, options.columns);
     const int rows = (options.beats + columns - 1) / columns;
     const int width = columns * options.buttonW + juce::jmax(0, columns - 1) * options.gap + options.gap * 2;
     const int height = rows * options.buttonH + juce::jmax(0, rows - 1) * options.gap + options.gap * 2;
     setSize(width, height);
+
+    if (highlightProvider)
+        startTimerHz(30);
 }
 
 void CountBeatMaskGrid::buildButtons()
@@ -70,8 +81,8 @@ void CountBeatMaskGrid::buildButtons()
         button->setClickingTogglesState(true);
         const bool selected = ((mask >> beat) & 1ull) != 0;
         button->setToggleState(selected, juce::dontSendNotification);
-        button->setColour(juce::TextButton::buttonColourId, juce::Colours::dimgrey.withAlpha(0.85f));
-        button->setColour(juce::TextButton::buttonOnColourId, juce::Colours::orange);
+        button->setColour(juce::TextButton::buttonColourId, buttonOffColour);
+        button->setColour(juce::TextButton::buttonOnColourId, buttonOnColour);
         button->setColour(juce::TextButton::textColourOffId, juce::Colours::whitesmoke);
         button->setColour(juce::TextButton::textColourOnId, juce::Colours::black);
         button->setWantsKeyboardFocus(false);
@@ -146,6 +157,40 @@ void CountBeatMaskGrid::setMask(uint64_t newMask, bool sendNotification)
 
     if (sendNotification && maskChanged)
         maskChanged(mask);
+}
+
+void CountBeatMaskGrid::setHighlightedBeat(int beatIndex)
+{
+    if (beatIndex < 0 || beatIndex >= options.beats)
+        beatIndex = -1;
+
+    if (highlightedBeat == beatIndex)
+        return;
+
+    highlightedBeat = beatIndex;
+    updateButtonColours();
+}
+
+void CountBeatMaskGrid::updateButtonColours()
+{
+    for (int index = 0; index < buttons.size(); ++index)
+    {
+        if (auto* button = buttons[index])
+        {
+            const bool isHighlighted = (index == highlightedBeat);
+            button->setColour(juce::TextButton::buttonColourId, isHighlighted ? highlightOffColour : buttonOffColour);
+            button->setColour(juce::TextButton::buttonOnColourId, isHighlighted ? highlightOnColour : buttonOnColour);
+        }
+    }
+}
+
+void CountBeatMaskGrid::timerCallback()
+{
+    if (!highlightProvider)
+        return;
+
+    const int beatIndex = highlightProvider();
+    setHighlightedBeat(beatIndex);
 }
 
 bool CountBeatMaskGrid::keyPressed(const juce::KeyPress& key)

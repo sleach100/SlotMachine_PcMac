@@ -1427,6 +1427,9 @@ SlotMachineAudioProcessor::SlotMachineAudioProcessor()
     initialiseOnFirstEditor = static_cast<bool>(apvts.state.getProperty(kAutoInitialiseProperty, true));
 
     refreshSlotCountMasksFromState();
+
+    for (auto& beatIndex : currentBeatIndices)
+        beatIndex.store(-1, std::memory_order_relaxed);
 }
 
 SlotMachineAudioProcessor::~SlotMachineAudioProcessor() {}
@@ -1530,6 +1533,9 @@ void SlotMachineAudioProcessor::prepareToPlay(double sampleRate, int samplesPerB
     juce::ignoreUnused(samplesPerBlock);
     currentSampleRate = sampleRate;
     masterBeatsAccum = 0.0;
+
+    for (auto& beatIndex : currentBeatIndices)
+        beatIndex.store(-1, std::memory_order_relaxed);
 
     for (auto& s : slots)
         s.prepare(sampleRate);
@@ -1672,6 +1678,8 @@ void SlotMachineAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, j
         s.setPan(pan);
         s.setDecayMs(decayMs);
 
+        int currentBeatIndex = -1;
+
         // Always keep visual phase tied to master beat phase (even if muted or idle)
         const double rateD = (double)rate;
         if (spb > 0.0)
@@ -1685,13 +1693,35 @@ void SlotMachineAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, j
                 // --- BeatsPerCycle mode ---
                 const double stepBeats = (count > 0 ? countModeCycleBeats / (double)count : 0.0);
                 if (stepBeats > 0.0)
+                {
+                    const double cycleBeats = stepBeats * (double)count;
+                    double beatPosition = std::fmod(currBeats, cycleBeats);
+                    if (beatPosition < 0.0)
+                        beatPosition += cycleBeats;
+
+                    const double stepIndex = beatPosition / stepBeats;
+                    int computedIndex = (int)std::floor(stepIndex + 1.0e-9);
+                    if (computedIndex >= count)
+                        computedIndex = count - 1;
+                    if (computedIndex < 0)
+                        computedIndex = 0;
+
+                    if (run)
+                        currentBeatIndex = computedIndex;
+
                     s.phase = std::fmod(currBeats, stepBeats) / stepBeats;
+                }
             }
         }
         else
         {
             // keep previous phase
         }
+
+        if (timingMode != 1 || !run)
+            currentBeatIndex = -1;
+
+        currentBeatIndices[(size_t)i].store(currentBeatIndex, std::memory_order_relaxed);
 
         // --- manual click triggers (editor requests) ---
         const int manualHits = pendingManualTriggers[(size_t)i].exchange(0, std::memory_order_relaxed);
@@ -2328,6 +2358,14 @@ uint64_t SlotMachineAudioProcessor::maskForBeats(int beats)
         return std::numeric_limits<uint64_t>::max();
 
     return (1ull << beats) - 1ull;
+}
+
+int SlotMachineAudioProcessor::getSlotCurrentBeatIndex(int index) const
+{
+    if (!juce::isPositiveAndBelow(index, kNumSlots))
+        return -1;
+
+    return currentBeatIndices[(size_t)index].load(std::memory_order_relaxed);
 }
 
 double SlotMachineAudioProcessor::getSlotPhase(int index) const
