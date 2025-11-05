@@ -8,6 +8,15 @@
 
 namespace BinaryData
 {
+    extern const char*   _808SM_wav;
+    const int            _808SM_wavSize = 1037016;
+
+    extern const char*   BASSSM_wav;
+    const int            BASSSM_wavSize = 537544;
+
+    extern const char*   CLAPSM_wav;
+    const int            CLAPSM_wavSize = 419176;
+
     extern const char*   CYMBALBell_wav;
     const int            CYMBALBell_wavSize = 55378;
 
@@ -29,6 +38,9 @@ namespace BinaryData
     extern const char*   CYMBALTap_wav;
     const int            CYMBALTap_wavSize = 416160;
 
+    extern const char*   FXSM_wav;
+    const int            FXSM_wavSize = 871800;
+
     extern const char*   HATClosed_2_wav;
     const int            HATClosed_2_wavSize = 10478;
 
@@ -43,6 +55,9 @@ namespace BinaryData
 
     extern const char*   HATPedal_wav;
     const int            HATPedal_wavSize = 12858;
+
+    extern const char*   HATSM_wav;
+    const int            HATSM_wavSize = 93512;
 
     extern const char*   HATTap_wav;
     const int            HATTap_wavSize = 63408;
@@ -65,6 +80,9 @@ namespace BinaryData
     extern const char*   KICKKick_6_wav;
     const int            KICKKick_6_wavSize = 50226;
 
+    extern const char*   KICKSM_wav;
+    const int            KICKSM_wavSize = 231000;
+
     extern const char*   RIMSHOTRimshot_1_wav;
     const int            RIMSHOTRimshot_1_wavSize = 49482;
 
@@ -79,6 +97,9 @@ namespace BinaryData
 
     extern const char*   RIMSHOTRimshot_5_wav;
     const int            RIMSHOTRimshot_5_wavSize = 1462;
+
+    extern const char*   SNARESM_wav;
+    const int            SNARESM_wavSize = 470520;
 
     extern const char*   SNARESnare_1_wav;
     const int            SNARESnare_1_wavSize = 17008;
@@ -165,7 +186,7 @@ namespace BinaryData
     const int            SoloON_pngSize = 9950;
 
     // Number of elements in the namedResourceList and originalFileNames arrays.
-    const int namedResourceListSize = 52;
+    const int namedResourceListSize = 59;
 
     // Points to the start of a list of resource names.
     extern const char* namedResourceList[];

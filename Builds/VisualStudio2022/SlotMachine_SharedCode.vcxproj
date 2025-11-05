@@ -2814,6 +2814,7 @@
     </ClCompile>
     <ClCompile Include="..\..\JuceLibraryCode\BinaryData.cpp"/>
     <ClCompile Include="..\..\JuceLibraryCode\BinaryData2.cpp"/>
+    <ClCompile Include="..\..\JuceLibraryCode\BinaryData3.cpp"/>
     <ClCompile Include="..\..\JuceLibraryCode\include_juce_audio_basics.cpp"/>
     <ClCompile Include="..\..\JuceLibraryCode\include_juce_audio_devices.cpp"/>
     <ClCompile Include="..\..\JuceLibraryCode\include_juce_audio_formats.cpp"/>
@@ -4156,6 +4157,9 @@
     <ClInclude Include="..\..\JuceLibraryCode\JucePluginDefines.h"/>
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\..\Resources\Tutorial Sounds\808-SM.wav"/>
+    <None Include="..\..\Resources\Tutorial Sounds\BASS-SM.wav"/>
+    <None Include="..\..\Resources\Tutorial Sounds\CLAP-SM.wav"/>
     <None Include="..\..\Resources\Open Source Wav Files\CYMBAL-Bell.wav"/>
     <None Include="..\..\Resources\Open Source Wav Files\CYMBAL-Crash 2.wav"/>
     <None Include="..\..\Resources\Open Source Wav Files\CYMBAL-Crash.wav"/>
@@ -4163,11 +4167,13 @@
     <None Include="..\..\Resources\Open Source Wav Files\CYMBAL-Ride 3.wav"/>
     <None Include="..\..\Resources\Open Source Wav Files\CYMBAL-Ride.wav"/>
     <None Include="..\..\Resources\Open Source Wav Files\CYMBAL-Tap.wav"/>
+    <None Include="..\..\Resources\Tutorial Sounds\FX-SM.wav"/>
     <None Include="..\..\Resources\Open Source Wav Files\HAT-Closed 2.wav"/>
     <None Include="..\..\Resources\Open Source Wav Files\HAT-Closed.wav"/>
     <None Include="..\..\Resources\Open Source Wav Files\HAT-Open 2.wav"/>
     <None Include="..\..\Resources\Open Source Wav Files\HAT-Open.wav"/>
     <None Include="..\..\Resources\Open Source Wav Files\HAT-Pedal.wav"/>
+    <None Include="..\..\Resources\Tutorial Sounds\HAT-SM.wav"/>
     <None Include="..\..\Resources\Open Source Wav Files\HAT-Tap.wav"/>
     <None Include="..\..\Resources\Open Source Wav Files\KICK-Kick 1.wav"/>
     <None Include="..\..\Resources\Open Source Wav Files\KICK-Kick 2.wav"/>
@@ -4175,11 +4181,13 @@
     <None Include="..\..\Resources\Open Source Wav Files\KICK-Kick 4.wav"/>
     <None Include="..\..\Resources\Open Source Wav Files\KICK-Kick 5.wav"/>
     <None Include="..\..\Resources\Open Source Wav Files\KICK-Kick 6.wav"/>
+    <None Include="..\..\Resources\Tutorial Sounds\KICK-SM.wav"/>
     <None Include="..\..\Resources\Open Source Wav Files\RIMSHOT-Rimshot 1.wav"/>
     <None Include="..\..\Resources\Open Source Wav Files\RIMSHOT-Rimshot 2.wav"/>
     <None Include="..\..\Resources\Open Source Wav Files\RIMSHOT-Rimshot 3.wav"/>
     <None Include="..\..\Resources\Open Source Wav Files\RIMSHOT-Rimshot 4.wav"/>
     <None Include="..\..\Resources\Open Source Wav Files\RIMSHOT-Rimshot 5.wav"/>
+    <None Include="..\..\Resources\Tutorial Sounds\SNARE-SM.wav"/>
     <None Include="..\..\Resources\Open Source Wav Files\SNARE-Snare 1.wav"/>
     <None Include="..\..\Resources\Open Source Wav Files\SNARE-Snare 2.wav"/>
     <None Include="..\..\Resources\Open Source Wav Files\SNARE-Snare 3.wav"/>

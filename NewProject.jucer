@@ -6,6 +6,9 @@
               companyName="Lone Pear Logic" companyCopyright="2005">
   <MAINGROUP id="JtL4vC" name="SlotMachine">
     <GROUP id="{6DAFA626-C461-0DE7-2A87-7D1750113952}" name="Sound Samples">
+      <FILE id="ydlp9K" name="808-SM.wav" compile="0" resource="1" file="Resources/Tutorial Sounds/808-SM.wav"/>
+      <FILE id="S9E7FU" name="BASS-SM.wav" compile="0" resource="1" file="Resources/Tutorial Sounds/BASS-SM.wav"/>
+      <FILE id="oUgbLZ" name="CLAP-SM.wav" compile="0" resource="1" file="Resources/Tutorial Sounds/CLAP-SM.wav"/>
       <FILE id="vaVUkT" name="CYMBAL-Bell.wav" compile="0" resource="1" file="Resources/Open Source Wav Files/CYMBAL-Bell.wav"/>
       <FILE id="gFjosA" name="CYMBAL-Crash 2.wav" compile="0" resource="1"
             file="Resources/Open Source Wav Files/CYMBAL-Crash 2.wav"/>
@@ -17,12 +20,14 @@
             file="Resources/Open Source Wav Files/CYMBAL-Ride 3.wav"/>
       <FILE id="NjKNDt" name="CYMBAL-Ride.wav" compile="0" resource="1" file="Resources/Open Source Wav Files/CYMBAL-Ride.wav"/>
       <FILE id="KBED3N" name="CYMBAL-Tap.wav" compile="0" resource="1" file="Resources/Open Source Wav Files/CYMBAL-Tap.wav"/>
+      <FILE id="krV3FO" name="FX-SM.wav" compile="0" resource="1" file="Resources/Tutorial Sounds/FX-SM.wav"/>
       <FILE id="qUyAuc" name="HAT-Closed 2.wav" compile="0" resource="1"
             file="Resources/Open Source Wav Files/HAT-Closed 2.wav"/>
       <FILE id="spZgam" name="HAT-Closed.wav" compile="0" resource="1" file="Resources/Open Source Wav Files/HAT-Closed.wav"/>
       <FILE id="wRbKwS" name="HAT-Open 2.wav" compile="0" resource="1" file="Resources/Open Source Wav Files/HAT-Open 2.wav"/>
       <FILE id="C4Tiuq" name="HAT-Open.wav" compile="0" resource="1" file="Resources/Open Source Wav Files/HAT-Open.wav"/>
       <FILE id="gStNyx" name="HAT-Pedal.wav" compile="0" resource="1" file="Resources/Open Source Wav Files/HAT-Pedal.wav"/>
+      <FILE id="Jd3fax" name="HAT-SM.wav" compile="0" resource="1" file="Resources/Tutorial Sounds/HAT-SM.wav"/>
       <FILE id="bFrALR" name="HAT-Tap.wav" compile="0" resource="1" file="Resources/Open Source Wav Files/HAT-Tap.wav"/>
       <FILE id="bCsYwK" name="KICK-Kick 1.wav" compile="0" resource="1" file="Resources/Open Source Wav Files/KICK-Kick 1.wav"/>
       <FILE id="ZiQlZ4" name="KICK-Kick 2.wav" compile="0" resource="1" file="Resources/Open Source Wav Files/KICK-Kick 2.wav"/>
@@ -30,6 +35,7 @@
       <FILE id="mIztLK" name="KICK-Kick 4.wav" compile="0" resource="1" file="Resources/Open Source Wav Files/KICK-Kick 4.wav"/>
       <FILE id="sGc3aI" name="KICK-Kick 5.wav" compile="0" resource="1" file="Resources/Open Source Wav Files/KICK-Kick 5.wav"/>
       <FILE id="HSQsoA" name="KICK-Kick 6.wav" compile="0" resource="1" file="Resources/Open Source Wav Files/KICK-Kick 6.wav"/>
+      <FILE id="T4kJBj" name="KICK-SM.wav" compile="0" resource="1" file="Resources/Tutorial Sounds/KICK-SM.wav"/>
       <FILE id="A3VdEt" name="RIMSHOT-Rimshot 1.wav" compile="0" resource="1"
             file="Resources/Open Source Wav Files/RIMSHOT-Rimshot 1.wav"/>
       <FILE id="nQAwif" name="RIMSHOT-Rimshot 2.wav" compile="0" resource="1"
@@ -40,6 +46,7 @@
             file="Resources/Open Source Wav Files/RIMSHOT-Rimshot 4.wav"/>
       <FILE id="fewIxz" name="RIMSHOT-Rimshot 5.wav" compile="0" resource="1"
             file="Resources/Open Source Wav Files/RIMSHOT-Rimshot 5.wav"/>
+      <FILE id="rZXaTj" name="SNARE-SM.wav" compile="0" resource="1" file="Resources/Tutorial Sounds/SNARE-SM.wav"/>
       <FILE id="ra2kHs" name="SNARE-Snare 1.wav" compile="0" resource="1"
             file="Resources/Open Source Wav Files/SNARE-Snare 1.wav"/>
       <FILE id="uROuX2" name="SNARE-Snare 2.wav" compile="0" resource="1"

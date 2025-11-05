@@ -3505,6 +3505,9 @@
     <ClCompile Include="..\..\JuceLibraryCode\BinaryData2.cpp">
       <Filter>JUCE Library Code</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\JuceLibraryCode\BinaryData3.cpp">
+      <Filter>JUCE Library Code</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\JuceLibraryCode\include_juce_audio_basics.cpp">
       <Filter>JUCE Library Code</Filter>
     </ClCompile>
@@ -7499,6 +7502,15 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\..\Resources\Tutorial Sounds\808-SM.wav">
+      <Filter>SlotMachine\Sound Samples</Filter>
+    </None>
+    <None Include="..\..\Resources\Tutorial Sounds\BASS-SM.wav">
+      <Filter>SlotMachine\Sound Samples</Filter>
+    </None>
+    <None Include="..\..\Resources\Tutorial Sounds\CLAP-SM.wav">
+      <Filter>SlotMachine\Sound Samples</Filter>
+    </None>
     <None Include="..\..\Resources\Open Source Wav Files\CYMBAL-Bell.wav">
       <Filter>SlotMachine\Sound Samples</Filter>
     </None>
@@ -7520,6 +7532,9 @@
     <None Include="..\..\Resources\Open Source Wav Files\CYMBAL-Tap.wav">
       <Filter>SlotMachine\Sound Samples</Filter>
     </None>
+    <None Include="..\..\Resources\Tutorial Sounds\FX-SM.wav">
+      <Filter>SlotMachine\Sound Samples</Filter>
+    </None>
     <None Include="..\..\Resources\Open Source Wav Files\HAT-Closed 2.wav">
       <Filter>SlotMachine\Sound Samples</Filter>
     </None>
@@ -7533,6 +7548,9 @@
       <Filter>SlotMachine\Sound Samples</Filter>
     </None>
     <None Include="..\..\Resources\Open Source Wav Files\HAT-Pedal.wav">
+      <Filter>SlotMachine\Sound Samples</Filter>
+    </None>
+    <None Include="..\..\Resources\Tutorial Sounds\HAT-SM.wav">
       <Filter>SlotMachine\Sound Samples</Filter>
     </None>
     <None Include="..\..\Resources\Open Source Wav Files\HAT-Tap.wav">
@@ -7556,6 +7574,9 @@
     <None Include="..\..\Resources\Open Source Wav Files\KICK-Kick 6.wav">
       <Filter>SlotMachine\Sound Samples</Filter>
     </None>
+    <None Include="..\..\Resources\Tutorial Sounds\KICK-SM.wav">
+      <Filter>SlotMachine\Sound Samples</Filter>
+    </None>
     <None Include="..\..\Resources\Open Source Wav Files\RIMSHOT-Rimshot 1.wav">
       <Filter>SlotMachine\Sound Samples</Filter>
     </None>
@@ -7569,6 +7590,9 @@
       <Filter>SlotMachine\Sound Samples</Filter>
     </None>
     <None Include="..\..\Resources\Open Source Wav Files\RIMSHOT-Rimshot 5.wav">
+      <Filter>SlotMachine\Sound Samples</Filter>
+    </None>
+    <None Include="..\..\Resources\Tutorial Sounds\SNARE-SM.wav">
       <Filter>SlotMachine\Sound Samples</Filter>
     </None>
     <None Include="..\..\Resources\Open Source Wav Files\SNARE-Snare 1.wav">
