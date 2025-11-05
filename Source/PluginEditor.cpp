@@ -3143,7 +3143,23 @@ void SlotMachineAudioProcessorEditor::mouseDown(const juce::MouseEvent& e)
                             processor.setSlotCountMask(slotIndex, preserved | (updatedMask & active));
                         };
 
-                        auto grid = std::make_unique<CountBeatMaskGrid>(maskOptions, activeMask, std::move(maskHandler));
+                        auto highlightProvider = [this, slotIndex = i, beats]() -> int
+                        {
+                            if (!Opt::getBool(apvts, "masterRun", false))
+                                return -1;
+
+                            const int timingModeNow = Opt::getInt(apvts, "optTimingMode", 1);
+                            if (timingModeNow != 1)
+                                return -1;
+
+                            const int beatIndex = processor.getSlotCurrentBeatIndex(slotIndex);
+                            if (beatIndex < 0 || beats <= 0)
+                                return -1;
+
+                            return beatIndex % beats;
+                        };
+
+                        auto grid = std::make_unique<CountBeatMaskGrid>(maskOptions, activeMask, std::move(maskHandler), std::move(highlightProvider));
 
                         const auto screenPos = e.getScreenPosition().roundToInt();
                         const auto calloutBounds = juce::Rectangle<int>(screenPos.x, screenPos.y, 1, 1);

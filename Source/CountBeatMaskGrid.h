@@ -5,7 +5,8 @@
 #include <cstdint>
 
 class CountBeatMaskGrid : public juce::Component,
-                          private juce::Button::Listener
+                          private juce::Button::Listener,
+                          private juce::Timer
 {
 public:
     struct Options
@@ -19,7 +20,8 @@ public:
 
     CountBeatMaskGrid(Options options,
                       uint64_t initialMask,
-                      std::function<void(uint64_t)> onMaskChanged);
+                      std::function<void(uint64_t)> onMaskChanged,
+                      std::function<int()> beatHighlightProvider = {});
     ~CountBeatMaskGrid() override = default;
 
     void resized() override;
@@ -31,6 +33,9 @@ private:
     void buttonClicked(juce::Button* button) override;
     void setMask(uint64_t newMask, bool sendNotification);
     void updateButtonStatesFromMask();
+    void setHighlightedBeat(int beatIndex);
+    void updateButtonColours();
+    void timerCallback() override;
 
     static uint64_t limitMaskToBeats(uint64_t mask, int beats);
 
@@ -38,4 +43,10 @@ private:
     uint64_t mask = 0;
     std::function<void(uint64_t)> maskChanged;
     juce::OwnedArray<juce::TextButton> buttons;
+    std::function<int()> highlightProvider;
+    int highlightedBeat = -1;
+    juce::Colour buttonOffColour;
+    juce::Colour buttonOnColour;
+    juce::Colour highlightOffColour;
+    juce::Colour highlightOnColour;
 };

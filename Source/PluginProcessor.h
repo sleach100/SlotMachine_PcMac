@@ -116,6 +116,7 @@ public:
     // UI polling
     uint32_t getSlotHitCounter(int index) const;
     double   getSlotPhase(int index) const;
+    int      getSlotCurrentBeatIndex(int index) const;
     double getMasterPhase() const;
     bool exportAudioCycles(const juce::File& file, int cyclesToExport, juce::String& errorMessage);
     bool exportAudioPlaythroughCycles(const juce::File& file, int playthroughCycles, juce::String& errorMessage);
@@ -158,6 +159,7 @@ private:
 
     std::array<std::atomic<int>, kNumSlots> pendingManualTriggers;
     std::array<std::atomic<uint64_t>, kNumSlots> countBeatMasks{};
+    std::array<std::atomic<int>, kNumSlots> currentBeatIndices{};
     double currentCycleBeats = 1.0;
     double currentCyclePhase01 = 0.0;
 
