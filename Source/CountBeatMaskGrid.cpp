@@ -54,7 +54,6 @@ CountBeatMaskGrid::CountBeatMaskGrid(Options opts,
 
     buttonOffColour = juce::Colours::dimgrey.withAlpha(0.85f);
     buttonOnColour = juce::Colours::orange;
-    highlightFrameColour = juce::Colours::white;
 
     buildButtons();
     updateButtonStatesFromMask();
@@ -193,10 +192,11 @@ void CountBeatMaskGrid::paintOverChildren(juce::Graphics& g)
     if (auto* button = buttons[highlightedBeat])
     {
         auto bounds = button->getBounds().toFloat();
+        constexpr float highlightFrameThickness = 2.0f;
         const float expansion = juce::jmax(0.0f, highlightFrameThickness * 0.5f);
         bounds = bounds.expanded(expansion);
 
-        g.setColour(highlightFrameColour);
+        g.setColour(juce::Colours::white);
         g.drawRoundedRectangle(bounds, 4.0f, highlightFrameThickness);
     }
 }

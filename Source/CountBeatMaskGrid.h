@@ -48,6 +48,4 @@ private:
     int highlightedBeat = -1;
     juce::Colour buttonOffColour;
     juce::Colour buttonOnColour;
-    juce::Colour highlightFrameColour;
-    float highlightFrameThickness = 2.0f;
 };
