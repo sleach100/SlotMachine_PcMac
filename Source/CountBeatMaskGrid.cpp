@@ -197,7 +197,7 @@ void CountBeatMaskGrid::paintOverChildren(juce::Graphics& g)
         const float expansion = juce::jmax(0.0f, highlightFrameThickness * 0.5f);
         bounds = bounds.expanded(expansion);
 
-        g.setColour(juce::Colours::grey);
+        g.setColour(juce::Colours::darkorange);
         g.drawRoundedRectangle(bounds, 4.0f, highlightFrameThickness);
     }
 }
