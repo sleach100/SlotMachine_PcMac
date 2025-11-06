@@ -4839,7 +4839,7 @@ void SlotMachineAudioProcessorEditor::buttonClicked(juce::Button* b)
 
     if (b == &btnTutorial)
     {
-        // Tutorial functionality will be implemented later.
+        openTutorialVideo();
         return;
     }
 
@@ -5267,6 +5267,29 @@ void SlotMachineAudioProcessorEditor::handleVisualizerWindowCloseRequest()
     closeVisualizerWindow();
     lastShowVisualizer = false;
     setShowVisualizerParam(false);
+}
+
+void SlotMachineAudioProcessorEditor::openTutorialVideo()
+{
+    const auto executable = juce::File::getSpecialLocation(juce::File::currentExecutableFile);
+    auto tutorialFile = executable.getParentDirectory().getChildFile("tutorialslotmachine.mp4");
+
+    if (!tutorialFile.existsAsFile())
+    {
+        juce::AlertWindow::showMessageBoxAsync(
+            juce::AlertWindow::WarningIcon,
+            "Tutorial",
+            "Unable to find tutorialslotmachine.mp4 next to the application.");
+        return;
+    }
+
+    if (!tutorialFile.startAsProcess())
+    {
+        juce::AlertWindow::showMessageBoxAsync(
+            juce::AlertWindow::WarningIcon,
+            "Tutorial",
+            "Unable to open tutorialslotmachine.mp4 with the system default player.");
+    }
 }
 
 void SlotMachineAudioProcessorEditor::openUserManual()

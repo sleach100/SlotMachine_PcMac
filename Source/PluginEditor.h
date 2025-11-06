@@ -357,6 +357,7 @@ private:
 
     // ===== Helpers =====
     void buttonClicked(juce::Button*) override;
+    void openTutorialVideo();
     void openUserManual();
     void openEmbeddedSampleSelectorForSlot(int slotIndex, const juce::MouseEvent& e);
     void timerCallback() override;
