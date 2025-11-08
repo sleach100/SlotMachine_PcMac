@@ -4221,14 +4221,15 @@ void SlotMachineAudioProcessorEditor::advancePlayThrough()
     if (playThroughCyclesRemaining > 0)
         return;
 
+    const bool isRunning = startToggle.getToggleState();
+
     const int nextIndex = playThroughCurrentPattern + 1;
     if (nextIndex < patternCount)
     {
         playThroughCurrentPattern = nextIndex;
         auto nextPattern = patternsTree.getChild(playThroughCurrentPattern);
         playThroughCyclesRemaining = computePatternPlayThroughCycles(nextPattern);
-        processor.resetAllPhases(true);
-        applyPattern(playThroughCurrentPattern, true, false, false);
+        applyPattern(playThroughCurrentPattern, true, false, isRunning);
     }
     else
     {
@@ -4237,8 +4238,7 @@ void SlotMachineAudioProcessorEditor::advancePlayThrough()
             playThroughCurrentPattern = 0;
             auto nextPattern = patternsTree.getChild(playThroughCurrentPattern);
             playThroughCyclesRemaining = computePatternPlayThroughCycles(nextPattern);
-            processor.resetAllPhases(true);
-            applyPattern(playThroughCurrentPattern, true, false, false);
+            applyPattern(playThroughCurrentPattern, true, false, isRunning);
         }
         else
         {
@@ -4254,6 +4254,8 @@ void SlotMachineAudioProcessorEditor::finishPlayThrough(bool restorePattern, boo
 
     playThroughActive = false;
     setSlotControlsFrozen(false);
+
+    const bool isRunning = startToggle.getToggleState();
 
     const int restoreIndex = playThroughInitialPattern;
     playThroughInitialPattern = -1;
@@ -4273,8 +4275,7 @@ void SlotMachineAudioProcessorEditor::finishPlayThrough(bool restorePattern, boo
             const int targetIndex = juce::jlimit(0, patternCount - 1, restoreIndex);
             if (targetIndex != currentPatternIndex)
             {
-                processor.resetAllPhases(true);
-                applyPattern(targetIndex, true, false, false);
+                applyPattern(targetIndex, true, false, isRunning);
             }
             else
             {
@@ -5887,11 +5888,7 @@ void SlotMachineAudioProcessorEditor::timerCallback()
     if (patternSwitchPending && (!isRunning || wrapped))
     {
         if (isRunning)
-        {
-            // Ensure the newly applied pattern starts from the downbeat rather than
-            // continuing from the previous tab's fractional position.
-            processor.resetAllPhases(true);
-        }
+            processor.scheduleTabSwitchOnNextDownbeat(currentPatternIndex);
 
         if (pendingPatternTree.isValid())
             applyPatternTreeNow(pendingPatternTree, isRunning);
