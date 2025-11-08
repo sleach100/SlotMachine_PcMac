@@ -137,6 +137,9 @@ public:
     void setCurrentPatternIndex(int index);
     int  getCurrentPatternIndex() const;
 
+    // --- Live tab switching (audio-thread owned) ---
+    void scheduleTabSwitchOnNextDownbeat(int newTabIndex);
+
     auto& getScopeQueue() noexcept { return scopeQueue; }
     double getBpm() const noexcept { return bpmAtomic.load(std::memory_order_relaxed); }
     int    getBeatsPerBar() const noexcept { return numeratorAtomic.load(std::memory_order_relaxed); }
@@ -271,6 +274,15 @@ private:
     std::atomic<int>    numeratorAtomic { kCountModeBaseBeats };
     //-------------------
     double masterBeatsAccum = 0.0; // total beats elapsed while running (not modulo)
+
+    // --- Live tab switching (audio-thread owned) ---
+    std::atomic<int> pendingTabSwitchIndex { -1 };   // -1 = none
+    bool blockStartIsDownbeat = false;
+    int suppressHitsForSamples = 0;
+    static constexpr int kDownbeatDebounceSamples = 64;
+    double samplesUntilNextDownbeat = 0.0;
+
+    void applyTabSwitchAtBlockStart_NoResetTails(int newTabIndex);
 
     bool initialiseOnFirstEditor = true;
 

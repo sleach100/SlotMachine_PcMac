@@ -1549,6 +1549,11 @@ void SlotMachineAudioProcessor::prepareToPlay(double sampleRate, int samplesPerB
     scratchMono.setSize(1, juce::jmax(1, samplesPerBlock));
     scratchMono.clear();
 
+    pendingTabSwitchIndex.store(-1, std::memory_order_relaxed);
+    blockStartIsDownbeat = true;
+    suppressHitsForSamples = 0;
+    samplesUntilNextDownbeat = 0.0;
+
     resetAllPhases(true);
 }
 
@@ -1570,6 +1575,28 @@ void SlotMachineAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, j
     const bool run = apvts.getRawParameterValue("masterRun")->load();
     const float masterBPM = *apvts.getRawParameterValue("masterBPM");
     const double spb = (masterBPM > 0.0f ? 60.0 / (double)masterBPM : 0.0); // seconds per beat
+    const bool transportRunning = run && spb > 0.0;
+    const double samplesPerBeat = transportRunning ? spb * currentSampleRate : 0.0;
+
+    if (!transportRunning)
+    {
+        blockStartIsDownbeat = true;
+        samplesUntilNextDownbeat = 0.0;
+    }
+    else
+    {
+        blockStartIsDownbeat = (samplesUntilNextDownbeat <= 0.5);
+    }
+
+    const int requestedTab = pendingTabSwitchIndex.load(std::memory_order_acquire);
+    if (requestedTab >= 0 && blockStartIsDownbeat)
+    {
+        applyTabSwitchAtBlockStart_NoResetTails(requestedTab);
+        pendingTabSwitchIndex.store(-1, std::memory_order_release);
+        suppressHitsForSamples = kDownbeatDebounceSamples;
+    }
+
+    const int suppressedHead = juce::jlimit(0, numSamples, suppressHitsForSamples);
 
     // Always emit both audio and MIDI
     const bool wantAudio = true;
@@ -1591,7 +1618,7 @@ void SlotMachineAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, j
     // Advance master beats accumulator once per block
     const double dtSec = (double)numSamples / currentSampleRate;
     const double prevBeats = masterBeatsAccum;
-    if (run && spb > 0.0)
+    if (transportRunning)
         masterBeatsAccum += dtSec / spb;
     const double currBeats = masterBeatsAccum;
     const int timingMode = (int)std::round(apvts.getRawParameterValue("optTimingMode")->load());
@@ -1727,7 +1754,11 @@ void SlotMachineAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, j
         const int manualHits = pendingManualTriggers[(size_t)i].exchange(0, std::memory_order_relaxed);
         if (manualHits > 0)
         {
-            if (s.hasSample() && slotAudible)
+            if (suppressedHead > 0)
+            {
+                // Skip manual triggers during the debounce window at the top of the block.
+            }
+            else if (s.hasSample() && slotAudible)
             {
                 s.trigger();
 
@@ -1797,6 +1828,9 @@ void SlotMachineAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, j
                     const int hitOffset = juce::jlimit(0, numSamples - 1,
                         (int)std::floor(fracBlock * (double)numSamples + 0.5));
 
+                    if (hitOffset < suppressedHead)
+                        continue;
+
                     // Fire and mix from hit point to block end
                     s.trigger();
 
@@ -1861,6 +1895,9 @@ void SlotMachineAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, j
                 const int hitOffset = juce::jlimit(0, numSamples - 1,
                     (int)std::floor(fracBlock * (double)numSamples + 0.5));
 
+                if (hitOffset < suppressedHead)
+                    continue;
+
                 s.trigger();
 
                 if (wantMidi && slotAudible)
@@ -1889,6 +1926,20 @@ void SlotMachineAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, j
 
         s.wasAudibleLastBlock = slotAudible;
     }
+
+    if (transportRunning && samplesPerBeat > 0.0)
+    {
+        samplesUntilNextDownbeat -= numSamples;
+        while (samplesUntilNextDownbeat <= 0.0)
+            samplesUntilNextDownbeat += samplesPerBeat;
+    }
+    else
+    {
+        samplesUntilNextDownbeat = 0.0;
+    }
+
+    if (suppressHitsForSamples > 0)
+        suppressHitsForSamples = juce::jmax(0, suppressHitsForSamples - suppressedHead);
 
     if (wantAudio)
     {
@@ -1928,6 +1979,18 @@ void SlotMachineAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, j
             remaining -= chunk;
         }
     }
+}
+
+void SlotMachineAudioProcessor::scheduleTabSwitchOnNextDownbeat(int newTabIndex)
+{
+    pendingTabSwitchIndex.store(newTabIndex, std::memory_order_release);
+}
+
+void SlotMachineAudioProcessor::applyTabSwitchAtBlockStart_NoResetTails(int newTabIndex)
+{
+    juce::ignoreUnused(newTabIndex);
+    // Pattern state is swapped on the message thread; the audio thread simply
+    // honours the debounce and keeps any ringing tails alive.
 }
 
 //==============================================================================
@@ -2034,6 +2097,10 @@ void SlotMachineAudioProcessor::resetAllPhases(bool immediate)
     {
         masterBeatsAccum = 0.0;
         currentCyclePhase01 = 0.0;
+        samplesUntilNextDownbeat = 0.0;
+        blockStartIsDownbeat = true;
+        suppressHitsForSamples = 0;
+        pendingTabSwitchIndex.store(-1, std::memory_order_relaxed);
     }
 }
 
