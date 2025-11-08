@@ -706,6 +706,13 @@ namespace
             aboutLabel.setFont(createBoldFont(16.0f));
             addAndMakeVisible(aboutLabel);
 
+            contactLabel.setText("Contact:  lonepearlogic@gmail.com",
+                                 juce::dontSendNotification);
+            contactLabel.setJustificationType(juce::Justification::centred);
+            contactLabel.setColour(juce::Label::textColourId, juce::Colours::whitesmoke);
+            contactLabel.setFont(createRegularFont(15.0f));
+            addAndMakeVisible(contactLabel);
+
             registrationLabel.setText("Registered to: " + registrationInfo,
                                       juce::dontSendNotification);
             registrationLabel.setJustificationType(juce::Justification::centred);
@@ -724,12 +731,16 @@ namespace
             auto bounds = getLocalBounds().reduced(20);
 
             const int aboutLabelHeight = 48;
+            const int contactLabelHeight = 32;
             const int registrationLabelHeight = 32;
-            auto imageArea = bounds.removeFromTop(juce::jmax(120, bounds.getHeight() - aboutLabelHeight - registrationLabelHeight - 30));
+            auto imageArea = bounds.removeFromTop(juce::jmax(120, bounds.getHeight() - aboutLabelHeight - contactLabelHeight - registrationLabelHeight - 40));
             logoComponent.setBounds(imageArea);
 
             bounds.removeFromTop(20);
             aboutLabel.setBounds(bounds.removeFromTop(aboutLabelHeight));
+
+            bounds.removeFromTop(10);
+            contactLabel.setBounds(bounds.removeFromTop(contactLabelHeight));
 
             bounds.removeFromTop(10);
             registrationLabel.setBounds(bounds.removeFromTop(registrationLabelHeight));
@@ -739,6 +750,7 @@ namespace
         juce::Image logo;
         juce::ImageComponent logoComponent;
         juce::Label aboutLabel;
+        juce::Label contactLabel;
         juce::Label registrationLabel;
     };
 }
