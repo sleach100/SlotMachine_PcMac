@@ -5885,8 +5885,12 @@ void SlotMachineAudioProcessorEditor::timerCallback()
     if (wrapped)
         cycleFlash = 1.0f;                        // start flash
 
+    bool consumedWrapForPatternSwitch = false;
     if (patternSwitchPending && (!isRunning || wrapped))
     {
+        if (wrapped)
+            consumedWrapForPatternSwitch = true;
+
         if (isRunning)
             processor.scheduleTabSwitchOnNextDownbeat(currentPatternIndex);
 
@@ -5900,7 +5904,7 @@ void SlotMachineAudioProcessorEditor::timerCallback()
         pendingPatternTree = {};
     }
 
-    if (playThroughActive && wrapped)
+    if (playThroughActive && wrapped && !consumedWrapForPatternSwitch)
     {
         if (playThroughSkipNextWrap)
         {
