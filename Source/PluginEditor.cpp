@@ -5885,11 +5885,11 @@ void SlotMachineAudioProcessorEditor::timerCallback()
     if (wrapped)
         cycleFlash = 1.0f;                        // start flash
 
-    bool consumedWrapForPatternSwitch = false;
+    bool suppressPlayThroughAdvanceForWrap = false;
     if (patternSwitchPending && (!isRunning || wrapped))
     {
-        if (wrapped)
-            consumedWrapForPatternSwitch = true;
+        if (isRunning && wrapped)
+            suppressPlayThroughAdvanceForWrap = true;
 
         if (isRunning)
             processor.scheduleTabSwitchOnNextDownbeat(currentPatternIndex);
@@ -5904,7 +5904,7 @@ void SlotMachineAudioProcessorEditor::timerCallback()
         pendingPatternTree = {};
     }
 
-    if (playThroughActive && wrapped && !consumedWrapForPatternSwitch)
+    if (playThroughActive && wrapped)
     {
         if (playThroughSkipNextWrap)
         {
@@ -5912,10 +5912,10 @@ void SlotMachineAudioProcessorEditor::timerCallback()
             playThroughSkipNextWrap = false;
             playThroughWrapGuardPhase = 0.0f;
 
-            if (!shouldIgnoreWrap)
+            if (!shouldIgnoreWrap && !suppressPlayThroughAdvanceForWrap)
                 advancePlayThrough();
         }
-        else
+        else if (!suppressPlayThroughAdvanceForWrap)
         {
             advancePlayThrough();
         }
