@@ -4265,6 +4265,11 @@ void SlotMachineAudioProcessorEditor::finishPlayThrough(bool restorePattern, boo
     playThroughSkipNextWrap = false;
     playThroughWrapGuardPhase = 0.0f;
 
+    // --- NEW ORDER: stop transport first (no more hits) ---
+    if (stopTransport && startToggle.getToggleState())
+        setMasterRun(false);
+
+    // --- DEFER the restore so the last tails aren’t muted by the start tab’s solo/mute ---
     if (restorePattern)
     {
         if (!patternsTree.isValid())
@@ -4274,19 +4279,16 @@ void SlotMachineAudioProcessorEditor::finishPlayThrough(bool restorePattern, boo
         if (patternCount > 0 && restoreIndex >= 0)
         {
             const int targetIndex = juce::jlimit(0, patternCount - 1, restoreIndex);
-            if (targetIndex != currentPatternIndex)
-            {
-                applyPattern(targetIndex, true, false, isRunning);
-            }
-            else
-            {
-                patternTabs.setCurrentIndex(targetIndex);
-            }
+
+            auto safe = juce::Component::SafePointer<SlotMachineAudioProcessorEditor>(this);
+            constexpr int kTailGraceMs = 200; // let the tail finish audibly
+            juce::Timer::callAfterDelay(kTailGraceMs, [safe, targetIndex]()
+                {
+                    if (safe != nullptr)
+                        safe->applyPattern(targetIndex, true, false, false);
+                });
         }
     }
-
-    if (stopTransport && startToggle.getToggleState())
-        setMasterRun(false);
 }
 
 void SlotMachineAudioProcessorEditor::reorderPatterns(int fromIndex, int toIndex)
