@@ -3912,15 +3912,15 @@ void SlotMachineAudioProcessorEditor::applyPattern(int index, bool updateTabs, b
     currentPatternIndex = index;
     processor.setCurrentPatternIndex(currentPatternIndex);
 
-    if (updateTabs)
-        patternTabs.setCurrentIndex(currentPatternIndex);
-
     if (shouldDefer)
     {
         pendingPatternTree = pattern;
         patternSwitchPending = true;
         return;
     }
+
+    if (updateTabs)
+        patternTabs.setCurrentIndex(currentPatternIndex);
 
     patternSwitchPending = false;
     pendingPatternTree = {};
@@ -5891,7 +5891,10 @@ void SlotMachineAudioProcessorEditor::timerCallback()
             processor.scheduleTabSwitchOnNextDownbeat(currentPatternIndex);
 
         if (pendingPatternTree.isValid())
+        {
             applyPatternTreeNow(pendingPatternTree, isRunning);
+            patternTabs.setCurrentIndex(currentPatternIndex);
+        }
 
         patternSwitchPending = false;
         pendingPatternTree = {};
