@@ -4197,7 +4197,7 @@ void SlotMachineAudioProcessorEditor::beginPlayThroughAtIndex(int startIndex)
     setMasterRun(true);
 }
 
-void SlotMachineAudioProcessorEditor::advancePlayThrough()
+void SlotMachineAudioProcessorEditor::advancePlayThrough(bool applyImmediately)
 {
     if (!playThroughActive)
         return;
@@ -4222,6 +4222,7 @@ void SlotMachineAudioProcessorEditor::advancePlayThrough()
         return;
 
     const bool isRunning = startToggle.getToggleState();
+    const bool deferIfRunning = isRunning && !applyImmediately;
 
     const int nextIndex = playThroughCurrentPattern + 1;
     if (nextIndex < patternCount)
@@ -4229,7 +4230,7 @@ void SlotMachineAudioProcessorEditor::advancePlayThrough()
         playThroughCurrentPattern = nextIndex;
         auto nextPattern = patternsTree.getChild(playThroughCurrentPattern);
         playThroughCyclesRemaining = computePatternPlayThroughCycles(nextPattern);
-        applyPattern(playThroughCurrentPattern, true, false, isRunning);
+        applyPattern(playThroughCurrentPattern, true, false, deferIfRunning);
     }
     else
     {
@@ -4238,7 +4239,7 @@ void SlotMachineAudioProcessorEditor::advancePlayThrough()
             playThroughCurrentPattern = 0;
             auto nextPattern = patternsTree.getChild(playThroughCurrentPattern);
             playThroughCyclesRemaining = computePatternPlayThroughCycles(nextPattern);
-            applyPattern(playThroughCurrentPattern, true, false, isRunning);
+            applyPattern(playThroughCurrentPattern, true, false, deferIfRunning);
         }
         else
         {
@@ -5913,11 +5914,11 @@ void SlotMachineAudioProcessorEditor::timerCallback()
             playThroughWrapGuardPhase = 0.0f;
 
             if (!shouldIgnoreWrap && !suppressPlayThroughAdvanceForWrap)
-                advancePlayThrough();
+                advancePlayThrough(true);
         }
         else if (!suppressPlayThroughAdvanceForWrap)
         {
-            advancePlayThrough();
+            advancePlayThrough(true);
         }
     }
 

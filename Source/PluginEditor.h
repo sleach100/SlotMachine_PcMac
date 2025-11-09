@@ -429,7 +429,7 @@ private:
     void beginPlayThrough();
     void beginPlayThroughFromCurrentTab();
     void beginPlayThroughAtIndex(int startIndex);
-    void advancePlayThrough();
+    void advancePlayThrough(bool applyImmediately);
     void finishPlayThrough(bool restorePattern, bool stopTransport);
     void importPatternFromFile();
     void handlePatternImportFile(const juce::File& file);
