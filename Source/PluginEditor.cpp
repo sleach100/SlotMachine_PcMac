@@ -3916,6 +3916,13 @@ void SlotMachineAudioProcessorEditor::applyPattern(int index, bool updateTabs, b
     {
         pendingPatternTree = pattern;
         patternSwitchPending = true;
+#if JUCE_DEBUG
+        DBG("ED: APPLY_PATTERN_DEFER index=" << index
+            << " isRunning=" << (int)isRunning
+            << " playActive=" << (int)playThroughActive
+            << " playPat=" << playThroughCurrentPattern
+            << " cyclesRem=" << playThroughCyclesRemaining);
+#endif
         return;
     }
 
@@ -4212,11 +4219,28 @@ void SlotMachineAudioProcessorEditor::advancePlayThrough(bool applyImmediately)
         return;
     }
 
+#if JUCE_DEBUG
+    DBG("ED: ADVANCE_PLAYTHROUGH fromWrap=" << (int)applyImmediately
+        << " cyclesRem(before)=" << playThroughCyclesRemaining
+        << " currentPat=" << playThroughCurrentPattern
+        << " patternCount=" << patternCount);
+#endif
+
     if (playThroughCurrentPattern < 0 || playThroughCurrentPattern >= patternCount)
         playThroughCurrentPattern = juce::jlimit(0, patternCount - 1, playThroughCurrentPattern);
 
+#if JUCE_DEBUG
+    const int cyclesBeforeDecrement = playThroughCyclesRemaining;
+#endif
     if (playThroughCyclesRemaining > 0)
         --playThroughCyclesRemaining;
+
+#if JUCE_DEBUG
+    if (cyclesBeforeDecrement > 0)
+    {
+        DBG("ED: ADVANCE_PLAYTHROUGH cyclesRem(afterDecrement)=" << playThroughCyclesRemaining);
+    }
+#endif
 
     if (playThroughCyclesRemaining > 0)
         return;
@@ -4227,22 +4251,43 @@ void SlotMachineAudioProcessorEditor::advancePlayThrough(bool applyImmediately)
     const int nextIndex = playThroughCurrentPattern + 1;
     if (nextIndex < patternCount)
     {
+        const int oldPattern = playThroughCurrentPattern;
         playThroughCurrentPattern = nextIndex;
         auto nextPattern = patternsTree.getChild(playThroughCurrentPattern);
         playThroughCyclesRemaining = computePatternPlayThroughCycles(nextPattern);
+#if JUCE_DEBUG
+        DBG("ED: ADVANCE_PLAYTHROUGH NEXT oldPat=" << oldPattern
+            << " newPat=" << playThroughCurrentPattern
+            << " cyclesRem=" << playThroughCyclesRemaining
+            << " defer=" << (int)deferIfRunning
+            << " fromWrap=" << (int)applyImmediately);
+#endif
         applyPattern(playThroughCurrentPattern, true, false, deferIfRunning);
     }
     else
     {
         if (loopPlaythroughEnabled)
         {
+            const int oldPattern = playThroughCurrentPattern;
             playThroughCurrentPattern = 0;
             auto nextPattern = patternsTree.getChild(playThroughCurrentPattern);
             playThroughCyclesRemaining = computePatternPlayThroughCycles(nextPattern);
+#if JUCE_DEBUG
+            DBG("ED: ADVANCE_PLAYTHROUGH LOOP oldPat=" << oldPattern
+                << " newPat=" << playThroughCurrentPattern
+                << " cyclesRem=" << playThroughCyclesRemaining
+                << " defer=" << (int)deferIfRunning
+                << " fromWrap=" << (int)applyImmediately);
+#endif
             applyPattern(playThroughCurrentPattern, true, false, deferIfRunning);
         }
         else
         {
+#if JUCE_DEBUG
+            DBG("ED: ADVANCE_PLAYTHROUGH STOP fromWrap=" << (int)applyImmediately
+                << " cyclesRem=" << playThroughCyclesRemaining
+                << " currentPat=" << playThroughCurrentPattern);
+#endif
             finishPlayThrough(true, true);
         }
     }
@@ -5886,16 +5931,39 @@ void SlotMachineAudioProcessorEditor::timerCallback()
     // Detect wrap (phase jumped backwards a bit)
     const bool wrapped = (p + 0.02f) < lastPhase; // small hysteresis
     if (wrapped)
+    {
+#if JUCE_DEBUG
+        DBG("ED: PHASE_WRAP p=" << p
+            << " last=" << lastPhase
+            << " playActive=" << (int)playThroughActive
+            << " cyclesRem=" << playThroughCyclesRemaining
+            << " playPat=" << playThroughCurrentPattern
+            << " currentTab=" << currentPatternIndex
+            << " skipNext=" << (int)playThroughSkipNextWrap);
+#endif
         cycleFlash = 1.0f;                        // start flash
+    }
 
     bool suppressPlayThroughAdvanceForWrap = false;
     if (patternSwitchPending && (!isRunning || wrapped))
     {
+#if JUCE_DEBUG
+        DBG("ED: PATTERN_SWITCH_PENDING isRunning=" << (int)isRunning
+            << " wrapped=" << (int)wrapped
+            << " currentTab=" << currentPatternIndex
+            << " playActive=" << (int)playThroughActive
+            << " playPat=" << playThroughCurrentPattern);
+#endif
         if (isRunning && wrapped)
             suppressPlayThroughAdvanceForWrap = true;
 
         if (isRunning)
+        {
+#if JUCE_DEBUG
+            DBG("ED: SCHEDULE_TAB_SWITCH_ON_NEXT_DOWNBEAT tab=" << currentPatternIndex);
+#endif
             processor.scheduleTabSwitchOnNextDownbeat(currentPatternIndex);
+        }
 
         if (pendingPatternTree.isValid())
         {
@@ -5909,6 +5977,13 @@ void SlotMachineAudioProcessorEditor::timerCallback()
 
     if (playThroughActive && wrapped)
     {
+#if JUCE_DEBUG
+        DBG("ED: PLAYTHROUGH_WRAP active=" << (int)playThroughActive
+            << " skipNext=" << (int)playThroughSkipNextWrap
+            << " suppress=" << (int)suppressPlayThroughAdvanceForWrap
+            << " cyclesRem=" << playThroughCyclesRemaining
+            << " playPat=" << playThroughCurrentPattern);
+#endif
         if (playThroughSkipNextWrap)
         {
             const bool shouldIgnoreWrap = playThroughWrapGuardPhase > kPlayThroughWrapGuardThreshold;
@@ -5916,11 +5991,32 @@ void SlotMachineAudioProcessorEditor::timerCallback()
             playThroughWrapGuardPhase = 0.0f;
 
             if (!shouldIgnoreWrap && !suppressPlayThroughAdvanceForWrap)
+            {
+#if JUCE_DEBUG
+                DBG("ED: PLAYTHROUGH_ADVANCE_CALL fromWrap=1 skipNext=1 ignore=" << (int)shouldIgnoreWrap
+                    << " suppress=" << (int)suppressPlayThroughAdvanceForWrap
+                    << " cyclesRem=" << playThroughCyclesRemaining
+                    << " playPat=" << playThroughCurrentPattern);
+#endif
                 advancePlayThrough(true);
+#if JUCE_DEBUG
+                DBG("ED: PLAYTHROUGH_ADVANCE_DONE cyclesRem=" << playThroughCyclesRemaining
+                    << " playPat=" << playThroughCurrentPattern);
+#endif
+            }
         }
         else if (!suppressPlayThroughAdvanceForWrap)
         {
+#if JUCE_DEBUG
+            DBG("ED: PLAYTHROUGH_ADVANCE_CALL fromWrap=1 skipNext=0 suppress=" << (int)suppressPlayThroughAdvanceForWrap
+                << " cyclesRem=" << playThroughCyclesRemaining
+                << " playPat=" << playThroughCurrentPattern);
+#endif
             advancePlayThrough(true);
+#if JUCE_DEBUG
+            DBG("ED: PLAYTHROUGH_ADVANCE_DONE cyclesRem=" << playThroughCyclesRemaining
+                << " playPat=" << playThroughCurrentPattern);
+#endif
         }
     }
 

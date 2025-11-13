@@ -28,6 +28,31 @@ using APVTS = juce::AudioProcessorValueTreeState;
 //==============================================================================
 // 
 namespace {
+#if JUCE_DEBUG
+static int gDebugBlockCounter = 0;
+
+static void logProcessBlockState(const SlotMachineAudioProcessor& proc,
+    int numSamples,
+    bool transportRunning,
+    bool blockStartIsDownbeat,
+    double samplesUntilNextDownbeat,
+    double masterBeatsAccum,
+    double currentCycleBeats,
+    double currentCyclePhase01,
+    int currentPatternIndex)
+{
+    DBG("PB[" << gDebugBlockCounter << "] ns=" << numSamples
+        << " run=" << (int)transportRunning
+        << " downbeat=" << (int)blockStartIsDownbeat
+        << " sampToNext=" << samplesUntilNextDownbeat
+        << " BPM=" << proc.getBpm()
+        << " beatsAccum=" << masterBeatsAccum
+        << " cycleBeats=" << currentCycleBeats
+        << " phase01=" << currentCyclePhase01
+        << " pat=" << currentPatternIndex);
+}
+#endif
+
 static std::unique_ptr<juce::AudioFormatReader> makeReaderFromMemory(juce::AudioFormatManager& fm,
     const void* data, int sizeBytes)
 {
@@ -1578,6 +1603,10 @@ void SlotMachineAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, j
     const bool transportRunning = run && spb > 0.0;
     const double samplesPerBeat = transportRunning ? spb * currentSampleRate : 0.0;
 
+#if JUCE_DEBUG
+    ++gDebugBlockCounter;
+#endif
+
     if (!transportRunning)
     {
         blockStartIsDownbeat = true;
@@ -1591,9 +1620,21 @@ void SlotMachineAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, j
     const int requestedTab = pendingTabSwitchIndex.load(std::memory_order_acquire);
     if (requestedTab >= 0 && blockStartIsDownbeat)
     {
+#if JUCE_DEBUG
+        const int patternBefore = getCurrentPatternIndex();
+        DBG("PB[" << gDebugBlockCounter << "] TAB_SWITCH_APPLY requestedTab=" << requestedTab
+            << " beatsAccum=" << masterBeatsAccum
+            << " phase01=" << currentCyclePhase01
+            << " sampToNext=" << samplesUntilNextDownbeat
+            << " oldPat=" << patternBefore);
+#endif
         applyTabSwitchAtBlockStart_NoResetTails(requestedTab);
         pendingTabSwitchIndex.store(-1, std::memory_order_release);
         suppressHitsForSamples = kDownbeatDebounceSamples;
+#if JUCE_DEBUG
+        const int patternAfter = getCurrentPatternIndex();
+        DBG("PB[" << gDebugBlockCounter << "] TAB_SWITCH_DONE newPat=" << patternAfter);
+#endif
     }
 
     const int suppressedHead = juce::jlimit(0, numSamples, suppressHitsForSamples);
@@ -1676,6 +1717,21 @@ void SlotMachineAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, j
     else
         currentCyclePhase01 = 0.0;
 
+#if JUCE_DEBUG
+    if (blockStartIsDownbeat)
+    {
+        logProcessBlockState(*this,
+            numSamples,
+            transportRunning,
+            blockStartIsDownbeat,
+            samplesUntilNextDownbeat,
+            masterBeatsAccum,
+            currentCycleBeats,
+            currentCyclePhase01,
+            getCurrentPatternIndex());
+    }
+#endif
+
     // Per-slot timing/render
     for (int i = 0; i < kNumSlots; ++i)
     {
@@ -1747,6 +1803,20 @@ void SlotMachineAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, j
 
         if (timingMode != 1 || !run)
             currentBeatIndex = -1;
+
+#if JUCE_DEBUG
+        if (i == 0)
+        {
+            const int previousBeat = currentBeatIndices[(size_t)i].load(std::memory_order_relaxed);
+            if (previousBeat != currentBeatIndex)
+            {
+                DBG("PB[" << gDebugBlockCounter << "] SLOT0_BEAT prev=" << previousBeat
+                    << " new=" << currentBeatIndex
+                    << " phase01=" << currentCyclePhase01
+                    << " beatsAccum=" << masterBeatsAccum);
+            }
+        }
+#endif
 
         currentBeatIndices[(size_t)i].store(currentBeatIndex, std::memory_order_relaxed);
 
