@@ -835,19 +835,12 @@ bool renderPatternAudio(SlotMachineAudioProcessor& processor,
         }
     }
 
-    if (totalSamplesNeeded > totalSamplesTarget)
-    {
-        const int fadeSamples = juce::jlimit(1, totalSamplesTarget, 512);
-        const int fadeStart = totalSamplesTarget - fadeSamples;
-
-        for (int channel = 0; channel < renderBuffer.getNumChannels(); ++channel)
-            renderBuffer.applyGainRamp(channel, fadeStart, fadeSamples, 1.0f, 0.0f);
-    }
-
-    renderBuffer.setSize(numChannels, totalSamplesTarget, true, true, true);
+    // Use totalSamplesNeeded to preserve the tail of the last beat
+    const int finalSampleCount = totalSamplesNeeded;
+    renderBuffer.setSize(numChannels, finalSampleCount, true, true, true);
 
     rendered.buffer = std::move(renderBuffer);
-    rendered.samples = totalSamplesTarget;
+    rendered.samples = finalSampleCount;
     return true;
 }
 
