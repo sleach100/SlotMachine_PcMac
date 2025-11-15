@@ -4191,6 +4191,7 @@ void SlotMachineAudioProcessorEditor::beginPlayThroughAtIndex(int startIndex)
     playThroughActive = true;
     playThroughInitialPattern = currentPatternIndex;
     playThroughCurrentPattern = juce::jlimit(0, patternCount - 1, startIndex);
+    playThroughNextPatternPreloaded = false; // Option 5: Initialize pre-load flag
 
     setSlotControlsFrozen(true);
 
@@ -4223,7 +4224,8 @@ void SlotMachineAudioProcessorEditor::advancePlayThrough(bool applyImmediately)
     DBG("ED: ADVANCE_PLAYTHROUGH fromWrap=" << (int)applyImmediately
         << " cyclesRem(before)=" << playThroughCyclesRemaining
         << " currentPat=" << playThroughCurrentPattern
-        << " patternCount=" << patternCount);
+        << " patternCount=" << patternCount
+        << " preloaded=" << (int)playThroughNextPatternPreloaded);
 #endif
 
     if (playThroughCurrentPattern < 0 || playThroughCurrentPattern >= patternCount)
@@ -4309,6 +4311,7 @@ void SlotMachineAudioProcessorEditor::finishPlayThrough(bool restorePattern, boo
     playThroughCyclesRemaining = 0;
     playThroughSkipNextWrap = false;
     playThroughWrapGuardPhase = 0.0f;
+    playThroughNextPatternPreloaded = false; // Option 5: Reset pre-load flag
 
     // --- NEW ORDER: stop transport first (no more hits) ---
     if (stopTransport && startToggle.getToggleState())
@@ -5928,6 +5931,57 @@ void SlotMachineAudioProcessorEditor::timerCallback()
     // 0..1 over full polyrhythmic cycle
     const float p = juce::jlimit(0.0f, 1.0f, (float)processor.getMasterPhase());
 
+    // === Option 5: Pre-load next pattern BEFORE cycle wraps ===
+    // This gives samples time to load before Beat 0 triggers
+    constexpr float kPreLoadThreshold = 0.95f; // Load when 95% through cycle
+    if (playThroughActive && isRunning && !playThroughNextPatternPreloaded && p >= kPreLoadThreshold)
+    {
+        // Check if we'll advance on the next wrap
+        if (playThroughCyclesRemaining <= 1) // Will decrement to 0 or less
+        {
+            if (!patternsTree.isValid())
+                patternsTree = processor.getPatternsTree();
+
+            const int patternCount = patternsTree.getNumChildren();
+            if (patternCount > 0)
+            {
+                const int nextIndex = playThroughCurrentPattern + 1;
+                const bool hasNextPattern = (nextIndex < patternCount) || loopPlaythroughEnabled;
+
+                if (hasNextPattern)
+                {
+                    const int targetIndex = (nextIndex < patternCount) ? nextIndex : 0;
+                    auto nextPattern = patternsTree.getChild(targetIndex);
+
+#if JUCE_DEBUG
+                    DBG("ED: PRELOAD_NEXT_PATTERN phase=" << p
+                        << " currentPat=" << playThroughCurrentPattern
+                        << " nextPat=" << targetIndex
+                        << " cyclesRem=" << playThroughCyclesRemaining);
+#endif
+
+                    // Pre-load samples immediately (on message thread, safe)
+                    applyPatternTreeNow(nextPattern, true);
+                    playThroughNextPatternPreloaded = true;
+
+                    // Don't update tabs yet - that happens after wrap
+                }
+                else
+                {
+                    // No next pattern - finish playthrough NOW (before wrap)
+                    // This prevents the extra beat at the cycle boundary
+#if JUCE_DEBUG
+                    DBG("ED: PRELOAD_FINISH_EARLY phase=" << p
+                        << " currentPat=" << playThroughCurrentPattern
+                        << " cyclesRem=" << playThroughCyclesRemaining
+                        << " reason=NoNextPattern");
+#endif
+                    finishPlayThrough(true, true);
+                }
+            }
+        }
+    }
+
     // Detect wrap (phase jumped backwards a bit)
     const bool wrapped = (p + 0.02f) < lastPhase; // small hysteresis
     if (wrapped)
@@ -5977,6 +6031,9 @@ void SlotMachineAudioProcessorEditor::timerCallback()
 
     if (playThroughActive && wrapped)
     {
+        // Option 5: Reset pre-load flag after wrap completes
+        playThroughNextPatternPreloaded = false;
+
 #if JUCE_DEBUG
         DBG("ED: PLAYTHROUGH_WRAP active=" << (int)playThroughActive
             << " skipNext=" << (int)playThroughSkipNextWrap
