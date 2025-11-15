@@ -478,6 +478,7 @@ private:
     int  playThroughCyclesRemaining = 0;
     bool  playThroughSkipNextWrap = false;
     float playThroughWrapGuardPhase = 0.0f;
+    bool  playThroughNextPatternPreloaded = false;  // Option 5: Track if next pattern is pre-loaded
     bool loopPlaythroughEnabled = false;
 
     bool patternSwitchPending = false;
