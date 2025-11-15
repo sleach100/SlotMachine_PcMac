@@ -840,7 +840,8 @@ bool renderPatternAudio(SlotMachineAudioProcessor& processor,
     renderBuffer.setSize(numChannels, finalSampleCount, true, true, true);
 
     rendered.buffer = std::move(renderBuffer);
-    rendered.samples = finalSampleCount;
+    rendered.samples = finalSampleCount;                  // Full length including tail
+    rendered.beatAlignedSamples = totalSamplesTarget;     // Beat-aligned boundary for positioning
     return true;
 }
 
@@ -2586,7 +2587,8 @@ bool SlotMachineAudioProcessor::exportAudioPlaythroughCycles(const juce::File& d
     std::vector<RenderedPatternAudio> renderedPatterns;
     renderedPatterns.reserve((size_t)patternCount);
 
-    int64_t samplesPerPlaythrough = 0;
+    int64_t beatAlignedSamplesPerPlaythrough = 0;
+    int maxTailSamples = 0;
 
     for (int i = 0; i < patternCount; ++i)
     {
@@ -2598,20 +2600,25 @@ bool SlotMachineAudioProcessor::exportAudioPlaythroughCycles(const juce::File& d
         if (!::renderPatternAudio(*this, data, patternCycles, engineSampleRate, rendered, errorMessage))
             return false;
 
-        samplesPerPlaythrough += rendered.samples;
+        beatAlignedSamplesPerPlaythrough += rendered.beatAlignedSamples;
+        const int tailSamples = rendered.samples - rendered.beatAlignedSamples;
+        maxTailSamples = juce::jmax(maxTailSamples, tailSamples);
+
         renderedPatterns.emplace_back();
         auto& stored = renderedPatterns.back();
         stored.samples = rendered.samples;
+        stored.beatAlignedSamples = rendered.beatAlignedSamples;
         stored.buffer.makeCopyOf(rendered.buffer);
     }
 
-    if (samplesPerPlaythrough <= 0)
+    if (beatAlignedSamplesPerPlaythrough <= 0)
     {
         errorMessage = "Export length is zero.";
         return false;
     }
 
-    const int64_t totalSamplesInt64 = samplesPerPlaythrough * (int64_t)playthroughCycles;
+    // Calculate total: beat-aligned duration for all playthroughs, plus tail space for the final pattern
+    const int64_t totalSamplesInt64 = beatAlignedSamplesPerPlaythrough * (int64_t)playthroughCycles + (int64_t)maxTailSamples;
     if (totalSamplesInt64 <= 0 || totalSamplesInt64 > std::numeric_limits<int>::max())
     {
         errorMessage = "Export length is too large.";
@@ -2625,23 +2632,47 @@ bool SlotMachineAudioProcessor::exportAudioPlaythroughCycles(const juce::File& d
     combinedBuffer.clear();
 
     int writePosition = 0;
+    int lastPatternEnd = 0;  // Track where the previous pattern's buffer ends (including tail)
+
     for (int cycle = 0; cycle < playthroughCycles; ++cycle)
     {
         for (const auto& rendered : renderedPatterns)
         {
-            if (rendered.samples <= 0)
+            if (rendered.beatAlignedSamples <= 0)
                 continue;
 
             const int remaining = combinedBuffer.getNumSamples() - writePosition;
             if (remaining <= 0)
                 break;
 
-            const int samples = juce::jmin(rendered.samples, remaining);
+            const int samplesToCopy = juce::jmin(rendered.samples, remaining);
 
-            for (int channel = 0; channel < numChannels; ++channel)
-                combinedBuffer.copyFrom(channel, writePosition, rendered.buffer, channel, 0, samples);
+            // Check if this pattern overlaps with the previous pattern's tail
+            if (lastPatternEnd > writePosition)
+            {
+                // There's an overlap - we need to mix the overlapping region
+                const int overlapSamples = juce::jmin(lastPatternEnd - writePosition, samplesToCopy);
+                const int nonOverlapSamples = samplesToCopy - overlapSamples;
 
-            writePosition += samples;
+                for (int channel = 0; channel < numChannels; ++channel)
+                {
+                    // Mix overlapping region where previous pattern's tail extends
+                    combinedBuffer.addFrom(channel, writePosition, rendered.buffer, channel, 0, overlapSamples);
+
+                    // Copy non-overlapping region
+                    if (nonOverlapSamples > 0)
+                        combinedBuffer.copyFrom(channel, writePosition + overlapSamples, rendered.buffer, channel, overlapSamples, nonOverlapSamples);
+                }
+            }
+            else
+            {
+                // No overlap - just copy everything
+                for (int channel = 0; channel < numChannels; ++channel)
+                    combinedBuffer.copyFrom(channel, writePosition, rendered.buffer, channel, 0, samplesToCopy);
+            }
+
+            lastPatternEnd = writePosition + samplesToCopy;
+            writePosition += rendered.beatAlignedSamples;
         }
     }
 
