@@ -5579,13 +5579,42 @@ void SlotMachineAudioProcessorEditor::doSavePreset()
             juce::ignoreUnused(chooser);
             fileDialogActive = false;
             auto f = fc.getResult();
-            if (f.getFullPathName().isNotEmpty())
+            if (f.getFullPathName().isEmpty())
+                return;
+
+            if (!f.hasFileExtension(".xml"))
+                f = f.withFileExtension(".xml");
+
+            // Lambda to perform the actual save
+            auto performSave = [this, f]()
             {
-                if (!f.hasFileExtension(".xml"))
-                    f = f.withFileExtension(".xml");
                 auto state = processor.copyStateWithVersion();
                 if (auto xml = state.createXml())
                     xml->writeTo(f);
+            };
+
+            // Check if file exists and ask user if they want to overwrite
+            if (f.exists())
+            {
+                auto options = juce::MessageBoxOptions()
+                    .withIconType(juce::MessageBoxIconType::QuestionIcon)
+                    .withTitle("File Already Exists")
+                    .withMessage("The file \"" + f.getFileName() + "\" already exists. Do you want to overwrite it?")
+                    .withButton("Overwrite")
+                    .withButton("Cancel");
+
+                juce::AlertWindow::showAsync(options,
+                    juce::ModalCallbackFunction::create([performSave](int result)
+                    {
+                        if (result == 1) // User clicked "Overwrite"
+                            performSave();
+                        // Otherwise user clicked "Cancel" or closed dialog - do nothing
+                    }));
+            }
+            else
+            {
+                // File doesn't exist, proceed with save
+                performSave();
             }
         });
 }
