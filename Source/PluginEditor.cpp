@@ -5754,6 +5754,14 @@ void SlotMachineAudioProcessorEditor::doResetAll(bool persistOptions)
 
     resetProgressVisuals();
 
+    // Reset Tab A's Repeat value to 0
+    if (patternsTree.isValid() && patternsTree.getNumChildren() > 0)
+    {
+        auto tabA = patternsTree.getChild(0);
+        if (tabA.isValid())
+            tabA.setProperty(kPatternRepeatProperty, 0, nullptr);
+    }
+
     // Persist options (Standalone fallback)
     if (persistOptions)
         saveOptionsToDisk(apvts);
