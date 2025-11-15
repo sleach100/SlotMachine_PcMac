@@ -315,7 +315,8 @@ struct OfflinePatternData
 struct RenderedPatternAudio
 {
     juce::AudioBuffer<float> buffer;
-    int samples = 0;
+    int samples = 0;               // Total samples including tail
+    int beatAlignedSamples = 0;    // Samples at beat-aligned boundary (for positioning)
 };
 
 struct RenderedPatternMidi
