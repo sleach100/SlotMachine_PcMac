@@ -5966,6 +5966,18 @@ void SlotMachineAudioProcessorEditor::timerCallback()
 
                     // Don't update tabs yet - that happens after wrap
                 }
+                else
+                {
+                    // No next pattern - finish playthrough NOW (before wrap)
+                    // This prevents the extra beat at the cycle boundary
+#if JUCE_DEBUG
+                    DBG("ED: PRELOAD_FINISH_EARLY phase=" << p
+                        << " currentPat=" << playThroughCurrentPattern
+                        << " cyclesRem=" << playThroughCyclesRemaining
+                        << " reason=NoNextPattern");
+#endif
+                    finishPlayThrough(true, true);
+                }
             }
         }
     }
