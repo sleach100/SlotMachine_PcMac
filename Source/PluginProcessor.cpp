@@ -2680,6 +2680,16 @@ bool SlotMachineAudioProcessor::exportMidiCycles(const juce::File& destination, 
     mf.setTicksPerQuarterNote(ppq);
     mf.addTrack(rendered.sequence);
 
+    // Delete existing file if it exists (to allow overwriting)
+    if (destination.existsAsFile())
+    {
+        if (!destination.deleteFile())
+        {
+            errorMessage = "Couldn't overwrite existing file:\n" + destination.getFullPathName();
+            return false;
+        }
+    }
+
     juce::FileOutputStream os(destination);
     if (!os.openedOk())
     {
@@ -2790,6 +2800,16 @@ bool SlotMachineAudioProcessor::exportMidiPlaythroughCycles(const juce::File& de
     juce::MidiFile mf;
     mf.setTicksPerQuarterNote(ppq);
     mf.addTrack(combined);
+
+    // Delete existing file if it exists (to allow overwriting)
+    if (destination.existsAsFile())
+    {
+        if (!destination.deleteFile())
+        {
+            errorMessage = "Couldn't overwrite existing file:\n" + destination.getFullPathName();
+            return false;
+        }
+    }
 
     juce::FileOutputStream os(destination);
     if (!os.openedOk())
