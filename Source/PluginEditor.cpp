@@ -5182,6 +5182,20 @@ void SlotMachineAudioProcessorEditor::beginAudioExportWithCycles(int cyclesReque
             if (!file.hasFileExtension(".wav"))
                 file = file.withFileExtension(".wav");
 
+            // Check if file exists and ask user if they want to overwrite
+            if (file.exists())
+            {
+                bool overwrite = juce::AlertWindow::showOkCancelBox(
+                    juce::AlertWindow::QuestionIcon,
+                    "File Already Exists",
+                    "The file \"" + file.getFileName() + "\" already exists. Do you want to overwrite it?",
+                    "Overwrite",
+                    "Cancel");
+
+                if (!overwrite)
+                    return; // User chose to cancel
+            }
+
             juce::String error;
             const bool ok = exportPlaythrough
                 ? processor.exportAudioPlaythroughCycles(file, cyclesRequested, error)
@@ -5250,6 +5264,20 @@ void SlotMachineAudioProcessorEditor::beginMidiExportWithCycles(int cyclesReques
 
             if (!file.hasFileExtension(".mid"))
                 file = file.withFileExtension(".mid");
+
+            // Check if file exists and ask user if they want to overwrite
+            if (file.exists())
+            {
+                bool overwrite = juce::AlertWindow::showOkCancelBox(
+                    juce::AlertWindow::QuestionIcon,
+                    "File Already Exists",
+                    "The file \"" + file.getFileName() + "\" already exists. Do you want to overwrite it?",
+                    "Overwrite",
+                    "Cancel");
+
+                if (!overwrite)
+                    return; // User chose to cancel
+            }
 
             juce::String error;
             const bool ok = exportPlaythrough
