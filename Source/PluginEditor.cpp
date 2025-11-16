@@ -6024,9 +6024,34 @@ void SlotMachineAudioProcessorEditor::timerCallback()
     // 0..1 over full polyrhythmic cycle
     const float p = juce::jlimit(0.0f, 1.0f, (float)processor.getMasterPhase());
 
+    // === Apply pending manual tab switches early (before cycle wraps) ===
+    // This gives the audio thread time to apply the switch at the upcoming downbeat,
+    // preventing the extra cycle delay that occurs when scheduling at wrap time.
+    constexpr float kPreLoadThreshold = 0.95f; // Load when 95% through cycle
+    if (patternSwitchPending && isRunning && p >= kPreLoadThreshold)
+    {
+#if JUCE_DEBUG
+        DBG("ED: PATTERN_SWITCH_PRELOAD phase=" << p
+            << " currentTab=" << currentPatternIndex
+            << " playActive=" << (int)playThroughActive);
+#endif
+        // Schedule tab switch for the upcoming downbeat (at wrap)
+        processor.scheduleTabSwitchOnNextDownbeat(currentPatternIndex);
+
+        // Pre-load samples immediately (on message thread, safe)
+        if (pendingPatternTree.isValid())
+        {
+            applyPatternTreeNow(pendingPatternTree, isRunning);
+            patternTabs.setCurrentIndex(currentPatternIndex);
+        }
+
+        // Clear pending flags
+        patternSwitchPending = false;
+        pendingPatternTree = {};
+    }
+
     // === Option 5: Pre-load next pattern BEFORE cycle wraps ===
     // This gives samples time to load before Beat 0 triggers
-    constexpr float kPreLoadThreshold = 0.95f; // Load when 95% through cycle
     if (playThroughActive && isRunning && !playThroughNextPatternPreloaded && p >= kPreLoadThreshold)
     {
         // Check if we'll advance on the next wrap
