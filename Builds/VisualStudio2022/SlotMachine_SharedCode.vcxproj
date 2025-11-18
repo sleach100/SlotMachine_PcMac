@@ -139,6 +139,7 @@
   <ItemGroup>
     <ClCompile Include="..\..\Source\PluginProcessor.cpp" />
     <ClCompile Include="..\..\Source\PluginEditor.cpp" />
+    <ClCompile Include="..\..\Source\WindowsPowerMonitor.cpp" />
     <ClCompile Include="..\..\Source\LicenseRegistry.cpp" />
     <ClCompile Include="..\..\Source\BeatsQuickPickGrid.cpp" />
     <ClCompile Include="..\..\Source\CountBeatMaskGrid.cpp" />
@@ -2837,6 +2838,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\Source\PluginProcessor.h" />
     <ClInclude Include="..\..\Source\PluginEditor.h" />
+    <ClInclude Include="..\..\Source\WindowsPowerMonitor.h" />
     <ClInclude Include="..\..\Source\LicenseRegistry.h" />
     <ClInclude Include="..\..\Source\BeatsQuickPickGrid.h" />
     <ClInclude Include="..\..\Source\CountBeatMaskGrid.h" />

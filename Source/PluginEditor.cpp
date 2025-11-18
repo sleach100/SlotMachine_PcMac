@@ -3097,6 +3097,18 @@ void SlotMachineAudioProcessorEditor::parentHierarchyChanged()
 {
     juce::AudioProcessorEditor::parentHierarchyChanged();
     updateStandaloneWindowTitle();
+
+#if JUCE_WINDOWS && JUCE_STANDALONE_APPLICATION
+    // Initialize the Windows power monitor when the window hierarchy is established
+    // This handles audio device reconnection after sleep/wake
+    if (powerMonitor == nullptr && getTopLevelComponent() != nullptr)
+    {
+        powerMonitor = std::make_unique<WindowsPowerMonitor>();
+        powerMonitor->setReconnectDelayMs(5000);  // 5-second delay after wake
+        powerMonitor->attachToWindow(this);
+        DBG("WindowsPowerMonitor initialized and attached");
+    }
+#endif
 }
 
 void SlotMachineAudioProcessorEditor::mouseDown(const juce::MouseEvent& e)

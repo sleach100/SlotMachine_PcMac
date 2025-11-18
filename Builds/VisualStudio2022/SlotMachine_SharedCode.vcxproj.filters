@@ -677,6 +677,9 @@
     </ClCompile>
     <ClCompile Include="..\..\Source\PluginEditor.cpp">
       <Filter>SlotMachine\Source</Filter>
+    <ClCompile Include="..\..\Source\WindowsPowerMonitor.cpp">
+      <Filter>SlotMachine\Source</Filter>
+    </ClCompile>
     </ClCompile>
     <ClCompile Include="..\..\Source\LicenseRegistry.cpp">
       <Filter>SlotMachine\Source</Filter>
@@ -3421,6 +3424,9 @@
     </ClInclude>
     <ClInclude Include="..\..\Source\PluginEditor.h">
       <Filter>SlotMachine\Source</Filter>
+    <ClInclude Include="..\..\Source\WindowsPowerMonitor.h">
+      <Filter>SlotMachine\Source</Filter>
+    </ClInclude>
     </ClInclude>
     <ClInclude Include="..\..\Source\LicenseRegistry.h">
       <Filter>SlotMachine\Source</Filter>

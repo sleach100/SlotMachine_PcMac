@@ -12,6 +12,7 @@
 #include "PluginProcessor.h"
 #include "WaveformUtils.h"
 #include "AppLookAndFeel.h"
+#include "WindowsPowerMonitor.h"
 
 class PolyrhythmVizComponent;
 
@@ -491,6 +492,11 @@ private:
     int patternWarningCounter = 0;
     bool lastAudioExportPlaythrough = false;
     bool lastMidiExportPlaythrough = false;
+
+#if JUCE_WINDOWS && JUCE_STANDALONE_APPLICATION
+    // Windows power monitor for handling audio reconnection after sleep/wake
+    std::unique_ptr<WindowsPowerMonitor> powerMonitor;
+#endif
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SlotMachineAudioProcessorEditor)
 };
