@@ -2,10 +2,8 @@
 
 #if JUCE_WINDOWS && JUCE_STANDALONE_APPLICATION
 
-// Need to include this to access StandalonePluginHolder
 #include <map>
 #include <iostream>
-#include <juce_audio_plugin_client/juce_audio_plugin_client.h>
 
 // Map of HWND to WindowsPowerMonitor instance for the static callback
 static std::map<HWND, WindowsPowerMonitor*> windowMonitorMap;
@@ -29,10 +27,13 @@ WindowsPowerMonitor::~WindowsPowerMonitor()
     logMessage("WindowsPowerMonitor destroyed");
 }
 
-void WindowsPowerMonitor::attachToWindow(juce::Component* editorComponent)
+void WindowsPowerMonitor::attachToWindow(juce::Component* editorComponent, juce::AudioDeviceManager* deviceManager)
 {
-    if (editorComponent == nullptr)
+    if (editorComponent == nullptr || deviceManager == nullptr)
         return;
+
+    // Store the audio device manager
+    audioDeviceManager = deviceManager;
 
     // Find the top-level window
     auto* topLevel = editorComponent->getTopLevelComponent();
@@ -120,16 +121,15 @@ LRESULT CALLBACK WindowsPowerMonitor::windowProc(HWND hwnd, UINT msg, WPARAM wPa
 void WindowsPowerMonitor::handleSystemSuspend()
 {
     // Save the current audio device setup before the system goes to sleep
-    auto* deviceManager = getAudioDeviceManager();
-    if (deviceManager != nullptr)
+    if (audioDeviceManager != nullptr)
     {
-        deviceManager->getAudioDeviceSetup(savedSetup);
+        audioDeviceManager->getAudioDeviceSetup(savedSetup);
         hasStoredSetup = true;
         logMessage("Saved audio device setup: " + savedSetup.outputDeviceName);
 
         // Close the audio device to avoid issues during sleep
         logMessage("Closing audio device before sleep");
-        deviceManager->closeAudioDevice();
+        audioDeviceManager->closeAudioDevice();
     }
     else
     {
@@ -153,8 +153,7 @@ void WindowsPowerMonitor::timerCallback()
 
 void WindowsPowerMonitor::reconnectAudioDevice()
 {
-    auto* deviceManager = getAudioDeviceManager();
-    if (deviceManager == nullptr)
+    if (audioDeviceManager == nullptr)
     {
         logMessage("Error: Could not access AudioDeviceManager for reconnection");
         return;
@@ -169,14 +168,14 @@ void WindowsPowerMonitor::reconnectAudioDevice()
     logMessage("Reconnecting audio device: " + savedSetup.outputDeviceName);
 
     // Attempt to restore the previous audio device setup
-    juce::String error = deviceManager->setAudioDeviceSetup(savedSetup, true);
+    juce::String error = audioDeviceManager->setAudioDeviceSetup(savedSetup, true);
 
     if (error.isEmpty())
     {
         logMessage("Successfully reconnected audio device");
 
         // Verify the device is actually working
-        if (auto* currentDevice = deviceManager->getCurrentAudioDevice())
+        if (auto* currentDevice = audioDeviceManager->getCurrentAudioDevice())
         {
             logMessage("Current device: " + currentDevice->getName() +
                       " (" + juce::String(currentDevice->getCurrentSampleRate()) + " Hz, " +
@@ -196,24 +195,12 @@ void WindowsPowerMonitor::reconnectAudioDevice()
         fallbackSetup.sampleRate = savedSetup.sampleRate;
         fallbackSetup.bufferSize = savedSetup.bufferSize;
 
-        juce::String fallbackError = deviceManager->initialiseWithDefaultDevices(2, 2);
+        juce::String fallbackError = audioDeviceManager->initialiseWithDefaultDevices(2, 2);
         if (fallbackError.isEmpty())
             logMessage("Successfully initialized with default device");
         else
             logMessage("Failed to initialize with default device: " + fallbackError);
     }
-}
-
-juce::AudioDeviceManager* WindowsPowerMonitor::getAudioDeviceManager()
-{
-    // Access the StandalonePluginHolder's AudioDeviceManager
-    // This is the recommended way to access it in JUCE standalone apps
-    // Note: StandalonePluginHolder is in the global namespace, not juce::
-    if (auto* holder = StandalonePluginHolder::getInstance())
-    {
-        return &holder->deviceManager;
-    }
-    return nullptr;
 }
 
 void WindowsPowerMonitor::logMessage(const juce::String& message)

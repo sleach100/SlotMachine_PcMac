@@ -13,6 +13,10 @@
 #include <cstring>
 #include <string>
 
+#if JUCE_WINDOWS && JUCE_STANDALONE_APPLICATION
+#include <juce_audio_plugin_client/juce_audio_plugin_client.h>
+#endif
+
 #if __has_include("BinaryData.h")
 #include "BinaryData.h"
 #else
@@ -3092,7 +3096,6 @@ SlotMachineAudioProcessorEditor::~SlotMachineAudioProcessorEditor()
     closeVisualizerWindow();
     apvts.removeParameterListener("optTimingMode", this);
 }
-
 void SlotMachineAudioProcessorEditor::parentHierarchyChanged()
 {
     juce::AudioProcessorEditor::parentHierarchyChanged();
@@ -3103,12 +3106,17 @@ void SlotMachineAudioProcessorEditor::parentHierarchyChanged()
     // This handles audio device reconnection after sleep/wake
     if (powerMonitor == nullptr && getTopLevelComponent() != nullptr)
     {
-        powerMonitor = std::make_unique<WindowsPowerMonitor>();
-        powerMonitor->setReconnectDelayMs(5000);  // 5-second delay after wake
-        powerMonitor->attachToWindow(this);
-        DBG("WindowsPowerMonitor initialized and attached");
+        // Get the AudioDeviceManager from the standalone plugin holder
+        if (auto* holder = StandalonePluginHolder::getInstance())
+        {
+            powerMonitor = std::make_unique<WindowsPowerMonitor>();
+            powerMonitor->setReconnectDelayMs(5000);  // 5-second delay after wake
+            powerMonitor->attachToWindow(this, &holder->deviceManager);
+            DBG("WindowsPowerMonitor initialized and attached");
+        }
     }
 #endif
+}
 }
 
 void SlotMachineAudioProcessorEditor::mouseDown(const juce::MouseEvent& e)

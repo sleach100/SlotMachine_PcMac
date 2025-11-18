@@ -50,8 +50,11 @@ public:
     /**
      * Attaches the power monitor to the standalone application window.
      * This must be called after the editor is added to the window hierarchy.
+     *
+     * @param editorComponent The editor component to attach to
+     * @param deviceManager Pointer to the AudioDeviceManager to monitor/reconnect
      */
-    void attachToWindow(juce::Component* editorComponent);
+    void attachToWindow(juce::Component* editorComponent, juce::AudioDeviceManager* deviceManager);
 
     /**
      * Sets the delay (in milliseconds) to wait after system wake before
@@ -72,7 +75,8 @@ private:
     void handleSystemResume();
     void reconnectAudioDevice();
 
-    juce::AudioDeviceManager* getAudioDeviceManager();
+    // Audio device manager (not owned)
+    juce::AudioDeviceManager* audioDeviceManager = nullptr;
 
     // Stored audio device setup
     juce::AudioDeviceManager::AudioDeviceSetup savedSetup;
