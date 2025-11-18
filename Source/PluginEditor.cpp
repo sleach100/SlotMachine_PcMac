@@ -14,7 +14,8 @@
 #include <string>
 
 #if JUCE_WINDOWS && JUCE_STANDALONE_APPLICATION
-#include <juce_audio_plugin_client/juce_audio_plugin_client.h>
+// Include standalone plugin holder for audio device access
+#include <juce_audio_plugin_client/Standalone/juce_StandaloneFilterApp.h>
 #endif
 
 #if __has_include("BinaryData.h")
@@ -3096,6 +3097,7 @@ SlotMachineAudioProcessorEditor::~SlotMachineAudioProcessorEditor()
     closeVisualizerWindow();
     apvts.removeParameterListener("optTimingMode", this);
 }
+
 void SlotMachineAudioProcessorEditor::parentHierarchyChanged()
 {
     juce::AudioProcessorEditor::parentHierarchyChanged();
@@ -3116,7 +3118,6 @@ void SlotMachineAudioProcessorEditor::parentHierarchyChanged()
         }
     }
 #endif
-}
 }
 
 void SlotMachineAudioProcessorEditor::mouseDown(const juce::MouseEvent& e)
