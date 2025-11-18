@@ -3,10 +3,12 @@
 // Always compile this file since it's in the StandalonePlugin project
 // The preprocessor guards in the header ensure this is only called on Windows standalone
 
+// Include basic JUCE headers needed for all platforms
+#include <juce_gui_basics/juce_gui_basics.h>
+
 #if JUCE_WINDOWS
 
 #include "WindowsPowerMonitor.h"
-#include <juce_gui_basics/juce_gui_basics.h>
 
 // Include JUCE standalone wrapper to access StandalonePluginHolder
 // This file is ONLY compiled in standalone builds
@@ -38,6 +40,9 @@ WindowsPowerMonitor* createAndAttachPowerMonitor(juce::Component* editorComponen
 } // namespace StandalonePowerMonitorHelper
 
 #else
+
+// Forward declare for non-Windows stub
+class WindowsPowerMonitor;
 
 // Provide stub implementation for non-Windows builds (shouldn't be called)
 namespace StandalonePowerMonitorHelper
