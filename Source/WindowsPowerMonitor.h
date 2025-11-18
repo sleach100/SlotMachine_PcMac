@@ -6,8 +6,26 @@
 
 #if JUCE_WINDOWS && JUCE_STANDALONE_APPLICATION
 
+// Prevent Windows macro pollution before including windows.h
+#ifndef NOMINMAX
+ #define NOMINMAX
+#endif
+
+#ifndef WIN32_LEAN_AND_MEAN
+ #define WIN32_LEAN_AND_MEAN
+#endif
+
 // Include Windows headers for power management
 #include <windows.h>
+
+// Undefine problematic Windows macros that conflict with C++ code
+#ifdef max
+ #undef max
+#endif
+
+#ifdef min
+ #undef min
+#endif
 
 /**
  * WindowsPowerMonitor
