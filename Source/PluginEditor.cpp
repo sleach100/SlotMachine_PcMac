@@ -14,8 +14,12 @@
 #include <string>
 
 #if JUCE_WINDOWS && JUCE_STANDALONE_APPLICATION
-// Include standalone plugin holder for audio device access
-#include <juce_audio_plugin_client/Standalone/juce_StandaloneFilterApp.h>
+// Declare StandalonePluginHolder (defined in JUCE standalone wrapper)
+struct StandalonePluginHolder
+{
+    static StandalonePluginHolder* getInstance();
+    juce::AudioDeviceManager deviceManager;
+};
 #endif
 
 #if __has_include("BinaryData.h")
