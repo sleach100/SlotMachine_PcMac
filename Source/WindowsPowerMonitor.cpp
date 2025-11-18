@@ -208,7 +208,8 @@ juce::AudioDeviceManager* WindowsPowerMonitor::getAudioDeviceManager()
 {
     // Access the StandalonePluginHolder's AudioDeviceManager
     // This is the recommended way to access it in JUCE standalone apps
-    if (auto* holder = juce::StandalonePluginHolder::getInstance())
+    // Note: StandalonePluginHolder is in the global namespace, not juce::
+    if (auto* holder = StandalonePluginHolder::getInstance())
     {
         return &holder->deviceManager;
     }

@@ -2,8 +2,12 @@
 
 #include <juce_audio_devices/juce_audio_devices.h>
 #include <juce_events/juce_events.h>
+#include <juce_gui_basics/juce_gui_basics.h>
 
 #if JUCE_WINDOWS && JUCE_STANDALONE_APPLICATION
+
+// Include Windows headers for power management
+#include <windows.h>
 
 /**
  * WindowsPowerMonitor
