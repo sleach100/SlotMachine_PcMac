@@ -41,13 +41,18 @@ using namespace juce;
 static std::unique_ptr<WindowsPowerMonitor> g_powerMonitor;
 
 // Timer to check for editor readiness and initialize power monitor
-struct StandalonePowerMonitorInitializer : public Timer
+struct StandalonePowerMonitorInitializer : public Timer, public DeletedAtShutdown
 {
     int checkCount = 0;
 
     StandalonePowerMonitorInitializer()
     {
-        DBG("StandalonePowerMonitorInitializer created - starting timer");
+        // Don't start timer in constructor - JUCE message manager may not be running yet
+    }
+
+    void startChecking()
+    {
+        DBG("StandalonePowerMonitorInitializer: Starting initialization checks");
         startTimer(100);  // Check every 100ms
     }
 
@@ -108,9 +113,34 @@ struct StandalonePowerMonitorInitializer : public Timer
             stopTimer();  // Stop checking once initialized
         }
     }
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(StandalonePowerMonitorInitializer)
 };
 
-// Global instance that starts checking
-static StandalonePowerMonitorInitializer g_initializer;
+// Start initialization after JUCE is fully running
+// This uses JUCE's initialization callback mechanism
+struct PowerMonitorStarter : public CallbackMessage
+{
+    void messageCallback() override
+    {
+        DBG("PowerMonitorStarter: JUCE message thread is running, creating initializer");
+        auto* initializer = new StandalonePowerMonitorInitializer();
+        initializer->startChecking();
+    }
+};
+
+// Launcher that safely starts after static initialization
+struct PowerMonitorLauncher
+{
+    PowerMonitorLauncher()
+    {
+        // Post a message to start initialization once the message loop is running
+        // This is safe to call even if the message manager isn't running yet
+        (new PowerMonitorStarter())->post();
+    }
+};
+
+// Global launcher - this is safe to construct at static init time
+static PowerMonitorLauncher g_launcher;
 
 #endif // JUCE_WINDOWS && JUCE_STANDALONE_APPLICATION
