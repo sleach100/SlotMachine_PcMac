@@ -9,19 +9,33 @@
 
 using namespace juce;
 
-// IMPORTANT: StandalonePluginHolder is in the GLOBAL namespace, not juce::
-// Based on linker errors, the actual JUCE class is: "class StandalonePluginHolder"
-// We declare it here to match. The actual definition comes from JUCE's compiled code.
-class StandalonePluginHolder
-{
-public:
-    static StandalonePluginHolder* getInstance();
+// Check if we can include the JUCE standalone header
+// If this fails, please add "C:\JUCE\modules\juce_audio_plugin_client" to your include path
+#if defined(_MSC_VER)
+    #pragma message("Attempting to locate juce_audio_plugin_client module...")
+#endif
 
-    // Public members that we need to access
-    // These MUST match the actual JUCE definition exactly
-    juce::AudioDeviceManager deviceManager;
-    std::unique_ptr<juce::AudioProcessor> processor;
-};
+// Try including with different possible paths
+#if __has_include(<juce_audio_plugin_client/Standalone/juce_StandaloneFilterWindow.h>)
+    #include <juce_audio_plugin_client/Standalone/juce_StandaloneFilterWindow.h>
+    #define JUCE_STANDALONE_HEADER_FOUND 1
+#else
+    // Fall back to forward declaration if header not found
+    #define JUCE_STANDALONE_HEADER_FOUND 0
+    #if defined(_MSC_VER)
+        #pragma message("Warning: Could not find JUCE standalone header, using forward declaration")
+        #pragma message("This may cause linker errors. Consider adding the JUCE module path to include directories.")
+    #endif
+
+    // Forward declaration approach (may not link correctly)
+    class StandalonePluginHolder
+    {
+    public:
+        static StandalonePluginHolder* getInstance();
+        juce::AudioDeviceManager deviceManager;
+        std::unique_ptr<juce::AudioProcessor> processor;
+    };
+#endif
 
 // Global power monitor instance
 static std::unique_ptr<WindowsPowerMonitor> g_powerMonitor;
