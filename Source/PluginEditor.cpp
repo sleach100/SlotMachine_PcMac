@@ -3097,6 +3097,11 @@ juce::String SlotMachineAudioProcessorEditor::getRegistrationDisplayName() const
 
 SlotMachineAudioProcessorEditor::~SlotMachineAudioProcessorEditor()
 {
+    setLookAndFeel(nullptr);
+    closeVisualizerWindow();
+    apvts.removeParameterListener("optTimingMode", this);
+}
+
 void SlotMachineAudioProcessorEditor::parentHierarchyChanged()
 {
     juce::AudioProcessorEditor::parentHierarchyChanged();
