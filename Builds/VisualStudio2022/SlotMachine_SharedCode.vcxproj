@@ -2840,7 +2840,6 @@
     <ClInclude Include="..\..\Source\PluginEditor.h" />
     <ClInclude Include="..\..\Source\WindowsPowerMonitor.h" />
     <ClInclude Include="..\..\Source\StandalonePowerMonitorHelper.h" />
-    <ClInclude Include="..\..\Source\LicenseRegistry.h" />
     <ClInclude Include="..\..\Source\BeatsQuickPickGrid.h" />
     <ClInclude Include="..\..\Source\CountBeatMaskGrid.h" />
     <ClInclude Include="..\..\Source\PolyrhythmVizComponent.h" />

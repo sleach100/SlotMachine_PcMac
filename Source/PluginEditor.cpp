@@ -14,8 +14,12 @@
 #include <string>
 
 #if JUCE_WINDOWS && JUCE_STANDALONE_APPLICATION
-// Use helper to avoid StandalonePluginHolder linker issues
-#include "StandalonePowerMonitorHelper.h"
+// Forward declare StandalonePluginHolder (defined in JUCE standalone wrapper)
+struct StandalonePluginHolder
+{
+    static StandalonePluginHolder* getInstance();
+    juce::AudioDeviceManager deviceManager;
+};
 #endif
 
 #if __has_include("BinaryData.h")
@@ -3093,22 +3097,24 @@ juce::String SlotMachineAudioProcessorEditor::getRegistrationDisplayName() const
 
 SlotMachineAudioProcessorEditor::~SlotMachineAudioProcessorEditor()
 {
-    setLookAndFeel(nullptr);
-    closeVisualizerWindow();
-    apvts.removeParameterListener("optTimingMode", this);
-}
-
 void SlotMachineAudioProcessorEditor::parentHierarchyChanged()
 {
     juce::AudioProcessorEditor::parentHierarchyChanged();
     updateStandaloneWindowTitle();
+
 #if JUCE_WINDOWS && JUCE_STANDALONE_APPLICATION
     // Initialize the Windows power monitor when the window hierarchy is established
     // This handles audio device reconnection after sleep/wake
     if (powerMonitor == nullptr && getTopLevelComponent() != nullptr)
     {
-        // Use helper to access StandalonePluginHolder without linker issues
-        powerMonitor.reset(StandalonePowerMonitorHelper::createAndAttachPowerMonitor(this));
+        // Get the AudioDeviceManager from the standalone plugin holder
+        if (auto* holder = StandalonePluginHolder::getInstance())
+        {
+            powerMonitor = std::make_unique<WindowsPowerMonitor>();
+            powerMonitor->setReconnectDelayMs(5000);  // 5-second delay after wake
+            powerMonitor->attachToWindow(this, &holder->deviceManager);
+            DBG("WindowsPowerMonitor initialized and attached");
+        }
     }
 #endif
 }

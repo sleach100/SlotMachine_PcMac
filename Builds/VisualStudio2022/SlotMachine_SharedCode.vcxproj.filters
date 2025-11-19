@@ -3427,9 +3427,6 @@
     <ClInclude Include="..\..\Source\StandalonePowerMonitorHelper.h">
       <Filter>SlotMachine\Source</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Source\WindowsPowerMonitor.h">
-      <Filter>SlotMachine\Source</Filter>
-    </ClInclude>
     </ClInclude>
     <ClInclude Include="..\..\Source\LicenseRegistry.h">
       <Filter>SlotMachine\Source</Filter>
