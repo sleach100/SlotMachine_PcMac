@@ -21,11 +21,11 @@ struct StandalonePowerMonitorInitializer : public juce::Timer
 
     void timerCallback() override
     {
-        // Try to get the standalone plugin holder
-        if (auto* holder = juce::StandalonePluginHolder::getInstance())
+        // Try to get the standalone plugin holder (it's in global namespace, not juce::)
+        if (auto* holder = StandalonePluginHolder::getInstance())
         {
             // Try to get the editor component
-            if (auto* editor = dynamic_cast<SlotMachineAudioProcessorEditor*>(holder->getProcessorEditor()))
+            if (auto* editor = dynamic_cast<SlotMachineAudioProcessorEditor*>(holder->editor.get()))
             {
                 // Initialize power monitor if not already done
                 if (g_powerMonitor == nullptr && editor->getTopLevelComponent() != nullptr)
