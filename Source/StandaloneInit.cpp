@@ -133,28 +133,22 @@ struct InitThread
     InitThread()
     {
         // Launch a detached thread that waits for JUCE to be ready
+        // NOTE: Don't use DBG() from this thread - it requires JUCE to be initialized!
         std::thread([]()
         {
-            DBG("StandalonePowerMonitor: Init thread started, waiting for app initialization...");
-
             // Wait for the application to fully initialize
             // 1000ms should be more than enough for JUCE to start its message loop
             std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-
-            DBG("StandalonePowerMonitor: Init thread scheduling message thread callback");
 
             // Now that the app should be running, schedule our initialization on the message thread
             if (auto* mm = MessageManager::getInstance())
             {
                 mm->callAsync([]()
                 {
+                    // Now we're on the message thread and JUCE is initialized - safe to use DBG()
                     DBG("StandalonePowerMonitor: Message thread callback executing, starting initialization");
                     g_initializer.startIfNeeded();
                 });
-            }
-            else
-            {
-                DBG("StandalonePowerMonitor: ERROR - MessageManager instance not available!");
             }
         }).detach();
     }
