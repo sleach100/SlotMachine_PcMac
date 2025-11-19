@@ -7,6 +7,14 @@
 
 #if JUCE_WINDOWS && JUCE_STANDALONE_APPLICATION
 
+// Forward declaration of StandalonePluginHolder (defined in JUCE standalone wrapper)
+struct StandalonePluginHolder
+{
+    static StandalonePluginHolder* getInstance();
+    juce::AudioDeviceManager deviceManager;
+    std::unique_ptr<juce::AudioProcessorEditor> editor;
+};
+
 // Global power monitor instance
 static std::unique_ptr<WindowsPowerMonitor> g_powerMonitor;
 
