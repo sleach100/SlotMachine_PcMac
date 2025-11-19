@@ -4,6 +4,8 @@
 #include "WindowsPowerMonitor.h"
 #include "PluginEditor.h"
 #include "../JuceLibraryCode/JuceHeader.h"
+#include <thread>
+#include <chrono>
 
 #if JUCE_WINDOWS && JUCE_STANDALONE_APPLICATION
 
@@ -124,40 +126,41 @@ struct StandalonePowerMonitorInitializer : public Timer
 // Global instance
 static StandalonePowerMonitorInitializer g_initializer;
 
-// This timer runs once to kick off initialization after message thread is definitely running
-struct StarterTimer : public Timer
+// Background thread launcher that waits for the application to be ready
+// This avoids the timing issues with static initialization
+struct InitThread
 {
-    StarterTimer()
+    InitThread()
     {
-        // Start a one-shot timer
-        startTimer(50);
-    }
-
-    void timerCallback() override
-    {
-        DBG("StandalonePowerMonitor: Starter timer fired, beginning initialization");
-        g_initializer.startIfNeeded();
-        stopTimer();
-        delete this;  // One-shot, delete ourselves
-    }
-};
-
-// Use a JUCE initialization callback to start our initialization
-// This runs after JUCE is fully initialized
-struct InitCallback
-{
-    InitCallback()
-    {
-        // Schedule initialization to happen on the message thread
-        MessageManager::callAsync([]()
+        // Launch a detached thread that waits for JUCE to be ready
+        std::thread([]()
         {
-            DBG("StandalonePowerMonitor: Message thread callback executing, creating starter");
-            new StarterTimer();  // Will delete itself after firing
-        });
+            DBG("StandalonePowerMonitor: Init thread started, waiting for app initialization...");
+
+            // Wait for the application to fully initialize
+            // 1000ms should be more than enough for JUCE to start its message loop
+            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+
+            DBG("StandalonePowerMonitor: Init thread scheduling message thread callback");
+
+            // Now that the app should be running, schedule our initialization on the message thread
+            if (auto* mm = MessageManager::getInstance())
+            {
+                mm->callAsync([]()
+                {
+                    DBG("StandalonePowerMonitor: Message thread callback executing, starting initialization");
+                    g_initializer.startIfNeeded();
+                });
+            }
+            else
+            {
+                DBG("StandalonePowerMonitor: ERROR - MessageManager instance not available!");
+            }
+        }).detach();
     }
 };
 
-// Global launcher
-static InitCallback g_initCallback;
+// Global launcher - this will start the background thread immediately
+static InitThread g_initThread;
 
 #endif // JUCE_WINDOWS && JUCE_STANDALONE_APPLICATION
