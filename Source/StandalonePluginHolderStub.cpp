@@ -3,7 +3,7 @@
 
 #include <juce_audio_devices/juce_audio_devices.h>
 
-// Only provide stub if NOT building standalone
+// Only provide stub if building on Windows but NOT building standalone
 #if JUCE_WINDOWS && !JUCE_STANDALONE_APPLICATION
 
 // Provide minimal stub to satisfy linker
@@ -19,4 +19,6 @@ struct StandalonePluginHolder
     juce::AudioDeviceManager deviceManager;
 };
 
+#elif JUCE_WINDOWS
+// For standalone builds, do nothing - JUCE provides the real implementation
 #endif

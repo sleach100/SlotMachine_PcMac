@@ -140,6 +140,7 @@
     <ClCompile Include="..\..\Source\PluginProcessor.cpp" />
     <ClCompile Include="..\..\Source\PluginEditor.cpp" />
     <ClCompile Include="..\..\Source\WindowsPowerMonitor.cpp" />
+    <ClCompile Include="..\..\Source\StandalonePluginHolderStub.cpp" />
     <ClCompile Include="..\..\Source\LicenseRegistry.cpp" />
     <ClCompile Include="..\..\Source\BeatsQuickPickGrid.cpp" />
     <ClCompile Include="..\..\Source\CountBeatMaskGrid.cpp" />
