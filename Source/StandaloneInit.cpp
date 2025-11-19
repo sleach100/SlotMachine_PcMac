@@ -9,17 +9,18 @@
 
 using namespace juce;
 
-// Forward declaration for JUCE StandalonePluginHolder class
-// This matches the actual JUCE implementation in juce_StandaloneFilterApp.h
+// IMPORTANT: StandalonePluginHolder is in the GLOBAL namespace, not juce::
+// Based on linker errors, the actual JUCE class is: "class StandalonePluginHolder"
+// We declare it here to match. The actual definition comes from JUCE's compiled code.
 class StandalonePluginHolder
 {
 public:
     static StandalonePluginHolder* getInstance();
 
-    AudioDeviceManager deviceManager;
-    std::unique_ptr<AudioProcessor> processor;
-
-    Component* getTopLevelComponent();
+    // Public members that we need to access
+    // These MUST match the actual JUCE definition exactly
+    juce::AudioDeviceManager deviceManager;
+    std::unique_ptr<juce::AudioProcessor> processor;
 };
 
 // Global power monitor instance
