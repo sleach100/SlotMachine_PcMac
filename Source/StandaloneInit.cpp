@@ -40,20 +40,26 @@ using namespace juce;
 // Global power monitor instance
 static std::unique_ptr<WindowsPowerMonitor> g_powerMonitor;
 
-// Timer to check for editor readiness and initialize power monitor
-struct StandalonePowerMonitorInitializer : public Timer, public DeletedAtShutdown
+// Simple timer-based initializer that doesn't require message thread to be running during construction
+struct StandalonePowerMonitorInitializer : public Timer
 {
     int checkCount = 0;
+    bool started = false;
 
     StandalonePowerMonitorInitializer()
     {
-        // Don't start timer in constructor - JUCE message manager may not be running yet
+        // Constructor is safe - doesn't start timer yet
     }
 
-    void startChecking()
+    // Call this from anywhere to begin initialization attempts
+    void startIfNeeded()
     {
-        DBG("StandalonePowerMonitorInitializer: Starting initialization checks");
-        startTimer(100);  // Check every 100ms
+        if (!started && MessageManager::getInstance()->isThisTheMessageThread())
+        {
+            DBG("StandalonePowerMonitor: Starting initialization checks from message thread");
+            started = true;
+            startTimer(100);  // Check every 100ms
+        }
     }
 
     void timerCallback() override
@@ -113,34 +119,45 @@ struct StandalonePowerMonitorInitializer : public Timer, public DeletedAtShutdow
             stopTimer();  // Stop checking once initialized
         }
     }
-
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(StandalonePowerMonitorInitializer)
 };
 
-// Start initialization after JUCE is fully running
-// This uses JUCE's initialization callback mechanism
-struct PowerMonitorStarter : public CallbackMessage
+// Global instance
+static StandalonePowerMonitorInitializer g_initializer;
+
+// This timer runs once to kick off initialization after message thread is definitely running
+struct StarterTimer : public Timer
 {
-    void messageCallback() override
+    StarterTimer()
     {
-        DBG("PowerMonitorStarter: JUCE message thread is running, creating initializer");
-        auto* initializer = new StandalonePowerMonitorInitializer();
-        initializer->startChecking();
+        // Start a one-shot timer
+        startTimer(50);
+    }
+
+    void timerCallback() override
+    {
+        DBG("StandalonePowerMonitor: Starter timer fired, beginning initialization");
+        g_initializer.startIfNeeded();
+        stopTimer();
+        delete this;  // One-shot, delete ourselves
     }
 };
 
-// Launcher that safely starts after static initialization
-struct PowerMonitorLauncher
+// Use a JUCE initialization callback to start our initialization
+// This runs after JUCE is fully initialized
+struct InitCallback
 {
-    PowerMonitorLauncher()
+    InitCallback()
     {
-        // Post a message to start initialization once the message loop is running
-        // This is safe to call even if the message manager isn't running yet
-        (new PowerMonitorStarter())->post();
+        // Schedule initialization to happen on the message thread
+        MessageManager::callAsync([]()
+        {
+            DBG("StandalonePowerMonitor: Message thread callback executing, creating starter");
+            new StarterTimer();  // Will delete itself after firing
+        });
     }
 };
 
-// Global launcher - this is safe to construct at static init time
-static PowerMonitorLauncher g_launcher;
+// Global launcher
+static InitCallback g_initCallback;
 
 #endif // JUCE_WINDOWS && JUCE_STANDALONE_APPLICATION
