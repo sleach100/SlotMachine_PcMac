@@ -43,32 +43,69 @@ static std::unique_ptr<WindowsPowerMonitor> g_powerMonitor;
 // Timer to check for editor readiness and initialize power monitor
 struct StandalonePowerMonitorInitializer : public Timer
 {
+    int checkCount = 0;
+
     StandalonePowerMonitorInitializer()
     {
+        DBG("StandalonePowerMonitorInitializer created - starting timer");
         startTimer(100);  // Check every 100ms
     }
 
     void timerCallback() override
     {
-        // Get the standalone plugin holder instance
-        if (auto* holder = StandalonePluginHolder::getInstance())
+        checkCount++;
+
+        // Stop checking after 100 attempts (10 seconds)
+        if (checkCount > 100)
         {
-            // Try to get the editor from the processor
-            if (auto* processor = holder->processor.get())
-            {
-                if (auto* editor = dynamic_cast<SlotMachineAudioProcessorEditor*>(processor->getActiveEditor()))
-                {
-                    // Initialize power monitor if not already done and editor is ready
-                    if (g_powerMonitor == nullptr && editor->getTopLevelComponent() != nullptr)
-                    {
-                        g_powerMonitor = std::make_unique<WindowsPowerMonitor>();
-                        g_powerMonitor->setReconnectDelayMs(5000);  // 5-second delay after wake
-                        g_powerMonitor->attachToWindow(editor, &holder->deviceManager);
-                        DBG("WindowsPowerMonitor initialized and attached");
-                        stopTimer();  // Stop checking once initialized
-                    }
-                }
-            }
+            DBG("StandalonePowerMonitor: Failed to initialize after 10 seconds, giving up");
+            stopTimer();
+            return;
+        }
+
+        // Get the standalone plugin holder instance
+        auto* holder = StandalonePluginHolder::getInstance();
+        if (!holder)
+        {
+            if (checkCount % 10 == 0)  // Log every 1 second
+                DBG("StandalonePowerMonitor: Waiting for StandalonePluginHolder... (attempt " + String(checkCount) + ")");
+            return;
+        }
+
+        // Try to get the editor from the processor
+        auto* processor = holder->processor.get();
+        if (!processor)
+        {
+            if (checkCount % 10 == 0)
+                DBG("StandalonePowerMonitor: Waiting for processor... (attempt " + String(checkCount) + ")");
+            return;
+        }
+
+        auto* editor = dynamic_cast<SlotMachineAudioProcessorEditor*>(processor->getActiveEditor());
+        if (!editor)
+        {
+            if (checkCount % 10 == 0)
+                DBG("StandalonePowerMonitor: Waiting for editor... (attempt " + String(checkCount) + ")");
+            return;
+        }
+
+        auto* topLevel = editor->getTopLevelComponent();
+        if (!topLevel)
+        {
+            if (checkCount % 10 == 0)
+                DBG("StandalonePowerMonitor: Waiting for top level component... (attempt " + String(checkCount) + ")");
+            return;
+        }
+
+        // Initialize power monitor if not already done and editor is ready
+        if (g_powerMonitor == nullptr)
+        {
+            DBG("StandalonePowerMonitor: All components ready, initializing power monitor...");
+            g_powerMonitor = std::make_unique<WindowsPowerMonitor>();
+            g_powerMonitor->setReconnectDelayMs(5000);  // 5-second delay after wake
+            g_powerMonitor->attachToWindow(editor, &holder->deviceManager);
+            DBG("WindowsPowerMonitor successfully initialized and attached to editor");
+            stopTimer();  // Stop checking once initialized
         }
     }
 };
