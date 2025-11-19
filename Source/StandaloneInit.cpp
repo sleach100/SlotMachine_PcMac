@@ -4,8 +4,6 @@
 #include "WindowsPowerMonitor.h"
 #include "PluginEditor.h"
 #include "../JuceLibraryCode/JuceHeader.h"
-#include <thread>
-#include <chrono>
 
 #if JUCE_WINDOWS && JUCE_STANDALONE_APPLICATION
 
@@ -42,34 +40,32 @@ using namespace juce;
 // Global power monitor instance
 static std::unique_ptr<WindowsPowerMonitor> g_powerMonitor;
 
-// Simple timer-based initializer that doesn't require message thread to be running during construction
+// Timer-based initializer that starts automatically
+// JUCE's Timer mechanism is safe to start during static initialization -
+// it will queue up and start firing once the message loop is running
 struct StandalonePowerMonitorInitializer : public Timer
 {
     int checkCount = 0;
-    bool started = false;
 
     StandalonePowerMonitorInitializer()
     {
-        // Constructor is safe - doesn't start timer yet
-    }
-
-    // Call this from anywhere to begin initialization attempts
-    void startIfNeeded()
-    {
-        if (!started && MessageManager::getInstance()->isThisTheMessageThread())
-        {
-            DBG("StandalonePowerMonitor: Starting initialization checks from message thread");
-            started = true;
-            startTimer(100);  // Check every 100ms
-        }
+        // Start the timer immediately - JUCE will handle deferred execution safely
+        // The timer won't actually fire until the message loop is running
+        startTimer(250);  // Check every 250ms (less frequent to reduce overhead)
     }
 
     void timerCallback() override
     {
         checkCount++;
 
-        // Stop checking after 100 attempts (10 seconds)
-        if (checkCount > 100)
+        // First callback - log that we're starting
+        if (checkCount == 1)
+        {
+            DBG("StandalonePowerMonitor: Timer started, beginning initialization checks...");
+        }
+
+        // Stop checking after 40 attempts (10 seconds at 250ms intervals)
+        if (checkCount > 40)
         {
             DBG("StandalonePowerMonitor: Failed to initialize after 10 seconds, giving up");
             stopTimer();
@@ -80,7 +76,7 @@ struct StandalonePowerMonitorInitializer : public Timer
         auto* holder = StandalonePluginHolder::getInstance();
         if (!holder)
         {
-            if (checkCount % 10 == 0)  // Log every 1 second
+            if (checkCount % 4 == 0)  // Log every 1 second (4 * 250ms)
                 DBG("StandalonePowerMonitor: Waiting for StandalonePluginHolder... (attempt " + String(checkCount) + ")");
             return;
         }
@@ -89,7 +85,7 @@ struct StandalonePowerMonitorInitializer : public Timer
         auto* processor = holder->processor.get();
         if (!processor)
         {
-            if (checkCount % 10 == 0)
+            if (checkCount % 4 == 0)
                 DBG("StandalonePowerMonitor: Waiting for processor... (attempt " + String(checkCount) + ")");
             return;
         }
@@ -97,7 +93,7 @@ struct StandalonePowerMonitorInitializer : public Timer
         auto* editor = dynamic_cast<SlotMachineAudioProcessorEditor*>(processor->getActiveEditor());
         if (!editor)
         {
-            if (checkCount % 10 == 0)
+            if (checkCount % 4 == 0)
                 DBG("StandalonePowerMonitor: Waiting for editor... (attempt " + String(checkCount) + ")");
             return;
         }
@@ -105,7 +101,7 @@ struct StandalonePowerMonitorInitializer : public Timer
         auto* topLevel = editor->getTopLevelComponent();
         if (!topLevel)
         {
-            if (checkCount % 10 == 0)
+            if (checkCount % 4 == 0)
                 DBG("StandalonePowerMonitor: Waiting for top level component... (attempt " + String(checkCount) + ")");
             return;
         }
@@ -123,38 +119,8 @@ struct StandalonePowerMonitorInitializer : public Timer
     }
 };
 
-// Global instance
+// Global instance - creates the timer and starts it automatically during static initialization
+// JUCE's Timer mechanism safely defers execution until the message loop is running
 static StandalonePowerMonitorInitializer g_initializer;
-
-// Background thread launcher that waits for the application to be ready
-// This avoids the timing issues with static initialization
-struct InitThread
-{
-    InitThread()
-    {
-        // Launch a detached thread that waits for JUCE to be ready
-        // NOTE: Don't use DBG() from this thread - it requires JUCE to be initialized!
-        std::thread([]()
-        {
-            // Wait for the application to fully initialize
-            // 1000ms should be more than enough for JUCE to start its message loop
-            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-
-            // Now that the app should be running, schedule our initialization on the message thread
-            if (auto* mm = MessageManager::getInstance())
-            {
-                mm->callAsync([]()
-                {
-                    // Now we're on the message thread and JUCE is initialized - safe to use DBG()
-                    DBG("StandalonePowerMonitor: Message thread callback executing, starting initialization");
-                    g_initializer.startIfNeeded();
-                });
-            }
-        }).detach();
-    }
-};
-
-// Global launcher - this will start the background thread immediately
-static InitThread g_initThread;
 
 #endif // JUCE_WINDOWS && JUCE_STANDALONE_APPLICATION
