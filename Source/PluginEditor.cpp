@@ -3097,6 +3097,14 @@ void SlotMachineAudioProcessorEditor::parentHierarchyChanged()
 {
     juce::AudioProcessorEditor::parentHierarchyChanged();
     updateStandaloneWindowTitle();
+
+    // Initialize power monitor for standalone builds only
+    // This must be done here (not during static initialization) to avoid crashes
+    #if JUCE_WINDOWS && JUCE_STANDALONE_APPLICATION
+    // Forward declare the initialization function from StandaloneInit.cpp
+    extern void initializeStandalonePowerMonitor(SlotMachineAudioProcessorEditor* editor);
+    initializeStandalonePowerMonitor(this);
+    #endif
 }
 
 void SlotMachineAudioProcessorEditor::mouseDown(const juce::MouseEvent& e)

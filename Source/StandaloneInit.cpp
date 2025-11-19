@@ -10,24 +10,14 @@
 using namespace juce;
 
 // Check if we can include the JUCE standalone header
-// If this fails, please add "C:\JUCE\modules\juce_audio_plugin_client" to your include path
-#if defined(_MSC_VER)
-    #pragma message("Attempting to locate juce_audio_plugin_client module...")
-#endif
-
-// Try including with different possible paths
 #if __has_include(<juce_audio_plugin_client/Standalone/juce_StandaloneFilterWindow.h>)
     #include <juce_audio_plugin_client/Standalone/juce_StandaloneFilterWindow.h>
     #define JUCE_STANDALONE_HEADER_FOUND 1
 #else
     // Fall back to forward declaration if header not found
     #define JUCE_STANDALONE_HEADER_FOUND 0
-    #if defined(_MSC_VER)
-        #pragma message("Warning: Could not find JUCE standalone header, using forward declaration")
-        #pragma message("This may cause linker errors. Consider adding the JUCE module path to include directories.")
-    #endif
 
-    // Forward declaration approach (may not link correctly)
+    // Forward declaration approach
     class StandalonePluginHolder
     {
     public:
@@ -40,35 +30,31 @@ using namespace juce;
 // Global power monitor instance
 static std::unique_ptr<WindowsPowerMonitor> g_powerMonitor;
 
-// Timer-based initializer that starts automatically
-// JUCE's Timer mechanism is safe to start during static initialization -
-// it will queue up and start firing once the message loop is running
+// Timer that polls for components to be ready
+// This is created AFTER JUCE is initialized, not during static initialization
 struct StandalonePowerMonitorInitializer : public Timer
 {
+    SlotMachineAudioProcessorEditor* editor;
     int checkCount = 0;
 
-    StandalonePowerMonitorInitializer()
+    StandalonePowerMonitorInitializer(SlotMachineAudioProcessorEditor* ed)
+        : editor(ed)
     {
-        // Start the timer immediately - JUCE will handle deferred execution safely
-        // The timer won't actually fire until the message loop is running
-        startTimer(250);  // Check every 250ms (less frequent to reduce overhead)
+        // Safe to start timer here - we're called from parentHierarchyChanged, not static init
+        DBG("StandalonePowerMonitor: Initializer created, starting timer...");
+        startTimer(250);  // Check every 250ms
     }
 
     void timerCallback() override
     {
         checkCount++;
 
-        // First callback - log that we're starting
-        if (checkCount == 1)
-        {
-            DBG("StandalonePowerMonitor: Timer started, beginning initialization checks...");
-        }
-
         // Stop checking after 40 attempts (10 seconds at 250ms intervals)
         if (checkCount > 40)
         {
             DBG("StandalonePowerMonitor: Failed to initialize after 10 seconds, giving up");
             stopTimer();
+            delete this;  // Clean up
             return;
         }
 
@@ -76,25 +62,8 @@ struct StandalonePowerMonitorInitializer : public Timer
         auto* holder = StandalonePluginHolder::getInstance();
         if (!holder)
         {
-            if (checkCount % 4 == 0)  // Log every 1 second (4 * 250ms)
+            if (checkCount % 4 == 0)  // Log every 1 second
                 DBG("StandalonePowerMonitor: Waiting for StandalonePluginHolder... (attempt " + String(checkCount) + ")");
-            return;
-        }
-
-        // Try to get the editor from the processor
-        auto* processor = holder->processor.get();
-        if (!processor)
-        {
-            if (checkCount % 4 == 0)
-                DBG("StandalonePowerMonitor: Waiting for processor... (attempt " + String(checkCount) + ")");
-            return;
-        }
-
-        auto* editor = dynamic_cast<SlotMachineAudioProcessorEditor*>(processor->getActiveEditor());
-        if (!editor)
-        {
-            if (checkCount % 4 == 0)
-                DBG("StandalonePowerMonitor: Waiting for editor... (attempt " + String(checkCount) + ")");
             return;
         }
 
@@ -114,13 +83,25 @@ struct StandalonePowerMonitorInitializer : public Timer
             g_powerMonitor->setReconnectDelayMs(5000);  // 5-second delay after wake
             g_powerMonitor->attachToWindow(editor, &holder->deviceManager);
             DBG("WindowsPowerMonitor successfully initialized and attached to editor");
-            stopTimer();  // Stop checking once initialized
+            stopTimer();
+            delete this;  // Clean up - we're done
         }
     }
 };
 
-// Global instance - creates the timer and starts it automatically during static initialization
-// JUCE's Timer mechanism safely defers execution until the message loop is running
-static StandalonePowerMonitorInitializer g_initializer;
+// Initialization function called from PluginEditor
+// This is called from parentHierarchyChanged(), not during static initialization
+void initializeStandalonePowerMonitor(SlotMachineAudioProcessorEditor* editor)
+{
+    static bool initialized = false;
+    if (initialized || !editor)
+        return;
+
+    initialized = true;
+    DBG("StandalonePowerMonitor: initializeStandalonePowerMonitor called");
+
+    // Create the initializer - it will delete itself when done
+    new StandalonePowerMonitorInitializer(editor);
+}
 
 #endif // JUCE_WINDOWS && JUCE_STANDALONE_APPLICATION
