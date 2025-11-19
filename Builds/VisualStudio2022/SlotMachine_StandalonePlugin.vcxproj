@@ -149,11 +149,14 @@
   <ItemGroup>
     <ClCompile Include="..\..\..\..\..\..\..\JUCE\modules\juce_audio_plugin_client\juce_audio_plugin_client_Standalone.cpp">
       <ExcludedFromBuild>true</ExcludedFromBuild>
-    <ClCompile Include="..\..\Source\StandalonePowerMonitorHelper.cpp" />
+    </ClCompile>
+    <ClCompile Include="..\..\Source\WindowsPowerMonitor.cpp" />
+    <ClCompile Include="..\..\Source\StandaloneInit.cpp" />
     <ClCompile Include="..\..\JuceLibraryCode\include_juce_audio_plugin_client_Standalone.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\..\..\..\JUCE\modules\juce_audio_plugin_client\Standalone\juce_StandaloneFilterWindow.h" />
+    <ClInclude Include="..\..\Source\WindowsPowerMonitor.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include=".\resources.rc" />
