@@ -9,10 +9,15 @@
 #if JUCE_WINDOWS
 
 #include "WindowsPowerMonitor.h"
+#include <juce_audio_devices/juce_audio_devices.h>
 
-// Include JUCE standalone wrapper to access StandalonePluginHolder
-// This file is ONLY compiled in standalone builds
-#include <juce_audio_plugin_client/juce_audio_plugin_client.h>
+// Forward declare StandalonePluginHolder (defined in JUCE standalone wrapper)
+// Use extern to tell compiler it will be resolved at link time
+struct StandalonePluginHolder
+{
+    static StandalonePluginHolder* getInstance();
+    juce::AudioDeviceManager deviceManager;
+};
 
 namespace StandalonePowerMonitorHelper
 {
