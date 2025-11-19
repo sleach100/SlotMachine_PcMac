@@ -3,53 +3,59 @@
 
 #include "WindowsPowerMonitor.h"
 #include "PluginEditor.h"
-#include <juce_audio_plugin_client/juce_audio_plugin_client.h>
+
+// Include the standalone filter app header which defines StandalonePluginHolder
+#define Point JUCEPoint  // Avoid conflicts with Windows Point
+#define JUCE_USE_WINRT_MIDI 0
+#include "../../JuceLibraryCode/JuceHeader.h"
+#include <juce_audio_plugin_client/Standalone/juce_StandaloneFilterApp.h>
+#undef Point
 
 #if JUCE_WINDOWS && JUCE_STANDALONE_APPLICATION
 
-// Forward declaration of StandalonePluginHolder (defined in JUCE standalone wrapper)
-struct StandalonePluginHolder
-{
-    static StandalonePluginHolder* getInstance();
-    juce::AudioDeviceManager deviceManager;
-    std::unique_ptr<juce::AudioProcessorEditor> editor;
-};
+using namespace juce;
 
 // Global power monitor instance
 static std::unique_ptr<WindowsPowerMonitor> g_powerMonitor;
 
-// Hook to initialize power monitor when the editor is created
-struct StandalonePowerMonitorInitializer : public juce::Timer
+// Timer to check for editor readiness and initialize power monitor
+struct StandalonePowerMonitorInitializer : public Timer
 {
     StandalonePowerMonitorInitializer()
     {
-        // Start a timer to check for the editor and initialize
-        startTimer(100);
+        startTimer(100);  // Check every 100ms
     }
 
     void timerCallback() override
     {
-        // Try to get the standalone plugin holder (it's in global namespace, not juce::)
+        // Get the standalone plugin holder instance
         if (auto* holder = StandalonePluginHolder::getInstance())
         {
-            // Try to get the editor component
-            if (auto* editor = dynamic_cast<SlotMachineAudioProcessorEditor*>(holder->editor.get()))
+            // Try to get the main window
+            if (auto* window = dynamic_cast<StandaloneFilterWindow*>(holder->getTopLevelComponent()))
             {
-                // Initialize power monitor if not already done
-                if (g_powerMonitor == nullptr && editor->getTopLevelComponent() != nullptr)
+                // Try to get the editor from the processor
+                if (auto* processor = holder->processor.get())
                 {
-                    g_powerMonitor = std::make_unique<WindowsPowerMonitor>();
-                    g_powerMonitor->setReconnectDelayMs(5000);  // 5-second delay after wake
-                    g_powerMonitor->attachToWindow(editor, &holder->deviceManager);
-                    DBG("WindowsPowerMonitor initialized and attached via StandaloneInit");
-                    stopTimer();  // Stop checking once initialized
+                    if (auto* editor = dynamic_cast<SlotMachineAudioProcessorEditor*>(processor->getActiveEditor()))
+                    {
+                        // Initialize power monitor if not already done
+                        if (g_powerMonitor == nullptr && editor->getTopLevelComponent() != nullptr)
+                        {
+                            g_powerMonitor = std::make_unique<WindowsPowerMonitor>();
+                            g_powerMonitor->setReconnectDelayMs(5000);  // 5-second delay after wake
+                            g_powerMonitor->attachToWindow(editor, &holder->deviceManager);
+                            DBG("WindowsPowerMonitor initialized and attached");
+                            stopTimer();  // Stop checking once initialized
+                        }
+                    }
                 }
             }
         }
     }
 };
 
-// Global instance that starts the initialization process
+// Global instance that starts checking
 static StandalonePowerMonitorInitializer g_initializer;
 
 #endif // JUCE_WINDOWS && JUCE_STANDALONE_APPLICATION
