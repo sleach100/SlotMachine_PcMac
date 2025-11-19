@@ -7,7 +7,7 @@
 // Include the standalone filter app header which defines StandalonePluginHolder
 #define Point JUCEPoint  // Avoid conflicts with Windows Point
 #define JUCE_USE_WINRT_MIDI 0
-#include "../../JuceLibraryCode/JuceHeader.h"
+#include "../JuceLibraryCode/JuceHeader.h"
 #include <juce_audio_plugin_client/Standalone/juce_StandaloneFilterApp.h>
 #undef Point
 
