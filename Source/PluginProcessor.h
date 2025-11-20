@@ -322,6 +322,7 @@ struct RenderedPatternAudio
 struct RenderedPatternMidi
 {
     juce::MidiMessageSequence sequence;
-    int totalTicks = 0;
+    int totalTicks = 0;              // Full length including note tails
+    int beatAlignedTicks = 0;        // Beat-aligned boundary for positioning
     double bpm = 120.0;
 };

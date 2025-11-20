@@ -1164,7 +1164,8 @@ bool renderPatternMidi(SlotMachineAudioProcessor& processor,
 
     out.sequence.sort();
     out.sequence.addEvent(juce::MidiMessage::endOfTrack(), (double)maxTick);
-    out.totalTicks = (int)maxTick;
+    out.totalTicks = (int)maxTick;                  // Full length including note tails
+    out.beatAlignedTicks = totalTicksFromBeats;     // Beat-aligned boundary for positioning
     out.bpm = tempoForMeta;
 
     return true;
@@ -2754,7 +2755,7 @@ bool SlotMachineAudioProcessor::exportMidiPlaythroughCycles(const juce::File& de
     std::vector<RenderedPatternMidi> renderedPatterns;
     renderedPatterns.reserve((size_t)patternCount);
 
-    int64_t ticksPerPlaythrough = 0;
+    int64_t beatAlignedTicksPerPlaythrough = 0;
 
     for (int i = 0; i < patternCount; ++i)
     {
@@ -2767,11 +2768,11 @@ bool SlotMachineAudioProcessor::exportMidiPlaythroughCycles(const juce::File& de
         if (!::renderPatternMidi(*this, data, patternCycles, bpm, ppq, rendered, errorMessage))
             return false;
 
-        if (rendered.totalTicks <= 0 || rendered.sequence.getNumEvents() == 0)
+        if (rendered.beatAlignedTicks <= 0 || rendered.sequence.getNumEvents() == 0)
             continue;
 
-        ticksPerPlaythrough += (int64_t)rendered.totalTicks;
-        if (ticksPerPlaythrough <= 0 || ticksPerPlaythrough > (int64_t)std::numeric_limits<int>::max())
+        beatAlignedTicksPerPlaythrough += (int64_t)rendered.beatAlignedTicks;
+        if (beatAlignedTicksPerPlaythrough <= 0 || beatAlignedTicksPerPlaythrough > (int64_t)std::numeric_limits<int>::max())
         {
             errorMessage = "Export length is too large.";
             return false;
@@ -2779,17 +2780,19 @@ bool SlotMachineAudioProcessor::exportMidiPlaythroughCycles(const juce::File& de
 
         renderedPatterns.emplace_back();
         renderedPatterns.back().totalTicks = rendered.totalTicks;
+        renderedPatterns.back().beatAlignedTicks = rendered.beatAlignedTicks;
         renderedPatterns.back().sequence = rendered.sequence;
         renderedPatterns.back().bpm = rendered.bpm;
     }
 
-    if (renderedPatterns.empty() || ticksPerPlaythrough <= 0)
+    if (renderedPatterns.empty() || beatAlignedTicksPerPlaythrough <= 0)
     {
         errorMessage = "Export length is zero.";
         return false;
     }
 
-    const int64_t totalTicks64 = ticksPerPlaythrough * (int64_t)playthroughCycles;
+    // Calculate total ticks: beat-aligned duration for positioning
+    const int64_t totalTicks64 = beatAlignedTicksPerPlaythrough * (int64_t)playthroughCycles;
     if (totalTicks64 <= 0 || totalTicks64 > (int64_t)std::numeric_limits<int>::max())
     {
         errorMessage = "Export length is too large.";
@@ -2841,7 +2844,9 @@ bool SlotMachineAudioProcessor::exportMidiPlaythroughCycles(const juce::File& de
                 }
             }
 
-            offset += rendered.totalTicks;
+            // Advance offset by beat-aligned ticks (not totalTicks with note tails)
+            // This positions the next pattern at the beat boundary, allowing note tails to overlap
+            offset += rendered.beatAlignedTicks;
         }
     }
 
