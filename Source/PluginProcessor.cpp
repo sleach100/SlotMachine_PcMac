@@ -2946,13 +2946,7 @@ bool SlotMachineAudioProcessor::exportMidiPlaythroughCycles(const juce::File& de
                 activeSlots.push_back(info);
             }
 
-            if (activeSlots.empty())
-            {
-                // No active slots, but still advance time
-                continue;
-            }
-
-            // Finalize cycle length
+            // Finalize cycle length (must be calculated before checking if slots are empty)
             double cycleBeats = 1.0;
             if (timingMode == 0)
             {
@@ -2970,6 +2964,13 @@ bool SlotMachineAudioProcessor::exportMidiPlaythroughCycles(const juce::File& de
             }
 
             prep.cycleBeats = cycleBeats;  // Store for later
+
+            if (activeSlots.empty())
+            {
+                // No active slots, but still advance time to maintain proper pattern sequencing
+                globalBeatPosition += cycleBeats * (double)prep.cycles;
+                continue;
+            }
 
             // Generate MIDI events for this pattern's cycles
             for (int patternCycle = 0; patternCycle < prep.cycles; ++patternCycle)
