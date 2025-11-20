@@ -1165,6 +1165,7 @@ bool renderPatternMidi(SlotMachineAudioProcessor& processor,
     out.sequence.sort();
     out.sequence.addEvent(juce::MidiMessage::endOfTrack(), (double)maxTick);
     out.totalTicks = (int)maxTick;
+    out.bpm = tempoForMeta;
 
     return true;
 }
@@ -2779,6 +2780,7 @@ bool SlotMachineAudioProcessor::exportMidiPlaythroughCycles(const juce::File& de
         renderedPatterns.emplace_back();
         renderedPatterns.back().totalTicks = rendered.totalTicks;
         renderedPatterns.back().sequence = rendered.sequence;
+        renderedPatterns.back().bpm = rendered.bpm;
     }
 
     if (renderedPatterns.empty() || ticksPerPlaythrough <= 0)
@@ -2797,24 +2799,57 @@ bool SlotMachineAudioProcessor::exportMidiPlaythroughCycles(const juce::File& de
     juce::MidiMessageSequence combined;
     int64_t offset = 0;
 
+    // Add time signature at the beginning (4/4)
+    combined.addEvent(juce::MidiMessage::timeSignatureMetaEvent(4, 2), 0.0);
+
+    // Track tempo changes to add tempo meta events at pattern boundaries
+    struct TempoChange
+    {
+        int64_t tick;
+        double bpm;
+    };
+    std::vector<TempoChange> tempoChanges;
+
     for (int cycle = 0; cycle < playthroughCycles; ++cycle)
     {
-        for (const auto& rendered : renderedPatterns)
+        for (size_t patternIndex = 0; patternIndex < renderedPatterns.size(); ++patternIndex)
         {
+            const auto& rendered = renderedPatterns[patternIndex];
+
+            // Add tempo meta event at the start of each pattern section
+            // (but only if BPM changed from previous pattern)
+            if (tempoChanges.empty() || tempoChanges.back().bpm != rendered.bpm)
+            {
+                tempoChanges.push_back({ offset, rendered.bpm });
+            }
+
+            // Copy note events (filter out all meta events)
             for (int eventIndex = 0; eventIndex < rendered.sequence.getNumEvents(); ++eventIndex)
             {
                 if (auto* event = rendered.sequence.getEventPointer(eventIndex))
                 {
                     const auto& message = event->message;
-                    if (message.isEndOfTrackMetaEvent())
+
+                    // Skip all meta events (tempo, time signature, end of track, etc.)
+                    if (message.isMetaEvent())
                         continue;
 
-                    combined.addEvent(message, message.getTimeStamp() + (double)offset);
+                    // Create new message with corrected timestamp
+                    const double newTimestamp = event->message.getTimeStamp() + (double)offset;
+                    juce::MidiMessage newMessage(message);
+                    combined.addEvent(newMessage, newTimestamp);
                 }
             }
 
             offset += rendered.totalTicks;
         }
+    }
+
+    // Add all tempo meta events at their correct positions
+    for (const auto& tempoChange : tempoChanges)
+    {
+        const int microsecondsPerQuarterNote = (int)std::round(60000000.0 / tempoChange.bpm);
+        combined.addEvent(juce::MidiMessage::tempoMetaEvent(microsecondsPerQuarterNote), (double)tempoChange.tick);
     }
 
     combined.sort();

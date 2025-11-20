@@ -323,4 +323,5 @@ struct RenderedPatternMidi
 {
     juce::MidiMessageSequence sequence;
     int totalTicks = 0;
+    double bpm = 120.0;
 };
