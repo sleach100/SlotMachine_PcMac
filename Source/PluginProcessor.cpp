@@ -2986,7 +2986,7 @@ bool SlotMachineAudioProcessor::exportMidiPlaythroughCycles(const juce::File& de
 
                         for (int hit = 0; hit < hitsPerCycle; ++hit)
                         {
-                            const double triggerBeat = patternCycleBeatStart + spacingBeats * (double)hit;
+                            const double triggerBeat = patternCycleBeatStart + spacingBeats * ((double)hit + 1.0);
                             const int64_t startTick = (int64_t)std::llround(triggerBeat * (double)ppq);
                             const int64_t noteTicks = juce::jmax(1LL, (int64_t)std::llround(slotInfo.noteLengthBeats * (double)ppq));
                             const int64_t offTick = startTick + noteTicks;
@@ -3008,7 +3008,7 @@ bool SlotMachineAudioProcessor::exportMidiPlaythroughCycles(const juce::File& de
                             if (((mask >> hit) & 1ull) == 0)
                                 continue;
 
-                            const double triggerBeat = patternCycleBeatStart + stepBeats * (double)hit;
+                            const double triggerBeat = patternCycleBeatStart + stepBeats * ((double)hit + 1.0);
                             const int64_t startTick = (int64_t)std::llround(triggerBeat * (double)ppq);
                             const int64_t noteTicks = juce::jmax(1LL, (int64_t)std::llround(slotInfo.noteLengthBeats * (double)ppq));
                             const int64_t offTick = startTick + noteTicks;
