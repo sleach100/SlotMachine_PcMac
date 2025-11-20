@@ -3088,6 +3088,12 @@ juce::String SlotMachineAudioProcessorEditor::getRegistrationDisplayName() const
 
 SlotMachineAudioProcessorEditor::~SlotMachineAudioProcessorEditor()
 {
+    // Clean up power monitor before JUCE shuts down
+    #if JUCE_WINDOWS && JUCE_STANDALONE_APPLICATION
+    extern void shutdownStandalonePowerMonitor();
+    shutdownStandalonePowerMonitor();
+    #endif
+
     setLookAndFeel(nullptr);
     closeVisualizerWindow();
     apvts.removeParameterListener("optTimingMode", this);

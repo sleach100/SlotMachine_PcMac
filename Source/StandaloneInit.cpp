@@ -104,4 +104,15 @@ void initializeStandalonePowerMonitor(SlotMachineAudioProcessorEditor* editor)
     new StandalonePowerMonitorInitializer(editor);
 }
 
+// Cleanup function called from PluginEditor destructor
+// This ensures cleanup happens before JUCE shuts down, avoiding leaks
+void shutdownStandalonePowerMonitor()
+{
+    if (g_powerMonitor != nullptr)
+    {
+        DBG("StandalonePowerMonitor: Shutting down power monitor");
+        g_powerMonitor.reset();  // Explicitly destroy before JUCE shuts down
+    }
+}
+
 #endif // JUCE_WINDOWS && JUCE_STANDALONE_APPLICATION
