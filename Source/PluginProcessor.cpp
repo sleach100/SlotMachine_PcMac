@@ -2743,6 +2743,12 @@ bool SlotMachineAudioProcessor::exportMidiPlaythroughCycles(const juce::File& de
     }
 
     const int ppq = 960;
+    const double engineSampleRate = currentSampleRate;
+    if (engineSampleRate <= 0.0)
+    {
+        errorMessage = "Audio engine is not initialised.";
+        return false;
+    }
 
     auto patterns = getPatternsTree();
     const int patternCount = patterns.getNumChildren();
@@ -2752,120 +2758,285 @@ bool SlotMachineAudioProcessor::exportMidiPlaythroughCycles(const juce::File& de
         return false;
     }
 
-    std::vector<RenderedPatternMidi> renderedPatterns;
-    renderedPatterns.reserve((size_t)patternCount);
+    // Structure to hold prepared pattern data
+    struct PreparedPattern
+    {
+        OfflinePatternData data;
+        int cycles;
+        double cycleBeats;
+        double bpm;
+    };
 
-    int64_t beatAlignedTicksPerPlaythrough = 0;
+    std::vector<PreparedPattern> preparedPatterns;
+    preparedPatterns.reserve((size_t)patternCount);
 
+    // Load and prepare all pattern data
     for (int i = 0; i < patternCount; ++i)
     {
         auto pattern = patterns.getChild(i);
         OfflinePatternData data = createOfflinePatternDataFromValueTree(*this, pattern);
-        const double bpm = data.bpm;
         const int patternCycles = computePatternPlaythroughCycles(pattern);
 
-        RenderedPatternMidi rendered;
-        if (!::renderPatternMidi(*this, data, patternCycles, bpm, ppq, rendered, errorMessage))
-            return false;
-
-        if (rendered.beatAlignedTicks <= 0 || rendered.sequence.getNumEvents() == 0)
+        if (patternCycles <= 0)
             continue;
 
-        beatAlignedTicksPerPlaythrough += (int64_t)rendered.beatAlignedTicks;
-        if (beatAlignedTicksPerPlaythrough <= 0 || beatAlignedTicksPerPlaythrough > (int64_t)std::numeric_limits<int>::max())
-        {
-            errorMessage = "Export length is too large.";
-            return false;
-        }
+        PreparedPattern prep;
+        prep.data = data;
+        prep.cycles = patternCycles;
+        prep.bpm = data.bpm;
+        prep.cycleBeats = 0.0;  // Will calculate below
 
-        renderedPatterns.emplace_back();
-        renderedPatterns.back().totalTicks = rendered.totalTicks;
-        renderedPatterns.back().beatAlignedTicks = rendered.beatAlignedTicks;
-        renderedPatterns.back().sequence = rendered.sequence;
-        renderedPatterns.back().bpm = rendered.bpm;
+        preparedPatterns.push_back(prep);
     }
 
-    if (renderedPatterns.empty() || beatAlignedTicksPerPlaythrough <= 0)
+    if (preparedPatterns.empty())
     {
-        errorMessage = "Export length is zero.";
+        errorMessage = "No patterns to export.";
         return false;
     }
 
-    // Calculate total ticks: beat-aligned duration for positioning
-    const int64_t totalTicks64 = beatAlignedTicksPerPlaythrough * (int64_t)playthroughCycles;
-    if (totalTicks64 <= 0 || totalTicks64 > (int64_t)std::numeric_limits<int>::max())
-    {
-        errorMessage = "Export length is too large.";
-        return false;
-    }
+    // Build unified MIDI timeline
+    juce::MidiMessageSequence sequence;
+    sequence.addEvent(juce::MidiMessage::timeSignatureMetaEvent(4, 2), 0.0);
 
-    juce::MidiMessageSequence combined;
-    int64_t offset = 0;
+    double globalBeatPosition = 0.0;  // Track position in beats
+    double currentBPM = -1.0;         // Track current BPM for tempo changes
+    const int noteNumber = 60;
 
-    // Add time signature at the beginning (4/4)
-    combined.addEvent(juce::MidiMessage::timeSignatureMetaEvent(4, 2), 0.0);
-
-    // Track tempo changes to add tempo meta events at pattern boundaries
-    struct TempoChange
-    {
-        int64_t tick;
-        double bpm;
-    };
-    std::vector<TempoChange> tempoChanges;
-
+    // Process each playthrough cycle
     for (int cycle = 0; cycle < playthroughCycles; ++cycle)
     {
-        for (size_t patternIndex = 0; patternIndex < renderedPatterns.size(); ++patternIndex)
+        // Process each pattern
+        for (auto& prep : preparedPatterns)
         {
-            const auto& rendered = renderedPatterns[patternIndex];
+            const auto& patternData = prep.data;
+            const double patternBpm = prep.bpm;
 
-            // Add tempo meta event at the start of each pattern section
-            // (but only if BPM changed from previous pattern)
-            if (tempoChanges.empty() || tempoChanges.back().bpm != rendered.bpm)
+            // Add tempo change if BPM changed
+            if (currentBPM != patternBpm)
             {
-                tempoChanges.push_back({ offset, rendered.bpm });
+                const int64_t tempoTick = (int64_t)std::llround(globalBeatPosition * (double)ppq);
+                const int microsecondsPerQuarterNote = (int)std::round(60000000.0 / patternBpm);
+                sequence.addEvent(juce::MidiMessage::tempoMetaEvent(microsecondsPerQuarterNote), (double)tempoTick);
+                currentBPM = patternBpm;
             }
 
-            // Copy note events (filter out all meta events)
-            for (int eventIndex = 0; eventIndex < rendered.sequence.getNumEvents(); ++eventIndex)
-            {
-                if (auto* event = rendered.sequence.getEventPointer(eventIndex))
-                {
-                    const auto& message = event->message;
+            const int timingMode = patternData.timingMode;
+            const double secondsPerBeat = 60.0 / patternBpm;
+            const double countModeCycleBeats = (double)kCountModeBaseBeats;
 
-                    // Skip all meta events (tempo, time signature, end of track, etc.)
-                    if (message.isMetaEvent())
+            // Check for solo slots
+            bool anySolo = false;
+            for (const auto& slot : patternData.slots)
+                anySolo = anySolo || slot.solo;
+
+            // Calculate cycle length for this pattern
+            const int maxDen = 32;
+            int cycleLengthNumerator = 1;
+            int cycleLengthDenominator = 1;
+            bool hasCycleLength = false;
+
+            // Structure for slot data
+            struct SlotInfo
+            {
+                int num = 0;
+                int den = 1;
+                int count = 0;
+                uint64_t mask = kDefaultCountMask;
+                int midiChannel = 1;
+                float gain = 1.0f;
+                double noteLengthBeats = 0.25;
+            };
+
+            std::vector<SlotInfo> activeSlots;
+            activeSlots.reserve(kNumSlots);
+
+            // Prepare active slots
+            for (int slotIndex = 0; slotIndex < kNumSlots; ++slotIndex)
+            {
+                const auto& slotData = patternData.slots[(size_t)slotIndex];
+
+                if (slotData.mute)
+                    continue;
+
+                if (anySolo && !slotData.solo)
+                    continue;
+
+                if (slotData.filePath.isEmpty())
+                    continue;
+
+                // Load sample to calculate note length
+                auto voice = std::make_unique<SlotVoice>();
+                voice->prepare(engineSampleRate);
+
+                bool loaded = false;
+
+#if __has_include("BinaryData.h")
+                {
+                    int resourceSize = 0;
+                    if (const void* data = BinaryData::getNamedResource(slotData.filePath.toRawUTF8(), resourceSize))
+                    {
+                        if (resourceSize > 0)
+                        {
+                            voice->loadFromMemory(data, resourceSize, slotData.filePath);
+                            loaded = voice->hasSample();
+                        }
+                    }
+                }
+#endif
+
+                if (!loaded)
+                {
+                    const juce::File audioFile(slotData.filePath);
+                    if (audioFile.existsAsFile())
+                    {
+                        voice->loadFile(audioFile);
+                        loaded = voice->hasSample();
+                    }
+                }
+
+                if (!loaded)
+                    continue;
+
+                voice->setDecayMs(decayUiToMilliseconds(slotData.decayUi));
+
+                SlotInfo info;
+                info.gain = juce::jlimit(0.0f, 1.0f, slotData.gainPercent * 0.01f);
+                info.mask = slotData.countMask;
+                info.midiChannel = juce::jlimit(1, 16, slotData.midiChannel);
+
+                // Calculate note length
+                int noteSamples = voice->sample.getNumSamples();
+                if (voice->envMaxSamples > 0)
+                    noteSamples = juce::jmin(noteSamples, voice->envMaxSamples);
+                noteSamples = juce::jmax(1, noteSamples);
+
+                const double noteSeconds = (double)noteSamples / engineSampleRate;
+                double noteLengthBeats = noteSeconds / secondsPerBeat;
+                if (noteLengthBeats <= 0.0)
+                    noteLengthBeats = 1.0 / (double)ppq;
+                info.noteLengthBeats = noteLengthBeats;
+
+                // Calculate timing parameters
+                if (timingMode == 0)  // Polyrhythm mode
+                {
+                    const double rate = juce::jmax(0.0001f, slotData.rate);
+                    int num = 0, den = 1;
+                    approximateRational(rate, maxDen, num, den);
+                    const int g = igcd(num, den);
+                    if (g != 0)
+                    {
+                        num /= g;
+                        den /= g;
+                    }
+
+                    if (num <= 0 || den <= 0)
                         continue;
 
-                    // Create new message with corrected timestamp
-                    const double newTimestamp = event->message.getTimeStamp() + (double)offset;
-                    juce::MidiMessage newMessage(message);
-                    combined.addEvent(newMessage, newTimestamp);
+                    accumulateCycleLength(den, num, cycleLengthNumerator, cycleLengthDenominator, hasCycleLength);
+
+                    info.num = num;
+                    info.den = den;
+                }
+                else  // Count mode
+                {
+                    info.count = juce::jlimit(1, 64, slotData.count);
+                }
+
+                activeSlots.push_back(info);
+            }
+
+            if (activeSlots.empty())
+            {
+                // No active slots, but still advance time
+                continue;
+            }
+
+            // Finalize cycle length
+            double cycleBeats = 1.0;
+            if (timingMode == 0)
+            {
+                if (!hasCycleLength)
+                {
+                    cycleLengthNumerator = 1;
+                    cycleLengthDenominator = 1;
+                }
+                cycleBeats = juce::jlimit(1.0e-6, 512.0,
+                    (double)cycleLengthNumerator / (double)cycleLengthDenominator);
+            }
+            else
+            {
+                cycleBeats = juce::jlimit(1.0e-6, 512.0, countModeCycleBeats);
+            }
+
+            prep.cycleBeats = cycleBeats;  // Store for later
+
+            // Generate MIDI events for this pattern's cycles
+            for (int patternCycle = 0; patternCycle < prep.cycles; ++patternCycle)
+            {
+                const double patternCycleBeatStart = globalBeatPosition + (double)patternCycle * cycleBeats;
+
+                for (const auto& slotInfo : activeSlots)
+                {
+                    if (timingMode == 0)  // Polyrhythm mode
+                    {
+                        const int hitsPerCycle = juce::jmax(1, slotInfo.num);
+                        const double spacingBeats = cycleBeats / (double)hitsPerCycle;
+
+                        for (int hit = 0; hit < hitsPerCycle; ++hit)
+                        {
+                            const double triggerBeat = patternCycleBeatStart + spacingBeats * (double)hit;
+                            const int64_t startTick = (int64_t)std::llround(triggerBeat * (double)ppq);
+                            const int64_t noteTicks = juce::jmax(1LL, (int64_t)std::llround(slotInfo.noteLengthBeats * (double)ppq));
+                            const int64_t offTick = startTick + noteTicks;
+
+                            const int velocity = juce::jlimit(1, 127, (int)std::round(slotInfo.gain * 127.0f));
+
+                            sequence.addEvent(juce::MidiMessage::noteOn(slotInfo.midiChannel, noteNumber, (juce::uint8)velocity), (double)startTick);
+                            sequence.addEvent(juce::MidiMessage::noteOff(slotInfo.midiChannel, noteNumber), (double)offTick);
+                        }
+                    }
+                    else  // Count mode
+                    {
+                        const int hitsPerCycle = juce::jmax(1, slotInfo.count);
+                        const double stepBeats = countModeCycleBeats / (double)hitsPerCycle;
+                        const uint64_t mask = slotInfo.mask & maskForBeats(slotInfo.count);
+
+                        for (int hit = 0; hit < hitsPerCycle; ++hit)
+                        {
+                            if (((mask >> hit) & 1ull) == 0)
+                                continue;
+
+                            const double triggerBeat = patternCycleBeatStart + stepBeats * (double)hit;
+                            const int64_t startTick = (int64_t)std::llround(triggerBeat * (double)ppq);
+                            const int64_t noteTicks = juce::jmax(1LL, (int64_t)std::llround(slotInfo.noteLengthBeats * (double)ppq));
+                            const int64_t offTick = startTick + noteTicks;
+
+                            const int velocity = juce::jlimit(1, 127, (int)std::round(slotInfo.gain * 127.0f));
+
+                            sequence.addEvent(juce::MidiMessage::noteOn(slotInfo.midiChannel, noteNumber, (juce::uint8)velocity), (double)startTick);
+                            sequence.addEvent(juce::MidiMessage::noteOff(slotInfo.midiChannel, noteNumber), (double)offTick);
+                        }
+                    }
                 }
             }
 
-            // Advance offset by beat-aligned ticks (not totalTicks with note tails)
-            // This positions the next pattern at the beat boundary, allowing note tails to overlap
-            offset += rendered.beatAlignedTicks;
+            // Advance global position by this pattern's total beat length
+            globalBeatPosition += cycleBeats * (double)prep.cycles;
         }
     }
 
-    // Add all tempo meta events at their correct positions
-    for (const auto& tempoChange : tempoChanges)
-    {
-        const int microsecondsPerQuarterNote = (int)std::round(60000000.0 / tempoChange.bpm);
-        combined.addEvent(juce::MidiMessage::tempoMetaEvent(microsecondsPerQuarterNote), (double)tempoChange.tick);
-    }
+    // Finalize sequence
+    const int64_t finalTick = (int64_t)std::llround(globalBeatPosition * (double)ppq);
+    sequence.sort();
+    sequence.updateMatchedPairs();
+    sequence.addEvent(juce::MidiMessage::endOfTrack(), (double)finalTick);
 
-    combined.sort();
-    combined.updateMatchedPairs();
-    combined.addEvent(juce::MidiMessage::endOfTrack(), (double)totalTicks64);
-
+    // Write to file
     juce::MidiFile mf;
     mf.setTicksPerQuarterNote(ppq);
-    mf.addTrack(combined);
+    mf.addTrack(sequence);
 
-    // Delete existing file if it exists (to allow overwriting)
     if (destination.existsAsFile())
     {
         if (!destination.deleteFile())
