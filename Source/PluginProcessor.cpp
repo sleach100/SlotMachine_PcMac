@@ -2802,6 +2802,7 @@ bool SlotMachineAudioProcessor::exportMidiPlaythroughCycles(const juce::File& de
     double globalBeatPosition = 0.0;  // Track position in beats
     double currentBPM = -1.0;         // Track current BPM for tempo changes
     const int noteNumber = 60;
+    int64_t maxNoteOffTick = 0;       // Track the last note-off event for end-of-track positioning
 
     // Process each playthrough cycle
     for (int cycle = 0; cycle < playthroughCycles; ++cycle)
@@ -2986,7 +2987,7 @@ bool SlotMachineAudioProcessor::exportMidiPlaythroughCycles(const juce::File& de
 
                         for (int hit = 0; hit < hitsPerCycle; ++hit)
                         {
-                            const double triggerBeat = patternCycleBeatStart + spacingBeats * ((double)hit + 1.0);
+                            const double triggerBeat = patternCycleBeatStart + spacingBeats * (double)hit;
                             const int64_t startTick = (int64_t)std::llround(triggerBeat * (double)ppq);
                             const int64_t noteTicks = juce::jmax(1LL, (int64_t)std::llround(slotInfo.noteLengthBeats * (double)ppq));
                             const int64_t offTick = startTick + noteTicks;
@@ -2995,6 +2996,7 @@ bool SlotMachineAudioProcessor::exportMidiPlaythroughCycles(const juce::File& de
 
                             sequence.addEvent(juce::MidiMessage::noteOn(slotInfo.midiChannel, noteNumber, (juce::uint8)velocity), (double)startTick);
                             sequence.addEvent(juce::MidiMessage::noteOff(slotInfo.midiChannel, noteNumber), (double)offTick);
+                            maxNoteOffTick = juce::jmax(maxNoteOffTick, offTick);
                         }
                     }
                     else  // Count mode
@@ -3008,7 +3010,7 @@ bool SlotMachineAudioProcessor::exportMidiPlaythroughCycles(const juce::File& de
                             if (((mask >> hit) & 1ull) == 0)
                                 continue;
 
-                            const double triggerBeat = patternCycleBeatStart + stepBeats * ((double)hit + 1.0);
+                            const double triggerBeat = patternCycleBeatStart + stepBeats * (double)hit;
                             const int64_t startTick = (int64_t)std::llround(triggerBeat * (double)ppq);
                             const int64_t noteTicks = juce::jmax(1LL, (int64_t)std::llround(slotInfo.noteLengthBeats * (double)ppq));
                             const int64_t offTick = startTick + noteTicks;
@@ -3017,6 +3019,7 @@ bool SlotMachineAudioProcessor::exportMidiPlaythroughCycles(const juce::File& de
 
                             sequence.addEvent(juce::MidiMessage::noteOn(slotInfo.midiChannel, noteNumber, (juce::uint8)velocity), (double)startTick);
                             sequence.addEvent(juce::MidiMessage::noteOff(slotInfo.midiChannel, noteNumber), (double)offTick);
+                            maxNoteOffTick = juce::jmax(maxNoteOffTick, offTick);
                         }
                     }
                 }
@@ -3028,7 +3031,8 @@ bool SlotMachineAudioProcessor::exportMidiPlaythroughCycles(const juce::File& de
     }
 
     // Finalize sequence
-    const int64_t finalTick = (int64_t)std::llround(globalBeatPosition * (double)ppq);
+    // Place end-of-track after the last note-off to ensure all notes play fully
+    const int64_t finalTick = juce::jmax(maxNoteOffTick, (int64_t)std::llround(globalBeatPosition * (double)ppq));
     sequence.sort();
     sequence.updateMatchedPairs();
     sequence.addEvent(juce::MidiMessage::endOfTrack(), (double)finalTick);
