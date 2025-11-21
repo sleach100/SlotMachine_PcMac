@@ -2035,21 +2035,6 @@ public:
         showSlotBars.setButtonText("Show slot progress bars");
         showSlotBars.addListener(this);
 
-        addAndMakeVisible(showVisualizer);
-        showVisualizer.setButtonText("Show Polyrhythm Visualizer window");
-        showVisualizer.addListener(this);
-
-        addAndMakeVisible(visualizerModeLabel);
-        visualizerModeLabel.setText("Visualizer Path", juce::dontSendNotification);
-        visualizerModeLabel.setJustificationType(juce::Justification::centredLeft);
-        visualizerModeLabel.setColour(juce::Label::textColourId, juce::Colours::white);
-
-        addAndMakeVisible(visualizerModeCombo);
-        visualizerModeCombo.setJustificationType(juce::Justification::centredLeft);
-        visualizerModeCombo.addItem("Edge Walk (perimeter)", 1);
-        visualizerModeCombo.addItem("Orbit (circular)", 2);
-        visualizerModeCombo.onChange = [this]() { handleVisualizerModeSelection(); };
-
         // sample rate
         sampleRateLabel.setText("Export Sample Rate", juce::dontSendNotification);
         sampleRateLabel.setColour(juce::Label::textColourId, juce::Colours::white);
@@ -2147,17 +2132,11 @@ public:
     {
         auto a = getLocalBounds().reduced(12);
 
-        auto toggleArea = a.removeFromTop(92);
-        auto topRow = toggleArea.removeFromTop(28);
-        showMasterBar.setBounds(topRow.removeFromLeft(getWidth() / 2 - 16));
-        showSlotBars.setBounds(topRow);
+        auto toggleArea = a.removeFromTop(28);
+        showMasterBar.setBounds(toggleArea.removeFromLeft(getWidth() / 2 - 16));
+        showSlotBars.setBounds(toggleArea);
 
-        toggleArea.removeFromTop(8);
-        auto secondRow = toggleArea.removeFromTop(28);
-        showVisualizer.setBounds(secondRow.removeFromLeft(getWidth() / 2 - 16));
-        secondRow.removeFromLeft(12);
-        visualizerModeLabel.setBounds(secondRow.removeFromLeft(150));
-        visualizerModeCombo.setBounds(secondRow.removeFromLeft(200).reduced(0, 4));
+        a.removeFromTop(8);
 
         auto sampleRateRow = a.removeFromTop(48);
         sampleRateLabel.setBounds(sampleRateRow.removeFromLeft(getWidth() / 2 - 16));
@@ -2212,9 +2191,7 @@ public:
 private:
     APVTS& apvts;
 
-    juce::ToggleButton showMasterBar, showSlotBars, showVisualizer;
-    juce::Label visualizerModeLabel;
-    juce::ComboBox visualizerModeCombo;
+    juce::ToggleButton showMasterBar, showSlotBars;
 
     juce::Label sampleRateLabel;
     juce::ComboBox sampleRateCombo;
@@ -2249,7 +2226,6 @@ private:
     std::array<int, 2>   timingModeValues{ { 0, 1 } };
     bool blockSampleRateUpdate = false;
     bool blockTimingModeUpdate = false;
-    bool blockVisualizerModeUpdate = false;
     std::array<float, 6> slotScaleValues{ { 0.75f, 0.8f, 0.85f, 0.9f, 0.95f, 1.0f } };
     bool blockSlotScaleUpdate = false;
 
@@ -2291,15 +2267,8 @@ private:
         // toggles
         showMasterBar.setToggleState(Opt::getBool(apvts, "optShowMasterBar", true), juce::dontSendNotification);
         showSlotBars.setToggleState(Opt::getBool(apvts, "optShowSlotBars", true), juce::dontSendNotification);
-        showVisualizer.setToggleState(Opt::getBool(apvts, "optShowVisualizer", false), juce::dontSendNotification);
-
-        const bool edgeWalk = Opt::getBool(apvts, "optVisualizerEdgeWalk", true);
-        blockVisualizerModeUpdate = true;
-        visualizerModeCombo.setSelectedId(edgeWalk ? 1 : 2, juce::dontSendNotification);
-        blockVisualizerModeUpdate = false;
 
         const int timingModeValue = Opt::getInt(apvts, "optTimingMode", timingModeValues.back());
-        applyVisualizerAvailabilityForTimingMode(timingModeValue);
 
         const int currentSampleRate = Opt::getInt(apvts, "optSampleRate", sampleRateValues.front());
         int sampleRateId = 1;
@@ -2365,8 +2334,6 @@ private:
             setBoolParam("optShowMasterBar", showMasterBar.getToggleState());
         else if (b == &showSlotBars)
             setBoolParam("optShowSlotBars", showSlotBars.getToggleState());
-        else if (b == &showVisualizer)
-            setBoolParam("optShowVisualizer", showVisualizer.getToggleState());
         else if (b == &btnResetDefaults)
             resetToDefaultOptions();
         else if (b == &btnClose)
@@ -2398,16 +2365,6 @@ private:
         if (s == &glowWidth)  setFloatParam("optGlowWidth", (float)glowWidth.getValue());
         if (s == &pulseAlpha) setFloatParam("optPulseAlpha", (float)pulseAlpha.getValue());
         if (s == &pulseWidth) setFloatParam("optPulseWidth", (float)pulseWidth.getValue());
-    }
-
-    void handleVisualizerModeSelection()
-    {
-        if (blockVisualizerModeUpdate)
-            return;
-
-        const int id = visualizerModeCombo.getSelectedId();
-        const bool edgeWalk = (id <= 0 || id == 1);
-        setBoolParam("optVisualizerEdgeWalk", edgeWalk);
     }
 
     void handleSampleRateSelection()
@@ -2450,7 +2407,6 @@ private:
 
         const int value = timingModeValues[(size_t)(id - 1)];
         setIntParam("optTimingMode", value);
-        applyVisualizerAvailabilityForTimingMode(value);
     }
 
     void resetToDefaultOptions()
@@ -2467,7 +2423,6 @@ private:
 
         setBoolParam("optShowMasterBar", true);
         setBoolParam("optShowSlotBars", true);
-        setBoolParam("optShowVisualizer", false);
         setBoolParam("optVisualizerEdgeWalk", true);
         setIntParam("optSampleRate", kDefaultSampleRate);
         setIntParam("optTimingMode", kDefaultTimingMode);
@@ -2511,25 +2466,6 @@ private:
         }
     }
 
-    void applyVisualizerAvailabilityForTimingMode(int timingMode)
-    {
-        const bool rateMode = (timingMode == 0);
-        const bool visualizerEnabled = !rateMode;
-
-        showVisualizer.setEnabled(visualizerEnabled);
-        showVisualizer.setAlpha(visualizerEnabled ? 1.0f : 0.35f);
-
-        visualizerModeLabel.setEnabled(visualizerEnabled);
-        visualizerModeLabel.setAlpha(visualizerEnabled ? 1.0f : 0.35f);
-        visualizerModeCombo.setEnabled(visualizerEnabled);
-        visualizerModeCombo.setAlpha(visualizerEnabled ? 1.0f : 0.35f);
-
-        if (!visualizerEnabled && showVisualizer.getToggleState())
-        {
-            showVisualizer.setToggleState(false, juce::dontSendNotification);
-            setBoolParam("optShowVisualizer", false);
-        }
-    }
 };
 
 
@@ -2860,9 +2796,9 @@ SlotMachineAudioProcessorEditor::SlotMachineAudioProcessorEditor(SlotMachineAudi
 
     refreshSlotTimingModeUI();
 
-    lastShowVisualizer = Opt::getBool(apvts, "optShowVisualizer", false);
-    if (lastShowVisualizer)
-        openVisualizerWindow();
+    // Visualizer is now only opened when the user clicks the Visualize button
+    // Do not auto-open based on saved state
+    lastShowVisualizer = false;
 
     initialiseLicenseState();
 }
@@ -5081,7 +5017,7 @@ void SlotMachineAudioProcessorEditor::showOptionsDialog()
         {
             applySlotScale(newScale);
         });
-    content->setSize(640, 668);
+    content->setSize(640, 632);
 
     juce::DialogWindow::LaunchOptions opt;
     opt.dialogTitle = "Options";
