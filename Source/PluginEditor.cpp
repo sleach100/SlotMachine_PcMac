@@ -2035,6 +2035,17 @@ public:
         showSlotBars.setButtonText("Show slot progress bars");
         showSlotBars.addListener(this);
 
+        addAndMakeVisible(visualizerModeLabel);
+        visualizerModeLabel.setText("Visualizer Path", juce::dontSendNotification);
+        visualizerModeLabel.setJustificationType(juce::Justification::centredLeft);
+        visualizerModeLabel.setColour(juce::Label::textColourId, juce::Colours::white);
+
+        addAndMakeVisible(visualizerModeCombo);
+        visualizerModeCombo.setJustificationType(juce::Justification::centredLeft);
+        visualizerModeCombo.addItem("Edge Walk (perimeter)", 1);
+        visualizerModeCombo.addItem("Orbit (circular)", 2);
+        visualizerModeCombo.onChange = [this]() { handleVisualizerModeSelection(); };
+
         // sample rate
         sampleRateLabel.setText("Export Sample Rate", juce::dontSendNotification);
         sampleRateLabel.setColour(juce::Label::textColourId, juce::Colours::white);
@@ -2138,6 +2149,11 @@ public:
 
         a.removeFromTop(8);
 
+        auto vizRow = a.removeFromTop(48);
+        visualizerModeLabel.setBounds(vizRow.removeFromLeft(150));
+        vizRow.removeFromLeft(12);
+        visualizerModeCombo.setBounds(vizRow.removeFromLeft(200).reduced(0, 8));
+
         auto sampleRateRow = a.removeFromTop(48);
         sampleRateLabel.setBounds(sampleRateRow.removeFromLeft(getWidth() / 2 - 16));
         sampleRateCombo.setBounds(sampleRateRow.removeFromLeft(180).reduced(0, 8));
@@ -2192,6 +2208,8 @@ private:
     APVTS& apvts;
 
     juce::ToggleButton showMasterBar, showSlotBars;
+    juce::Label visualizerModeLabel;
+    juce::ComboBox visualizerModeCombo;
 
     juce::Label sampleRateLabel;
     juce::ComboBox sampleRateCombo;
@@ -2226,6 +2244,7 @@ private:
     std::array<int, 2>   timingModeValues{ { 0, 1 } };
     bool blockSampleRateUpdate = false;
     bool blockTimingModeUpdate = false;
+    bool blockVisualizerModeUpdate = false;
     std::array<float, 6> slotScaleValues{ { 0.75f, 0.8f, 0.85f, 0.9f, 0.95f, 1.0f } };
     bool blockSlotScaleUpdate = false;
 
@@ -2267,6 +2286,11 @@ private:
         // toggles
         showMasterBar.setToggleState(Opt::getBool(apvts, "optShowMasterBar", true), juce::dontSendNotification);
         showSlotBars.setToggleState(Opt::getBool(apvts, "optShowSlotBars", true), juce::dontSendNotification);
+
+        const bool edgeWalk = Opt::getBool(apvts, "optVisualizerEdgeWalk", true);
+        blockVisualizerModeUpdate = true;
+        visualizerModeCombo.setSelectedId(edgeWalk ? 1 : 2, juce::dontSendNotification);
+        blockVisualizerModeUpdate = false;
 
         const int timingModeValue = Opt::getInt(apvts, "optTimingMode", timingModeValues.back());
 
@@ -2365,6 +2389,16 @@ private:
         if (s == &glowWidth)  setFloatParam("optGlowWidth", (float)glowWidth.getValue());
         if (s == &pulseAlpha) setFloatParam("optPulseAlpha", (float)pulseAlpha.getValue());
         if (s == &pulseWidth) setFloatParam("optPulseWidth", (float)pulseWidth.getValue());
+    }
+
+    void handleVisualizerModeSelection()
+    {
+        if (blockVisualizerModeUpdate)
+            return;
+
+        const int id = visualizerModeCombo.getSelectedId();
+        const bool edgeWalk = (id <= 0 || id == 1);
+        setBoolParam("optVisualizerEdgeWalk", edgeWalk);
     }
 
     void handleSampleRateSelection()
@@ -2797,8 +2831,16 @@ SlotMachineAudioProcessorEditor::SlotMachineAudioProcessorEditor(SlotMachineAudi
     refreshSlotTimingModeUI();
 
     // Visualizer is now only opened when the user clicks the Visualize button
-    // Do not auto-open based on saved state
+    // Force visualizer to be off at startup regardless of saved state
     lastShowVisualizer = false;
+    if (auto* param = dynamic_cast<juce::AudioParameterBool*>(apvts.getParameter("optShowVisualizer")))
+    {
+        if (param->get())
+        {
+            *param = false;
+            saveOptionsToDisk(apvts);
+        }
+    }
 
     initialiseLicenseState();
 }
@@ -5017,7 +5059,7 @@ void SlotMachineAudioProcessorEditor::showOptionsDialog()
         {
             applySlotScale(newScale);
         });
-    content->setSize(640, 632);
+    content->setSize(640, 668);
 
     juce::DialogWindow::LaunchOptions opt;
     opt.dialogTitle = "Options";
