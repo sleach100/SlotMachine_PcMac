@@ -191,6 +191,29 @@ LicenseValidationResult LemonSqueezyAPI::parseValidationResponse(const juce::Str
                             }
                         }
 
+                        // If customer info not found in license_key.customer, check meta field
+                        if (result.licenseeEmail.isEmpty() || result.licenseeName.isEmpty())
+                        {
+                            DBG("Customer info not found in license_key.customer, checking meta field");
+                            if (root->hasProperty("meta"))
+                            {
+                                juce::var metaData = root->getProperty("meta");
+                                if (metaData.isObject())
+                                {
+                                    juce::DynamicObject* metaObj = metaData.getDynamicObject();
+                                    if (metaObj != nullptr)
+                                    {
+                                        if (metaObj->hasProperty("customer_email"))
+                                            result.licenseeEmail = metaObj->getProperty("customer_email").toString();
+                                        if (metaObj->hasProperty("customer_name"))
+                                            result.licenseeName = metaObj->getProperty("customer_name").toString();
+
+                                        DBG("Extracted from meta - Name: " + result.licenseeName + ", Email: " + result.licenseeEmail);
+                                    }
+                                }
+                            }
+                        }
+
                         // If we successfully extracted customer info, treat as valid
                         if (result.licenseeName.isNotEmpty() && result.licenseeEmail.isNotEmpty())
                         {
