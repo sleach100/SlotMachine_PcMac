@@ -156,31 +156,104 @@ LicenseValidationResult LemonSqueezyAPI::parseValidationResponse(const juce::Str
                     result.licenseStatus = status;  // Store status even when valid=false
                     DBG("License status: " + status + " (valid=false)");
 
-                    // Note: Test mode licenses may show as "inactive" but still validate successfully
-                    // Only reject if the status is explicitly problematic
-                    if (status == "expired")
+                    // Check if this is a test mode license
+                    bool isTestMode = false;
+                    if (licenseObj->hasProperty("test_mode"))
                     {
-                        result.errorMessage = "License key has expired.";
-                        result.errorCode = "license_expired";
+                        isTestMode = licenseObj->getProperty("test_mode");
+                        result.testMode = isTestMode;
+                        DBG("Test mode license detected in invalid response: " + juce::String(isTestMode ? "yes" : "no"));
                     }
-                    else if (status == "disabled")
+
+                    // For test mode licenses with status "inactive", extract the license data
+                    // even though the API returns valid=false
+                    if (isTestMode && status == "inactive")
                     {
-                        result.errorMessage = "License key has been disabled.";
-                        result.errorCode = "license_disabled";
+                        DBG("Test mode inactive license - extracting license data despite valid=false");
+
+                        // Extract license key and status
+                        result.licenseKey = licenseObj->getProperty("key").toString();
+                        result.activationLimit = licenseObj->getProperty("activation_limit");
+                        result.activationUsage = licenseObj->getProperty("activation_usage");
+
+                        // Extract customer info
+                        if (licenseObj->hasProperty("customer"))
+                        {
+                            juce::var customerData = licenseObj->getProperty("customer");
+                            if (customerData.isObject())
+                            {
+                                juce::DynamicObject* customerObj = customerData.getDynamicObject();
+                                if (customerObj != nullptr)
+                                {
+                                    result.licenseeEmail = customerObj->getProperty("email").toString();
+                                    result.licenseeName = customerObj->getProperty("name").toString();
+                                }
+                            }
+                        }
+
+                        // If we successfully extracted customer info, treat as valid
+                        if (result.licenseeName.isNotEmpty() && result.licenseeEmail.isNotEmpty())
+                        {
+                            DBG("Test mode license has valid customer data - treating as valid");
+                            result.valid = true;
+                            result.hasError = false;
+                            result.errorMessage = "";
+                            result.errorCode = "";
+
+                            // Continue parsing to extract instance info below
+                            // Don't return early
+                        }
+                        else
+                        {
+                            DBG("Test mode license missing customer data - treating as invalid");
+                            result.errorMessage = "Test mode license is missing customer information.";
+                            result.errorCode = "license_incomplete";
+                            return result;
+                        }
                     }
                     else
                     {
-                        result.errorMessage = "License validation failed (status: " + status + ").";
-                        result.errorCode = "license_" + status;
+                        // Not a test mode inactive license - handle normally
+                        // Note: Test mode licenses may show as "inactive" but still validate successfully
+                        // Only reject if the status is explicitly problematic
+                        if (status == "expired")
+                        {
+                            result.errorMessage = "License key has expired.";
+                            result.errorCode = "license_expired";
+                        }
+                        else if (status == "disabled")
+                        {
+                            result.errorMessage = "License key has been disabled.";
+                            result.errorCode = "license_disabled";
+                        }
+                        else
+                        {
+                            result.errorMessage = "License validation failed (status: " + status + ").";
+                            result.errorCode = "license_" + status;
+                        }
+
+                        return result;
                     }
                 }
+                else
+                {
+                    return result;
+                }
+            }
+            else
+            {
+                return result;
             }
         }
-
-        return result;
+        else
+        {
+            return result;
+        }
     }
-
-    DBG("License validation succeeded (valid=true)");
+    else
+    {
+        DBG("License validation succeeded (valid=true)");
+    }
 
     // Extract license information
     if (root->hasProperty("license_key"))
@@ -204,6 +277,7 @@ LicenseValidationResult LemonSqueezyAPI::parseValidationResponse(const juce::Str
                 if (licenseObj->hasProperty("test_mode"))
                 {
                     bool testMode = licenseObj->getProperty("test_mode");
+                    result.testMode = testMode;
                     DBG("Test mode license detected: " + juce::String(testMode ? "yes" : "no"));
                 }
 

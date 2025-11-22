@@ -17,6 +17,7 @@ struct LicenseValidationResult
     juce::String licenseeEmail;       // Customer email
     juce::String licenseeName;        // Customer name
     juce::String licenseStatus;       // Status: "active", "inactive", etc.
+    bool testMode = false;            // Whether this is a test mode license
 
     // Activation tracking
     int activationLimit = 0;          // Maximum allowed activations
