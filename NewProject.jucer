@@ -84,6 +84,14 @@
             file="Source/LicenseRegistry.cpp"/>
       <FILE id="gQwT7P" name="LicenseRegistry.h" compile="0" resource="0"
             file="Source/LicenseRegistry.h"/>
+      <FILE id="LS0001" name="LemonSqueezyAPI.cpp" compile="1" resource="0"
+            file="Source/LemonSqueezyAPI.cpp"/>
+      <FILE id="LS0002" name="LemonSqueezyAPI.h" compile="0" resource="0"
+            file="Source/LemonSqueezyAPI.h"/>
+      <FILE id="LS0003" name="InstanceIdentifier.cpp" compile="1" resource="0"
+            file="Source/InstanceIdentifier.cpp"/>
+      <FILE id="LS0004" name="InstanceIdentifier.h" compile="0" resource="0"
+            file="Source/InstanceIdentifier.h"/>
       <FILE id="rX1k5u" name="BeatsQuickPickGrid.cpp" compile="1" resource="0"
             file="Source/BeatsQuickPickGrid.cpp"/>
       <FILE id="vE7sLq" name="BeatsQuickPickGrid.h" compile="0" resource="0"
@@ -96,11 +104,17 @@
             file="Source/PolyrhythmVizComponent.cpp"/>
       <FILE id="dCSe0b" name="PolyrhythmVizComponent.h" compile="0" resource="0"
             file="Source/PolyrhythmVizComponent.h"/>
+      <FILE id="SA0001" name="StandaloneInit.cpp" compile="1" resource="0"
+            file="Source/StandaloneInit.cpp"/>
+      <FILE id="PM0001" name="WindowsPowerMonitor.cpp" compile="1" resource="0"
+            file="Source/WindowsPowerMonitor.cpp"/>
+      <FILE id="PM0002" name="WindowsPowerMonitor.h" compile="0" resource="0"
+            file="Source/WindowsPowerMonitor.h"/>
     </GROUP>
-    <FILE id="RTt46d" name="base32.h" compile="0" resource="0" file="Source/base32.h"/>
-    <FILE id="TQ3uw4" name="crypto_small.h" compile="0" resource="0" file="Source/crypto_small.h"/>
-    <FILE id="mjuz99" name="license.cpp" compile="1" resource="0" file="Source/license.cpp"/>
-    <FILE id="yl6Hgw" name="license.h" compile="0" resource="0" file="Source/license.h"/>
+    <FILE id="RTt46d" name="base32.h" compile="0" resource="0" file="Source/base32.h" xcodeResource="0"/>
+    <FILE id="TQ3uw4" name="crypto_small.h" compile="0" resource="0" file="Source/crypto_small.h" xcodeResource="0"/>
+    <FILE id="mjuz99" name="license.cpp" compile="0" resource="0" file="Source/license.cpp" xcodeResource="0"/>
+    <FILE id="yl6Hgw" name="license.h" compile="0" resource="0" file="Source/license.h" xcodeResource="0"/>
     <FILE id="ClHMkc" name="LockIcon2.png" compile="0" resource="1" file="Resources/Images/LockIcon2.png"/>
     <FILE id="Jej5zP" name="LonePearLogic.png" compile="0" resource="1"
           file="Resources/Images/LonePearLogic.png"/>

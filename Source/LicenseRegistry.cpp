@@ -43,6 +43,59 @@ namespace
 namespace reg
 {
 
+bool readQWORD(const wchar_t* subkey, const wchar_t* name, int64_t& out)
+{
+#if JUCE_WINDOWS
+    if (subkey == nullptr || name == nullptr)
+        return false;
+
+    HKEY key = nullptr;
+    const LONG status = RegOpenKeyExW(HKEY_CURRENT_USER, subkey, 0, KEY_READ, &key);
+    if (status != ERROR_SUCCESS)
+        return false;
+
+    DWORD dataSize = sizeof(DWORD64);
+    DWORD64 value = 0;
+    LONG result = RegGetValueW(key, nullptr, name, RRF_RT_QWORD, nullptr, &value, &dataSize);
+    RegCloseKey(key);
+
+    if (result != ERROR_SUCCESS)
+        return false;
+
+    out = static_cast<int64_t>(value);
+    return true;
+#else
+    juce::ignoreUnused(subkey, name, out);
+    return false;
+#endif
+}
+
+bool writeQWORD(const wchar_t* subkey, const wchar_t* name, int64_t value)
+{
+#if JUCE_WINDOWS
+    if (subkey == nullptr || name == nullptr)
+        return false;
+
+    HKEY key = nullptr;
+    DWORD disposition = 0;
+    const LONG status = RegCreateKeyExW(HKEY_CURRENT_USER, subkey, 0, nullptr,
+        REG_OPTION_NON_VOLATILE, KEY_WRITE, nullptr, &key, &disposition);
+
+    if (status != ERROR_SUCCESS)
+        return false;
+
+    DWORD64 qwordValue = static_cast<DWORD64>(value);
+    const LONG result = RegSetValueExW(key, name, 0, REG_QWORD,
+        reinterpret_cast<const BYTE*>(&qwordValue), sizeof(DWORD64));
+
+    RegCloseKey(key);
+    return result == ERROR_SUCCESS;
+#else
+    juce::ignoreUnused(subkey, name, value);
+    return false;
+#endif
+}
+
 bool readString(const wchar_t* subkey, const wchar_t* name, std::wstring& out)
 {
 #if JUCE_WINDOWS
@@ -215,3 +268,108 @@ bool clearLicenseFromRegistry()
     return false;
 #endif
 }
+
+// =============================================================================
+// Lemon Squeezy License Cache Implementation
+// =============================================================================
+
+namespace LemonSqueezyCache
+{
+
+bool saveLicenseCache(const std::string& licenseKey,
+                      const std::string& instanceId,
+                      const std::string& cachedJson,
+                      const std::string& licenseeName,
+                      const std::string& licenseeEmail,
+                      int64_t validationTimestamp)
+{
+#if JUCE_WINDOWS
+    const std::wstring licenseKeyW = toWide(licenseKey);
+    const std::wstring instanceIdW = toWide(instanceId);
+    const std::wstring cachedJsonW = toWide(cachedJson);
+    const std::wstring licenseeNameW = toWide(licenseeName);
+    const std::wstring licenseeEmailW = toWide(licenseeEmail);
+
+    if (!reg::writeString(reg::kRegistrySubkey, L"LS_LicenseKey", licenseKeyW))
+        return false;
+    if (!reg::writeString(reg::kRegistrySubkey, L"LS_InstanceID", instanceIdW))
+        return false;
+    if (!reg::writeString(reg::kRegistrySubkey, L"LS_CachedJson", cachedJsonW))
+        return false;
+    if (!reg::writeString(reg::kRegistrySubkey, L"LS_LicenseeName", licenseeNameW))
+        return false;
+    if (!reg::writeString(reg::kRegistrySubkey, L"LS_LicenseeEmail", licenseeEmailW))
+        return false;
+    if (!reg::writeQWORD(reg::kRegistrySubkey, L"LS_ValidationTimestamp", validationTimestamp))
+        return false;
+
+    return true;
+#else
+    juce::ignoreUnused(licenseKey, instanceId, cachedJson, licenseeName, licenseeEmail, validationTimestamp);
+    return false;
+#endif
+}
+
+bool loadLicenseCache(std::string& licenseKey,
+                      std::string& instanceId,
+                      std::string& cachedJson,
+                      std::string& licenseeName,
+                      std::string& licenseeEmail,
+                      int64_t& validationTimestamp)
+{
+#if JUCE_WINDOWS
+    std::wstring licenseKeyW, instanceIdW, cachedJsonW, licenseeNameW, licenseeEmailW;
+
+    if (!reg::readString(reg::kRegistrySubkey, L"LS_LicenseKey", licenseKeyW))
+        return false;
+    if (!reg::readString(reg::kRegistrySubkey, L"LS_InstanceID", instanceIdW))
+        return false;
+    if (!reg::readString(reg::kRegistrySubkey, L"LS_CachedJson", cachedJsonW))
+        return false;
+    if (!reg::readString(reg::kRegistrySubkey, L"LS_LicenseeName", licenseeNameW))
+        return false;
+    if (!reg::readString(reg::kRegistrySubkey, L"LS_LicenseeEmail", licenseeEmailW))
+        return false;
+    if (!reg::readQWORD(reg::kRegistrySubkey, L"LS_ValidationTimestamp", validationTimestamp))
+        return false;
+
+    licenseKey = toNarrow(licenseKeyW);
+    instanceId = toNarrow(instanceIdW);
+    cachedJson = toNarrow(cachedJsonW);
+    licenseeName = toNarrow(licenseeNameW);
+    licenseeEmail = toNarrow(licenseeEmailW);
+
+    return true;
+#else
+    juce::ignoreUnused(licenseKey, instanceId, cachedJson, licenseeName, licenseeEmail, validationTimestamp);
+    return false;
+#endif
+}
+
+bool clearLicenseCache()
+{
+#if JUCE_WINDOWS
+    const bool keyRemoved = reg::deleteValue(reg::kRegistrySubkey, L"LS_LicenseKey");
+    const bool instanceRemoved = reg::deleteValue(reg::kRegistrySubkey, L"LS_InstanceID");
+    const bool jsonRemoved = reg::deleteValue(reg::kRegistrySubkey, L"LS_CachedJson");
+    const bool nameRemoved = reg::deleteValue(reg::kRegistrySubkey, L"LS_LicenseeName");
+    const bool emailRemoved = reg::deleteValue(reg::kRegistrySubkey, L"LS_LicenseeEmail");
+    const bool timestampRemoved = reg::deleteValue(reg::kRegistrySubkey, L"LS_ValidationTimestamp");
+
+    return keyRemoved && instanceRemoved && jsonRemoved && nameRemoved && emailRemoved && timestampRemoved;
+#else
+    return false;
+#endif
+}
+
+bool hasCachedLicense()
+{
+#if JUCE_WINDOWS
+    std::wstring licenseKeyW;
+    return reg::readString(reg::kRegistrySubkey, L"LS_LicenseKey", licenseKeyW);
+#else
+    return false;
+#endif
+}
+
+} // namespace LemonSqueezyCache
