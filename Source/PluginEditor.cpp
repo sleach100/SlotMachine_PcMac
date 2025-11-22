@@ -2974,18 +2974,25 @@ void SlotMachineAudioProcessorEditor::handleUnlockDialogResult(bool accepted,
     if (!accepted)
         return;
 
-    // Note: firstName, lastName, and email are no longer used with Lemon Squeezy
-    // They're kept in the signature for compatibility with the UnlockDialogComponent
-    juce::ignoreUnused(firstName, lastName, email);
-
     const auto trimmedLicense = licenseKey.trim();
+    const auto trimmedFirstName = firstName.trim();
+    const auto trimmedLastName = lastName.trim();
+    const auto trimmedEmail = email.trim();
 
-    // Only license key is required for Lemon Squeezy
+    // Validate required fields
     if (trimmedLicense.isEmpty())
     {
         juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
             "Unlock Slot Machine",
             "Please enter your license key.");
+        return;
+    }
+
+    if (trimmedFirstName.isEmpty() || trimmedEmail.isEmpty())
+    {
+        juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
+            "Unlock Slot Machine",
+            "Please enter your first name and email address.");
         return;
     }
 
@@ -3031,6 +3038,37 @@ void SlotMachineAudioProcessorEditor::handleUnlockDialogResult(bool accepted,
         juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
             "Unlock Slot Machine",
             errorMsg);
+        return;
+    }
+
+    // Validate that the user-entered information matches the license registration
+    // Compare email (case-insensitive)
+    if (!trimmedEmail.equalsIgnoreCase(result.licenseeEmail))
+    {
+        juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
+            "Unlock Slot Machine",
+            "The email address you entered does not match the email registered for this license key.\n\n" +
+            juce::String("Expected: ") + result.licenseeEmail);
+        return;
+    }
+
+    // Compare name - the API returns a full name, so we need to handle both cases:
+    // 1. User entered first name only - check if it matches the beginning of the full name
+    // 2. User entered first + last name - check if they match the full name
+    juce::String userEnteredName = trimmedFirstName;
+    if (trimmedLastName.isNotEmpty())
+    {
+        userEnteredName += " " + trimmedLastName;
+    }
+
+    // Case-insensitive comparison
+    if (!result.licenseeName.equalsIgnoreCase(userEnteredName) &&
+        !result.licenseeName.toLowerCase().startsWith(trimmedFirstName.toLowerCase()))
+    {
+        juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
+            "Unlock Slot Machine",
+            "The name you entered does not match the name registered for this license key.\n\n" +
+            juce::String("Expected: ") + result.licenseeName);
         return;
     }
 
