@@ -122,8 +122,9 @@ LicenseValidationResult LemonSqueezyAPI::parseValidationResponse(const juce::Str
 
     // Check if there's an error in the response
     // Note: error property may exist but be null, which is not an error
+    // In JUCE, null values are represented as var(), so compare against that
     juce::var errorVar = root->getProperty("error");
-    if (!errorVar.isVoid() && !errorVar.isNull())
+    if (!errorVar.isVoid() && errorVar != juce::var() && errorVar.toString().isNotEmpty())
     {
         result.hasError = true;
         result.errorMessage = errorVar.toString();
@@ -533,7 +534,9 @@ bool LemonSqueezyAPI::deactivateLicense(const juce::String& licenseKey,
     }
 
     // Also consider it successful if there's no error
-    bool success = !root->hasProperty("error");
+    // Note: error property may exist but be null, which is not an error
+    juce::var errorVar = root->getProperty("error");
+    bool success = errorVar.isVoid() || errorVar == juce::var() || errorVar.toString().isEmpty();
     DBG("Deactivation result (no deactivated field): " + juce::String(success ? "success" : "failed"));
     return success;
 }
