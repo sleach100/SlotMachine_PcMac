@@ -3052,18 +3052,38 @@ void SlotMachineAudioProcessorEditor::handleUnlockDialogResult(bool accepted,
         return;
     }
 
-    // Compare name - the API returns a full name, so we need to handle both cases:
-    // 1. User entered first name only - check if it matches the beginning of the full name
-    // 2. User entered first + last name - check if they match the full name
-    juce::String userEnteredName = trimmedFirstName;
-    if (trimmedLastName.isNotEmpty())
+    // Compare name - both first and last names must match exactly
+    // The API returns a full name, so parse it into first and last name components
+    // and validate each separately (case-insensitive)
+
+    // Require both first and last names to be provided
+    if (trimmedLastName.isEmpty())
     {
-        userEnteredName += " " + trimmedLastName;
+        juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
+            "Unlock Slot Machine",
+            "Please enter both your first and last name.\n\n" +
+            juce::String("Expected: ") + result.licenseeName);
+        return;
     }
 
-    // Case-insensitive comparison
-    if (!result.licenseeName.equalsIgnoreCase(userEnteredName) &&
-        !result.licenseeName.toLowerCase().startsWith(trimmedFirstName.toLowerCase()))
+    // Parse the license name into first and last components
+    juce::String licenseFirstName, licenseLastName;
+    int spacePos = result.licenseeName.indexOfChar(' ');
+    if (spacePos > 0)
+    {
+        licenseFirstName = result.licenseeName.substring(0, spacePos).trim();
+        licenseLastName = result.licenseeName.substring(spacePos + 1).trim();
+    }
+    else
+    {
+        // License name has no space - treat entire string as first name
+        licenseFirstName = result.licenseeName.trim();
+        licenseLastName = "";
+    }
+
+    // Validate both first and last names match exactly (case-insensitive)
+    if (!trimmedFirstName.equalsIgnoreCase(licenseFirstName) ||
+        !trimmedLastName.equalsIgnoreCase(licenseLastName))
     {
         juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
             "Unlock Slot Machine",
