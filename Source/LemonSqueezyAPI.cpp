@@ -87,6 +87,9 @@ LicenseValidationResult LemonSqueezyAPI::validateLicense(const juce::String& lic
         return result;
     }
 
+    // Debug: Log the API response
+    DBG("Lemon Squeezy API Response: " + response);
+
     // Store raw response for caching
     result.rawJsonResponse = response;
 

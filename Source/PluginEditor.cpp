@@ -3008,7 +3008,7 @@ void SlotMachineAudioProcessorEditor::handleUnlockDialogResult(bool accepted,
         }
         else if (result.errorCode == "license_inactive")
         {
-            errorMsg = "This license key is inactive.";
+            errorMsg = "This license key is inactive.\n\nPlease activate it in your Lemon Squeezy dashboard.";
         }
         else if (result.errorCode == "license_expired")
         {
@@ -3017,6 +3017,12 @@ void SlotMachineAudioProcessorEditor::handleUnlockDialogResult(bool accepted,
         else if (result.hasError && result.errorMessage.isNotEmpty())
         {
             errorMsg = result.errorMessage;
+        }
+
+        // Add debug info for troubleshooting
+        if (result.errorCode.isNotEmpty())
+        {
+            errorMsg += juce::String("\n\nError code: ") + result.errorCode;
         }
 
         juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
