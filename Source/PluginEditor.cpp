@@ -694,8 +694,10 @@ namespace
     {
     public:
         AboutComponent(const juce::String& registrationInfo,
-                      std::function<void()> deactivateCallback)
+                      std::function<void()> deactivateCallback,
+                      bool showDeactivateButton)
             : onDeactivate(std::move(deactivateCallback))
+            , shouldShowDeactivateButton(showDeactivateButton)
         {
             logo = juce::ImageCache::getFromMemory(BinaryData::LonePearLogic_png,
                                                    BinaryData::LonePearLogic_pngSize);
@@ -725,9 +727,12 @@ namespace
             registrationLabel.setFont(createRegularFont(15.0f));
             addAndMakeVisible(registrationLabel);
 
-            deactivateButton.setButtonText("Deactivate License");
-            deactivateButton.addListener(this);
-            addAndMakeVisible(deactivateButton);
+            if (shouldShowDeactivateButton)
+            {
+                deactivateButton.setButtonText("Deactivate License");
+                deactivateButton.addListener(this);
+                addAndMakeVisible(deactivateButton);
+            }
         }
 
         void paint(juce::Graphics& g) override
@@ -743,7 +748,8 @@ namespace
             const int contactLabelHeight = 32;
             const int registrationLabelHeight = 32;
             const int buttonHeight = 32;
-            auto imageArea = bounds.removeFromTop(juce::jmax(120, bounds.getHeight() - aboutLabelHeight - contactLabelHeight - registrationLabelHeight - buttonHeight - 60));
+            const int buttonSpacing = shouldShowDeactivateButton ? buttonHeight + 20 : 0;
+            auto imageArea = bounds.removeFromTop(juce::jmax(120, bounds.getHeight() - aboutLabelHeight - contactLabelHeight - registrationLabelHeight - buttonSpacing - 40));
             logoComponent.setBounds(imageArea);
 
             bounds.removeFromTop(20);
@@ -755,9 +761,12 @@ namespace
             bounds.removeFromTop(10);
             registrationLabel.setBounds(bounds.removeFromTop(registrationLabelHeight));
 
-            bounds.removeFromTop(20);
-            auto buttonBounds = bounds.removeFromTop(buttonHeight);
-            deactivateButton.setBounds(buttonBounds.withSizeKeepingCentre(180, buttonHeight));
+            if (shouldShowDeactivateButton)
+            {
+                bounds.removeFromTop(20);
+                auto buttonBounds = bounds.removeFromTop(buttonHeight);
+                deactivateButton.setBounds(buttonBounds.withSizeKeepingCentre(180, buttonHeight));
+            }
         }
 
         void buttonClicked(juce::Button* button) override
@@ -776,6 +785,7 @@ namespace
         juce::Label registrationLabel;
         juce::TextButton deactivateButton;
         std::function<void()> onDeactivate;
+        bool shouldShowDeactivateButton;
     };
 }
 
@@ -5135,7 +5145,7 @@ void SlotMachineAudioProcessorEditor::buttonClicked(juce::Button* b)
             }
         };
 
-        auto aboutContent = std::make_unique<AboutComponent>(getRegistrationDisplayName(), deactivateCallback);
+        auto aboutContent = std::make_unique<AboutComponent>(getRegistrationDisplayName(), deactivateCallback, isUnlocked);
         aboutContent->setSize(420, 460);
 
         juce::DialogWindow::LaunchOptions options;
