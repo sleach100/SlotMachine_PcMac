@@ -4,6 +4,8 @@
 #include "BeatsQuickPickGrid.h"
 #include "CountBeatMaskGrid.h"
 #include "LicenseRegistry.h"
+#include "LemonSqueezyAPI.h"
+#include "InstanceIdentifier.h"
 
 #include <memory>
 #include <cmath>
@@ -2847,31 +2849,60 @@ SlotMachineAudioProcessorEditor::SlotMachineAudioProcessorEditor(SlotMachineAudi
 
 void SlotMachineAudioProcessorEditor::initialiseLicenseState()
 {
-    std::string first;
-    std::string last;
-    std::string email;
-    std::string licenseKey;
-
     storedFirstName.clear();
     storedLastName.clear();
     storedEmail.clear();
     storedLicenseKey.clear();
 
-    if (loadLicenseFromRegistry(first, last, email, licenseKey))
-    {
-        storedFirstName = first;
-        storedLastName = last;
-        storedEmail = email;
-        storedLicenseKey = licenseKey;
+    // Try to load Lemon Squeezy cached license first
+    std::string licenseKey, instanceId, cachedJson, licenseeName, licenseeEmail;
+    int64_t validationTimestamp = 0;
 
-        if (!first.empty() && !last.empty() && !email.empty() && !licenseKey.empty()
-            && license::verifyLicense(licenseKey, first, last, email))
+    if (LemonSqueezyCache::loadLicenseCache(licenseKey, instanceId, cachedJson,
+                                             licenseeName, licenseeEmail, validationTimestamp))
+    {
+        // We have a cached license - parse it to verify it's still valid
+        auto cachedResult = LemonSqueezyAPI::parseCachedResponse(juce::String(cachedJson));
+
+        if (cachedResult.valid)
         {
+            // Cache is valid - unlock the plugin
+            storedLicenseKey = licenseKey;
+            storedFirstName = licenseeName;
+            storedLastName = "";  // Not used with Lemon Squeezy
+            storedEmail = licenseeEmail;
+
             setUnlocked(true);
+
+            // Try to revalidate online in the background (non-blocking)
+            juce::Thread::launch([this, licenseKey, instanceId]()
+            {
+                auto onlineResult = LemonSqueezyAPI::validateLicense(
+                    juce::String(licenseKey),
+                    juce::String(instanceId));
+
+                if (onlineResult.valid)
+                {
+                    // Update cache with fresh validation
+                    juce::MessageManager::callAsync([this, onlineResult]()
+                    {
+                        LemonSqueezyCache::saveLicenseCache(
+                            onlineResult.licenseKey.toStdString(),
+                            onlineResult.instanceId.toStdString(),
+                            onlineResult.rawJsonResponse.toStdString(),
+                            onlineResult.licenseeName.toStdString(),
+                            onlineResult.licenseeEmail.toStdString(),
+                            onlineResult.validatedAt.toMilliseconds());
+                    });
+                }
+                // If online validation fails, we still use the cache (offline mode)
+            });
+
             return;
         }
     }
 
+    // No Lemon Squeezy cache found - plugin starts in locked state
     setUnlocked(false);
 }
 
@@ -2943,49 +2974,86 @@ void SlotMachineAudioProcessorEditor::handleUnlockDialogResult(bool accepted,
     if (!accepted)
         return;
 
-    const auto trimmedFirst = firstName.trim();
-    const auto trimmedLast = lastName.trim();
-    const auto trimmedEmail = email.trim();
     const auto trimmedLicense = licenseKey.trim();
 
-    if (trimmedFirst.isEmpty() || trimmedLast.isEmpty() || trimmedEmail.isEmpty() || trimmedLicense.isEmpty())
+    // Only license key is required for Lemon Squeezy
+    if (trimmedLicense.isEmpty())
     {
         juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
             "Unlock Slot Machine",
-            "All fields are required to unlock the application.");
+            "Please enter your license key.");
         return;
     }
 
-    storedFirstName = trimmedFirst.toStdString();
-    storedLastName = trimmedLast.toStdString();
-    storedEmail = trimmedEmail.toStdString();
-    storedLicenseKey = trimmedLicense.toStdString();
+    // Get or create instance ID for this machine
+    juce::String instanceId = InstanceIdentifier::getOrCreateInstanceID();
 
-    if (!license::verifyLicense(storedLicenseKey, storedFirstName, storedLastName, storedEmail))
+    // Validate with Lemon Squeezy API (synchronous for now)
+    auto result = LemonSqueezyAPI::validateLicense(trimmedLicense, instanceId);
+
+    if (result.hasError || !result.valid)
+    {
+        juce::String errorMsg = "The license key could not be validated.";
+
+        if (result.errorCode == "activation_limit_reached")
+        {
+            errorMsg = juce::String("Activation limit reached (") +
+                       juce::String(result.activationUsage) + " of " +
+                       juce::String(result.activationLimit) + " used).\n\n" +
+                       "Please deactivate the license on another machine first.";
+        }
+        else if (result.errorCode == "license_inactive")
+        {
+            errorMsg = "This license key is inactive.";
+        }
+        else if (result.errorCode == "license_expired")
+        {
+            errorMsg = "This license key has expired.";
+        }
+        else if (result.hasError && result.errorMessage.isNotEmpty())
+        {
+            errorMsg = result.errorMessage;
+        }
+
+        juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
+            "Unlock Slot Machine",
+            errorMsg);
+        return;
+    }
+
+    // Validation successful - save to cache
+    storedLicenseKey = result.licenseKey.toStdString();
+    storedFirstName = result.licenseeName.toStdString();
+    storedLastName = "";  // Not used with Lemon Squeezy
+    storedEmail = result.licenseeEmail.toStdString();
+
+    if (!LemonSqueezyCache::saveLicenseCache(
+            result.licenseKey.toStdString(),
+            result.instanceId.toStdString(),
+            result.rawJsonResponse.toStdString(),
+            result.licenseeName.toStdString(),
+            result.licenseeEmail.toStdString(),
+            result.validatedAt.toMilliseconds()))
     {
         juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
             "Unlock Slot Machine",
-            "The supplied license details could not be validated.");
-        return;
+            "Unable to save the license information. The plugin may not work offline.");
+        // Continue anyway - the license is valid, we just can't cache it
     }
-
-#if JUCE_WINDOWS
-    if (!saveLicenseToRegistry(storedFirstName, storedLastName, storedEmail, storedLicenseKey))
-    {
-        juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
-            "Unlock Slot Machine",
-            "Unable to save the license information to the registry.");
-        return;
-    }
-#else
-    saveLicenseToRegistry(storedFirstName, storedLastName, storedEmail, storedLicenseKey);
-#endif
 
     setUnlocked(true);
 
+    juce::String successMsg = "Thank you! The application has been unlocked.";
+    if (result.activationLimit > 0)
+    {
+        successMsg += juce::String("\n\nActivations used: ") +
+                      juce::String(result.activationUsage) + " of " +
+                      juce::String(result.activationLimit);
+    }
+
     juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::InfoIcon,
         "Unlock Slot Machine",
-        "Thank you! The application has been unlocked.");
+        successMsg);
 }
 
 void SlotMachineAudioProcessorEditor::showTrialModeDialog()
