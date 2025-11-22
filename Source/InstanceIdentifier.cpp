@@ -80,9 +80,9 @@ juce::String getOrCreateInstanceID()
     const int requiredChars = MultiByteToWideChar(CP_UTF8, 0, machineGuid.toRawUTF8(), -1, nullptr, 0);
     if (requiredChars > 0)
     {
-        std::wstring instanceIDW(static_cast<size_t>(requiredChars - 1), L'\0');
-        MultiByteToWideChar(CP_UTF8, 0, machineGuid.toRawUTF8(), -1, instanceIDW.data(), requiredChars);
-        reg::writeString(reg::kRegistrySubkey, L"InstanceID", instanceIDW);
+        std::wstring storedInstanceIDW(static_cast<size_t>(requiredChars - 1), L'\0');
+        MultiByteToWideChar(CP_UTF8, 0, machineGuid.toRawUTF8(), -1, storedInstanceIDW.data(), requiredChars);
+        reg::writeString(reg::kRegistrySubkey, L"InstanceID", storedInstanceIDW);
     }
 
     return machineGuid;

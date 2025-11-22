@@ -51,14 +51,19 @@ LicenseValidationResult LemonSqueezyAPI::validateLicense(const juce::String& lic
     // Set up HTTP headers as a single string
     juce::String headers = "Accept: application/json\r\nContent-Type: application/json\r\n";
 
+    // Add POST data to URL (older JUCE API)
+    juce::URL postUrl = url.withPOSTData(requestBody);
+
     // Make the HTTP request
-    std::unique_ptr<juce::InputStream> stream = url.createInputStream(
-        juce::URL::InputStreamOptions(juce::URL::ParameterHandling::inAddress)
-            .withExtraHeaders(headers)
-            .withConnectionTimeoutMs(TIMEOUT_MS)
-            .withNumRedirectsToFollow(5)
-            .withHttpRequestCmd("POST")
-            .withPostData(requestBody)
+    std::unique_ptr<juce::InputStream> stream = postUrl.createInputStream(
+        false,                      // usePostCommand = false (already set by withPOSTData)
+        nullptr,                    // progressCallback
+        nullptr,                    // progressCallbackContext
+        headers,                    // extraHeaders
+        TIMEOUT_MS,                 // timeOutMs
+        nullptr,                    // responseHeaders
+        nullptr,                    // numRedirectsToFollow (use default)
+        0                           // httpStatusCode
     );
 
     if (stream == nullptr)
@@ -242,14 +247,19 @@ bool LemonSqueezyAPI::deactivateLicense(const juce::String& licenseKey,
     // Set up HTTP headers as a single string
     juce::String headers = "Accept: application/json\r\nContent-Type: application/json\r\n";
 
+    // Add POST data to URL (older JUCE API)
+    juce::URL postUrl = url.withPOSTData(requestBody);
+
     // Make the HTTP request (same endpoint handles both activation and deactivation)
-    std::unique_ptr<juce::InputStream> stream = url.createInputStream(
-        juce::URL::InputStreamOptions(juce::URL::ParameterHandling::inAddress)
-            .withExtraHeaders(headers)
-            .withConnectionTimeoutMs(TIMEOUT_MS)
-            .withNumRedirectsToFollow(5)
-            .withHttpRequestCmd("POST")
-            .withPostData(requestBody)
+    std::unique_ptr<juce::InputStream> stream = postUrl.createInputStream(
+        false,                      // usePostCommand = false (already set by withPOSTData)
+        nullptr,                    // progressCallback
+        nullptr,                    // progressCallbackContext
+        headers,                    // extraHeaders
+        TIMEOUT_MS,                 // timeOutMs
+        nullptr,                    // responseHeaders
+        nullptr,                    // numRedirectsToFollow (use default)
+        0                           // httpStatusCode
     );
 
     if (stream == nullptr)
