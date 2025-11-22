@@ -3047,8 +3047,7 @@ void SlotMachineAudioProcessorEditor::handleUnlockDialogResult(bool accepted,
     {
         juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
             "Unlock Slot Machine",
-            "The email address you entered does not match the email registered for this license key.\n\n" +
-            juce::String("Expected: ") + result.licenseeEmail);
+            "The email address you entered does not match the email registered for this license key.");
         return;
     }
 
@@ -3061,8 +3060,7 @@ void SlotMachineAudioProcessorEditor::handleUnlockDialogResult(bool accepted,
     {
         juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
             "Unlock Slot Machine",
-            "Please enter both your first and last name.\n\n" +
-            juce::String("Expected: ") + result.licenseeName);
+            "Please enter both your first and last name.");
         return;
     }
 
@@ -3087,8 +3085,7 @@ void SlotMachineAudioProcessorEditor::handleUnlockDialogResult(bool accepted,
     {
         juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
             "Unlock Slot Machine",
-            "The name you entered does not match the name registered for this license key.\n\n" +
-            juce::String("Expected: ") + result.licenseeName);
+            "The name you entered does not match the name registered for this license key.");
         return;
     }
 
