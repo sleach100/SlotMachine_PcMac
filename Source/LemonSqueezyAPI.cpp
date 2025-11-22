@@ -29,7 +29,8 @@ juce::String LemonSqueezyAPI::buildValidationRequestBody(const juce::String& lic
 
     if (instanceId.isNotEmpty())
     {
-        jsonObject->setProperty("instance_id", instanceId);
+        // Lemon Squeezy expects "instance_name" not "instance_id"
+        jsonObject->setProperty("instance_name", instanceId);
     }
 
     return juce::JSON::toString(juce::var(jsonObject.get()));
@@ -48,8 +49,11 @@ LicenseValidationResult LemonSqueezyAPI::validateLicense(const juce::String& lic
 
     juce::String requestBody = buildValidationRequestBody(licenseKey, instanceId);
 
-    // Set up HTTP headers as a single string
-    juce::String headers = "Accept: application/json\r\nContent-Type: application/json\r\n";
+    // Set up HTTP headers including Authorization
+    juce::String apiKey = getAPIKey();
+    juce::String headers = "Accept: application/json\r\n";
+    headers += "Content-Type: application/json\r\n";
+    headers += "Authorization: Bearer " + apiKey + "\r\n";
 
     // Add POST data to URL (older JUCE API)
     juce::URL postUrl = url.withPOSTData(requestBody);
@@ -244,8 +248,11 @@ bool LemonSqueezyAPI::deactivateLicense(const juce::String& licenseKey,
 
     juce::String requestBody = buildValidationRequestBody(licenseKey, instanceId);
 
-    // Set up HTTP headers as a single string
-    juce::String headers = "Accept: application/json\r\nContent-Type: application/json\r\n";
+    // Set up HTTP headers including Authorization
+    juce::String apiKey = getAPIKey();
+    juce::String headers = "Accept: application/json\r\n";
+    headers += "Content-Type: application/json\r\n";
+    headers += "Authorization: Bearer " + apiKey + "\r\n";
 
     // Add POST data to URL (older JUCE API)
     juce::URL postUrl = url.withPOSTData(requestBody);
