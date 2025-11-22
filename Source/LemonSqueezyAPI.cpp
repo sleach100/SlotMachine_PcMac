@@ -268,11 +268,80 @@ LicenseValidationResult LemonSqueezyAPI::parseCachedResponse(const juce::String&
     return parseValidationResponse(jsonResponse);
 }
 
+LicenseValidationResult LemonSqueezyAPI::activateLicense(const juce::String& licenseKey,
+                                                          const juce::String& instanceId)
+{
+    LicenseValidationResult result;
+    result.licenseKey = licenseKey;
+    result.instanceId = instanceId;
+    result.validatedAt = juce::Time::getCurrentTime();
+
+    DBG("Attempting to activate license: " + licenseKey);
+    DBG("Instance ID: " + instanceId);
+
+    // Build the API request
+    juce::URL url(juce::String(API_BASE_URL) + "/licenses/activate");
+
+    juce::String requestBody = buildValidationRequestBody(licenseKey, instanceId);
+
+    // Set up HTTP headers including Authorization
+    juce::String apiKey = getAPIKey();
+    juce::String headers = "Accept: application/json\r\n";
+    headers += "Content-Type: application/json\r\n";
+    headers += "Authorization: Bearer " + apiKey + "\r\n";
+
+    // Add POST data to URL (older JUCE API)
+    juce::URL postUrl = url.withPOSTData(requestBody);
+
+    // Make the HTTP request
+    std::unique_ptr<juce::InputStream> stream = postUrl.createInputStream(
+        false,                      // usePostCommand = false (already set by withPOSTData)
+        nullptr,                    // progressCallback
+        nullptr,                    // progressCallbackContext
+        headers,                    // extraHeaders
+        TIMEOUT_MS,                 // timeOutMs
+        nullptr,                    // responseHeaders
+        nullptr,                    // numRedirectsToFollow (use default)
+        0                           // httpStatusCode
+    );
+
+    if (stream == nullptr)
+    {
+        result.hasError = true;
+        result.errorMessage = "Failed to connect to Lemon Squeezy API for activation.";
+        DBG("Activation failed: Could not connect to API");
+        return result;
+    }
+
+    // Read the response
+    juce::String response = stream->readEntireStreamAsString();
+
+    if (response.isEmpty())
+    {
+        result.hasError = true;
+        result.errorMessage = "Received empty response from Lemon Squeezy activation API.";
+        DBG("Activation failed: Empty response");
+        return result;
+    }
+
+    // Debug: Log the API response
+    DBG("Lemon Squeezy Activation Response: " + response);
+
+    // Store raw response
+    result.rawJsonResponse = response;
+
+    // Parse the response - activation returns the same structure as validation
+    return parseValidationResponse(response);
+}
+
 bool LemonSqueezyAPI::deactivateLicense(const juce::String& licenseKey,
                                          const juce::String& instanceId)
 {
+    DBG("Attempting to deactivate license: " + licenseKey);
+    DBG("Instance ID: " + instanceId);
+
     // Build the API request
-    juce::URL url(juce::String(API_BASE_URL) + "/licenses/activate");
+    juce::URL url(juce::String(API_BASE_URL) + "/licenses/deactivate");
 
     juce::String requestBody = buildValidationRequestBody(licenseKey, instanceId);
 
@@ -299,6 +368,7 @@ bool LemonSqueezyAPI::deactivateLicense(const juce::String& licenseKey,
 
     if (stream == nullptr)
     {
+        DBG("Deactivation failed: Could not connect to API");
         return false;
     }
 
@@ -307,19 +377,25 @@ bool LemonSqueezyAPI::deactivateLicense(const juce::String& licenseKey,
 
     if (response.isEmpty())
     {
+        DBG("Deactivation failed: Empty response");
         return false;
     }
+
+    // Debug: Log the API response
+    DBG("Lemon Squeezy Deactivation Response: " + response);
 
     // Parse the response
     juce::var parsedJson = juce::JSON::parse(response);
     if (!parsedJson.isObject())
     {
+        DBG("Deactivation failed: Invalid JSON response");
         return false;
     }
 
     juce::DynamicObject* root = parsedJson.getDynamicObject();
     if (root == nullptr)
     {
+        DBG("Deactivation failed: Could not parse response");
         return false;
     }
 
@@ -327,9 +403,13 @@ bool LemonSqueezyAPI::deactivateLicense(const juce::String& licenseKey,
     // The API should return the updated instance with deactivated=true
     if (root->hasProperty("deactivated"))
     {
-        return root->getProperty("deactivated");
+        bool success = root->getProperty("deactivated");
+        DBG("Deactivation result: " + juce::String(success ? "success" : "failed"));
+        return success;
     }
 
     // Also consider it successful if there's no error
-    return !root->hasProperty("error");
+    bool success = !root->hasProperty("error");
+    DBG("Deactivation result (no deactivated field): " + juce::String(success ? "success" : "failed"));
+    return success;
 }

@@ -49,6 +49,17 @@ public:
                                                     const juce::String& instanceId);
 
     /**
+     * Activate a license on this machine.
+     * This increments the activation count and creates an instance.
+     *
+     * @param licenseKey The license key to activate
+     * @param instanceId The instance ID to activate
+     * @return LicenseValidationResult with activation status
+     */
+    static LicenseValidationResult activateLicense(const juce::String& licenseKey,
+                                                    const juce::String& instanceId);
+
+    /**
      * Deactivate a license on this machine.
      * This decrements the activation count for the license.
      *
