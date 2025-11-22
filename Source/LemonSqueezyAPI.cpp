@@ -153,6 +153,7 @@ LicenseValidationResult LemonSqueezyAPI::parseValidationResponse(const juce::Str
                 if (licenseObj && licenseObj->hasProperty("status"))
                 {
                     juce::String status = licenseObj->getProperty("status").toString();
+                    result.licenseStatus = status;  // Store status even when valid=false
                     DBG("License status: " + status + " (valid=false)");
 
                     // Note: Test mode licenses may show as "inactive" but still validate successfully

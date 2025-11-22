@@ -2995,10 +2995,11 @@ void SlotMachineAudioProcessorEditor::handleUnlockDialogResult(bool accepted,
     // Validate with Lemon Squeezy API (synchronous for now)
     auto result = LemonSqueezyAPI::validateLicense(trimmedLicense, instanceId);
 
-    // If valid but inactive, try to activate it automatically
-    if (result.valid && result.licenseStatus == "inactive")
+    // If inactive (whether valid or not), try to activate it automatically
+    // Note: Lemon Squeezy returns valid=false for inactive licenses
+    if (result.licenseStatus == "inactive")
     {
-        DBG("License is valid but inactive - attempting activation");
+        DBG("License is inactive - attempting activation");
         result = LemonSqueezyAPI::activateLicense(trimmedLicense, instanceId);
 
         if (result.hasError || !result.valid)
