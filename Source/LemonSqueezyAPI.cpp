@@ -141,6 +141,8 @@ LicenseValidationResult LemonSqueezyAPI::parseValidationResponse(const juce::Str
         if (root->hasProperty("error"))
         {
             result.errorCode = root->getProperty("error").toString();
+            result.errorMessage = "Validation failed: " + result.errorCode;
+            DBG("License validation failed with error: " + result.errorCode);
         }
         else if (root->hasProperty("license_key"))
         {
@@ -151,15 +153,24 @@ LicenseValidationResult LemonSqueezyAPI::parseValidationResponse(const juce::Str
                 if (licenseObj && licenseObj->hasProperty("status"))
                 {
                     juce::String status = licenseObj->getProperty("status").toString();
-                    if (status == "inactive")
-                    {
-                        result.errorMessage = "License key is inactive.";
-                        result.errorCode = "license_inactive";
-                    }
-                    else if (status == "expired")
+                    DBG("License status: " + status + " (valid=false)");
+
+                    // Note: Test mode licenses may show as "inactive" but still validate successfully
+                    // Only reject if the status is explicitly problematic
+                    if (status == "expired")
                     {
                         result.errorMessage = "License key has expired.";
                         result.errorCode = "license_expired";
+                    }
+                    else if (status == "disabled")
+                    {
+                        result.errorMessage = "License key has been disabled.";
+                        result.errorCode = "license_disabled";
+                    }
+                    else
+                    {
+                        result.errorMessage = "License validation failed (status: " + status + ").";
+                        result.errorCode = "license_" + status;
                     }
                 }
             }
@@ -167,6 +178,8 @@ LicenseValidationResult LemonSqueezyAPI::parseValidationResponse(const juce::Str
 
         return result;
     }
+
+    DBG("License validation succeeded (valid=true)");
 
     // Extract license information
     if (root->hasProperty("license_key"))
@@ -182,6 +195,17 @@ LicenseValidationResult LemonSqueezyAPI::parseValidationResponse(const juce::Str
                 result.activationLimit = licenseObj->getProperty("activation_limit");
                 result.activationUsage = licenseObj->getProperty("activation_usage");
 
+                DBG("License details - Status: " + result.licenseStatus +
+                    ", Activation: " + juce::String(result.activationUsage) + "/" +
+                    juce::String(result.activationLimit));
+
+                // Check if this is a test mode license
+                if (licenseObj->hasProperty("test_mode"))
+                {
+                    bool testMode = licenseObj->getProperty("test_mode");
+                    DBG("Test mode license detected: " + juce::String(testMode ? "yes" : "no"));
+                }
+
                 // Extract customer info
                 if (licenseObj->hasProperty("customer"))
                 {
@@ -193,6 +217,7 @@ LicenseValidationResult LemonSqueezyAPI::parseValidationResponse(const juce::Str
                         {
                             result.licenseeEmail = customerObj->getProperty("email").toString();
                             result.licenseeName = customerObj->getProperty("name").toString();
+                            DBG("License registered to: " + result.licenseeName + " (" + result.licenseeEmail + ")");
                         }
                     }
                 }
