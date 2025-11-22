@@ -121,11 +121,13 @@ LicenseValidationResult LemonSqueezyAPI::parseValidationResponse(const juce::Str
     }
 
     // Check if there's an error in the response
-    if (root->hasProperty("error"))
+    // Note: error property may exist but be null, which is not an error
+    juce::var errorVar = root->getProperty("error");
+    if (!errorVar.isVoid() && !errorVar.isNull())
     {
         result.hasError = true;
-        result.errorMessage = root->getProperty("error").toString();
-        result.errorCode = root->getProperty("error").toString();
+        result.errorMessage = errorVar.toString();
+        result.errorCode = errorVar.toString();
         return result;
     }
 
