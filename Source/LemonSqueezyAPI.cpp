@@ -48,13 +48,11 @@ LicenseValidationResult LemonSqueezyAPI::validateLicense(const juce::String& lic
 
     juce::String requestBody = buildValidationRequestBody(licenseKey, instanceId);
 
-    // Set up HTTP headers
-    juce::StringPairArray headers;
-    headers.set("Accept", "application/json");
-    headers.set("Content-Type", "application/json");
+    // Set up HTTP headers as a single string
+    juce::String headers = "Accept: application/json\r\nContent-Type: application/json\r\n";
 
     // Make the HTTP request
-    auto stream = url.createInputStream(
+    std::unique_ptr<juce::InputStream> stream = url.createInputStream(
         juce::URL::InputStreamOptions(juce::URL::ParameterHandling::inAddress)
             .withExtraHeaders(headers)
             .withConnectionTimeoutMs(TIMEOUT_MS)
@@ -241,13 +239,11 @@ bool LemonSqueezyAPI::deactivateLicense(const juce::String& licenseKey,
 
     juce::String requestBody = buildValidationRequestBody(licenseKey, instanceId);
 
-    // Set up HTTP headers
-    juce::StringPairArray headers;
-    headers.set("Accept", "application/json");
-    headers.set("Content-Type", "application/json");
+    // Set up HTTP headers as a single string
+    juce::String headers = "Accept: application/json\r\nContent-Type: application/json\r\n";
 
     // Make the HTTP request (same endpoint handles both activation and deactivation)
-    auto stream = url.createInputStream(
+    std::unique_ptr<juce::InputStream> stream = url.createInputStream(
         juce::URL::InputStreamOptions(juce::URL::ParameterHandling::inAddress)
             .withExtraHeaders(headers)
             .withConnectionTimeoutMs(TIMEOUT_MS)

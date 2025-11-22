@@ -2974,6 +2974,10 @@ void SlotMachineAudioProcessorEditor::handleUnlockDialogResult(bool accepted,
     if (!accepted)
         return;
 
+    // Note: firstName, lastName, and email are no longer used with Lemon Squeezy
+    // They're kept in the signature for compatibility with the UnlockDialogComponent
+    juce::ignoreUnused(firstName, lastName, email);
+
     const auto trimmedLicense = licenseKey.trim();
 
     // Only license key is required for Lemon Squeezy
