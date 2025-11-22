@@ -689,10 +689,13 @@ namespace
         bool hasCommitted = false;
     };
 
-    class AboutComponent : public juce::Component
+    class AboutComponent : public juce::Component,
+                           public juce::Button::Listener
     {
     public:
-        explicit AboutComponent(const juce::String& registrationInfo)
+        AboutComponent(const juce::String& registrationInfo,
+                      std::function<void()> deactivateCallback)
+            : onDeactivate(std::move(deactivateCallback))
         {
             logo = juce::ImageCache::getFromMemory(BinaryData::LonePearLogic_png,
                                                    BinaryData::LonePearLogic_pngSize);
@@ -721,6 +724,10 @@ namespace
             registrationLabel.setColour(juce::Label::textColourId, juce::Colours::whitesmoke);
             registrationLabel.setFont(createRegularFont(15.0f));
             addAndMakeVisible(registrationLabel);
+
+            deactivateButton.setButtonText("Deactivate License");
+            deactivateButton.addListener(this);
+            addAndMakeVisible(deactivateButton);
         }
 
         void paint(juce::Graphics& g) override
@@ -735,7 +742,8 @@ namespace
             const int aboutLabelHeight = 48;
             const int contactLabelHeight = 32;
             const int registrationLabelHeight = 32;
-            auto imageArea = bounds.removeFromTop(juce::jmax(120, bounds.getHeight() - aboutLabelHeight - contactLabelHeight - registrationLabelHeight - 40));
+            const int buttonHeight = 32;
+            auto imageArea = bounds.removeFromTop(juce::jmax(120, bounds.getHeight() - aboutLabelHeight - contactLabelHeight - registrationLabelHeight - buttonHeight - 60));
             logoComponent.setBounds(imageArea);
 
             bounds.removeFromTop(20);
@@ -746,6 +754,18 @@ namespace
 
             bounds.removeFromTop(10);
             registrationLabel.setBounds(bounds.removeFromTop(registrationLabelHeight));
+
+            bounds.removeFromTop(20);
+            auto buttonBounds = bounds.removeFromTop(buttonHeight);
+            deactivateButton.setBounds(buttonBounds.withSizeKeepingCentre(180, buttonHeight));
+        }
+
+        void buttonClicked(juce::Button* button) override
+        {
+            if (button == &deactivateButton && onDeactivate)
+            {
+                onDeactivate();
+            }
         }
 
     private:
@@ -754,6 +774,8 @@ namespace
         juce::Label aboutLabel;
         juce::Label contactLabel;
         juce::Label registrationLabel;
+        juce::TextButton deactivateButton;
+        std::function<void()> onDeactivate;
     };
 }
 
@@ -3111,17 +3133,9 @@ void SlotMachineAudioProcessorEditor::handleUnlockDialogResult(bool accepted,
 
     setUnlocked(true);
 
-    juce::String successMsg = "Thank you! The application has been unlocked.";
-    if (result.activationLimit > 0)
-    {
-        successMsg += juce::String("\n\nActivations used: ") +
-                      juce::String(result.activationUsage) + " of " +
-                      juce::String(result.activationLimit);
-    }
-
     juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::InfoIcon,
         "Unlock Slot Machine",
-        successMsg);
+        "Thank you! The application has been unlocked.");
 }
 
 void SlotMachineAudioProcessorEditor::showTrialModeDialog()
@@ -5052,7 +5066,76 @@ void SlotMachineAudioProcessorEditor::buttonClicked(juce::Button* b)
             return;
         }
 
-        auto aboutContent = std::make_unique<AboutComponent>(getRegistrationDisplayName());
+        auto deactivateCallback = [this]()
+        {
+            // Confirm deactivation
+            bool shouldDeactivate = juce::NativeMessageBox::showOkCancelBox(
+                juce::AlertWindow::WarningIcon,
+                "Deactivate License",
+                "Are you sure you want to deactivate this license on this computer?\n\n"
+                "This will free up an activation slot for use on another computer.",
+                nullptr,
+                nullptr);
+
+            if (!shouldDeactivate)
+                return;
+
+            // Get current license info
+            juce::String licenseKey = storedLicenseKey;
+            juce::String instanceId = InstanceIdentifier::getOrCreateInstanceID();
+
+            // Call API to deactivate
+            bool apiSuccess = LemonSqueezyAPI::deactivateLicense(licenseKey, instanceId);
+
+            // Clear local cache regardless of API result
+#if JUCE_WINDOWS
+            if (!clearLicenseFromRegistry())
+            {
+                juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
+                    "Deactivate License",
+                    "Unable to remove the saved license information from the registry.");
+            }
+#else
+            clearLicenseFromRegistry();
+#endif
+
+            // Clear instance ID
+            InstanceIdentifier::clearInstanceID();
+
+            // Clear stored credentials
+            storedFirstName.clear();
+            storedLastName.clear();
+            storedEmail.clear();
+            storedLicenseKey.clear();
+
+            // Update UI
+            setUnlocked(false);
+
+            // Close about dialog
+            if (auto* dialog = aboutDialog.getComponent())
+            {
+                if (auto* window = dynamic_cast<juce::DialogWindow*>(dialog))
+                    window->exitModalState(0);
+            }
+
+            // Show result message
+            if (apiSuccess)
+            {
+                juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::InfoIcon,
+                    "Deactivate License",
+                    "License successfully deactivated on this computer.");
+            }
+            else
+            {
+                juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
+                    "Deactivate License",
+                    "License deactivated locally, but there was an error communicating with the server.\n\n"
+                    "The license has been removed from this computer, but you may need to contact support "
+                    "to free up the activation slot.");
+            }
+        };
+
+        auto aboutContent = std::make_unique<AboutComponent>(getRegistrationDisplayName(), deactivateCallback);
         aboutContent->setSize(420, 460);
 
         juce::DialogWindow::LaunchOptions options;
