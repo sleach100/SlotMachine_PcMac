@@ -104,6 +104,12 @@
             file="Source/PolyrhythmVizComponent.cpp"/>
       <FILE id="dCSe0b" name="PolyrhythmVizComponent.h" compile="0" resource="0"
             file="Source/PolyrhythmVizComponent.h"/>
+      <FILE id="SA0001" name="StandaloneInit.cpp" compile="1" resource="0"
+            file="Source/StandaloneInit.cpp"/>
+      <FILE id="PM0001" name="WindowsPowerMonitor.cpp" compile="1" resource="0"
+            file="Source/WindowsPowerMonitor.cpp"/>
+      <FILE id="PM0002" name="WindowsPowerMonitor.h" compile="0" resource="0"
+            file="Source/WindowsPowerMonitor.h"/>
     </GROUP>
     <FILE id="RTt46d" name="base32.h" compile="0" resource="0" file="Source/base32.h" xcodeResource="0"/>
     <FILE id="TQ3uw4" name="crypto_small.h" compile="0" resource="0" file="Source/crypto_small.h" xcodeResource="0"/>
