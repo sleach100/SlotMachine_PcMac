@@ -4112,6 +4112,7 @@ void SlotMachineAudioProcessorEditor::refreshSlotFileLabels(const juce::Array<in
 
         const bool hasSample = processor.slotHasSample(i);
         juce::String path = processor.getSlotFilePath(i);
+        const bool hadProcessorPath = path.isNotEmpty(); // Track if processor had a path
         if (embeddedSlotResourceNames[(size_t)i].isNotEmpty()
             && path.isNotEmpty()
             && path != embeddedSlotResourceNames[(size_t)i])
@@ -4172,7 +4173,8 @@ void SlotMachineAudioProcessorEditor::refreshSlotFileLabels(const juce::Array<in
                 const bool failed = failedSlots.contains(i);
                 juce::File f(path);
                 const bool exists = f.existsAsFile();
-                isFailed = failed || !exists;
+                // Only mark as failed if in failedSlots OR (processor had path AND file doesn't exist)
+                isFailed = failed || (!exists && hadProcessorPath);
                 const juce::String fileName = f.getFileName().isNotEmpty() ? f.getFileName() : path;
 
                 if (failed || !exists)
