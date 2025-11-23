@@ -4088,32 +4088,9 @@ void SlotMachineAudioProcessorEditor::applyPattern(int index, bool updateTabs, b
 
 void SlotMachineAudioProcessorEditor::showPatternWarning(const juce::Array<int>& failedSlots)
 {
-    if (failedSlots.isEmpty())
-    {
-        patternWarningLabel.setVisible(false);
-        patternWarningCounter = 0;
-        return;
-    }
-
-    juce::String text;
-    if (failedSlots.size() == 1)
-        text = "1 sample failed to load";
-    else
-        text = juce::String(failedSlots.size()) + " samples failed to load";
-
-    juce::String patternName;
-    if (patternsTree.isValid())
-    {
-        auto child = patternsTree.getChild(currentPatternIndex);
-        patternName = child.getProperty(kPatternNameProperty).toString();
-    }
-
-    if (patternName.isNotEmpty())
-        text = patternName + ": " + text;
-
-    patternWarningLabel.setText(text, juce::dontSendNotification);
-    patternWarningLabel.setVisible(true);
-    patternWarningCounter = 300; // ~5 seconds at 60 Hz
+    // Hide error messages for sample loading failures
+    patternWarningLabel.setVisible(false);
+    patternWarningCounter = 0;
 }
 
 void SlotMachineAudioProcessorEditor::refreshSlotFileLabels(const juce::Array<int>& failedSlots)
@@ -4135,6 +4112,7 @@ void SlotMachineAudioProcessorEditor::refreshSlotFileLabels(const juce::Array<in
 
         const bool hasSample = processor.slotHasSample(i);
         juce::String path = processor.getSlotFilePath(i);
+        const bool hadProcessorPath = path.isNotEmpty(); // Track if processor had a path
         if (embeddedSlotResourceNames[(size_t)i].isNotEmpty()
             && path.isNotEmpty()
             && path != embeddedSlotResourceNames[(size_t)i])
@@ -4161,6 +4139,8 @@ void SlotMachineAudioProcessorEditor::refreshSlotFileLabels(const juce::Array<in
             }
         }
 
+        bool isFailed = false;
+
         if (embeddedResource.isNotEmpty())
         {
             juce::String display = getEmbeddedSampleDisplay(embeddedResource);
@@ -4168,6 +4148,7 @@ void SlotMachineAudioProcessorEditor::refreshSlotFileLabels(const juce::Array<in
                 display = embeddedResource;
 
             const bool failed = failedSlots.contains(i) || !hasSample;
+            isFailed = failed;
             label = failed ? display + " (missing)" : display + " (embedded)";
         }
         else
@@ -4192,6 +4173,8 @@ void SlotMachineAudioProcessorEditor::refreshSlotFileLabels(const juce::Array<in
                 const bool failed = failedSlots.contains(i);
                 juce::File f(path);
                 const bool exists = f.existsAsFile();
+                // Only mark as failed if in failedSlots OR (processor had path AND file doesn't exist)
+                isFailed = failed || (!exists && hadProcessorPath);
                 const juce::String fileName = f.getFileName().isNotEmpty() ? f.getFileName() : path;
 
                 if (failed || !exists)
@@ -4203,6 +4186,12 @@ void SlotMachineAudioProcessorEditor::refreshSlotFileLabels(const juce::Array<in
 
         ui->hasFile = hasSample;
         ui->fileLabel.setText(label, juce::dontSendNotification);
+
+        // Set color to red for failed samples, default color otherwise
+        if (isFailed)
+            ui->fileLabel.setColour(juce::Label::textColourId, juce::Colours::red);
+        else
+            ui->fileLabel.setColour(juce::Label::textColourId, juce::Label().findColour(juce::Label::textColourId));
     }
 }
 
@@ -5204,6 +5193,7 @@ void SlotMachineAudioProcessorEditor::buttonClicked(juce::Button* b)
             embeddedSlotResourceNames[(size_t)i].clear();
             ui->hasFile = false;
             ui->fileLabel.setText("No file", juce::dontSendNotification);
+            ui->fileLabel.setColour(juce::Label::textColourId, juce::Label().findColour(juce::Label::textColourId));
             ui->glow = 0.0f;
             ui->phase = 0.0f;
             ui->lastHitCounter = 0;
@@ -6189,18 +6179,8 @@ void SlotMachineAudioProcessorEditor::timerCallback()
     if (std::abs(currentScaleParam - slotScale) > 0.0001f)
         applySlotScale(currentScaleParam);
 
-    bool showVisualizer = false;
-    if (auto* showParam = apvts.getRawParameterValue("optShowVisualizer"))
-        showVisualizer = showParam->load() >= 0.5f;
-
-    if (showVisualizer != lastShowVisualizer)
-    {
-        lastShowVisualizer = showVisualizer;
-        if (showVisualizer)
-            openVisualizerWindow();
-        else
-            closeVisualizerWindow();
-    }
+    // Visualizer should only open when user explicitly clicks the Visualize button,
+    // not automatically when loading saved state
 
     const double sampleRateNow = processor.getSampleRate();
     const double bpmNow = processor.getBpm();
