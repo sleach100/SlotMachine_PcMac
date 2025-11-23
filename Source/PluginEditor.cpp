@@ -4088,32 +4088,9 @@ void SlotMachineAudioProcessorEditor::applyPattern(int index, bool updateTabs, b
 
 void SlotMachineAudioProcessorEditor::showPatternWarning(const juce::Array<int>& failedSlots)
 {
-    if (failedSlots.isEmpty())
-    {
-        patternWarningLabel.setVisible(false);
-        patternWarningCounter = 0;
-        return;
-    }
-
-    juce::String text;
-    if (failedSlots.size() == 1)
-        text = "1 sample failed to load";
-    else
-        text = juce::String(failedSlots.size()) + " samples failed to load";
-
-    juce::String patternName;
-    if (patternsTree.isValid())
-    {
-        auto child = patternsTree.getChild(currentPatternIndex);
-        patternName = child.getProperty(kPatternNameProperty).toString();
-    }
-
-    if (patternName.isNotEmpty())
-        text = patternName + ": " + text;
-
-    patternWarningLabel.setText(text, juce::dontSendNotification);
-    patternWarningLabel.setVisible(true);
-    patternWarningCounter = 300; // ~5 seconds at 60 Hz
+    // Hide error messages for sample loading failures
+    patternWarningLabel.setVisible(false);
+    patternWarningCounter = 0;
 }
 
 void SlotMachineAudioProcessorEditor::refreshSlotFileLabels(const juce::Array<int>& failedSlots)
