@@ -4170,9 +4170,9 @@ void SlotMachineAudioProcessorEditor::refreshSlotFileLabels(const juce::Array<in
             if (path.isNotEmpty())
             {
                 const bool failed = failedSlots.contains(i);
-                isFailed = failed;
                 juce::File f(path);
                 const bool exists = f.existsAsFile();
+                isFailed = failed || !exists;
                 const juce::String fileName = f.getFileName().isNotEmpty() ? f.getFileName() : path;
 
                 if (failed || !exists)
