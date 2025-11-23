@@ -5193,6 +5193,7 @@ void SlotMachineAudioProcessorEditor::buttonClicked(juce::Button* b)
             embeddedSlotResourceNames[(size_t)i].clear();
             ui->hasFile = false;
             ui->fileLabel.setText("No file", juce::dontSendNotification);
+            ui->fileLabel.setColour(juce::Label::textColourId, juce::Label().findColour(juce::Label::textColourId));
             ui->glow = 0.0f;
             ui->phase = 0.0f;
             ui->lastHitCounter = 0;
