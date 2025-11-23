@@ -6179,18 +6179,8 @@ void SlotMachineAudioProcessorEditor::timerCallback()
     if (std::abs(currentScaleParam - slotScale) > 0.0001f)
         applySlotScale(currentScaleParam);
 
-    bool showVisualizer = false;
-    if (auto* showParam = apvts.getRawParameterValue("optShowVisualizer"))
-        showVisualizer = showParam->load() >= 0.5f;
-
-    if (showVisualizer != lastShowVisualizer)
-    {
-        lastShowVisualizer = showVisualizer;
-        if (showVisualizer)
-            openVisualizerWindow();
-        else
-            closeVisualizerWindow();
-    }
+    // Visualizer should only open when user explicitly clicks the Visualize button,
+    // not automatically when loading saved state
 
     const double sampleRateNow = processor.getSampleRate();
     const double bpmNow = processor.getBpm();
