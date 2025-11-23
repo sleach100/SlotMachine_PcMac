@@ -4138,6 +4138,8 @@ void SlotMachineAudioProcessorEditor::refreshSlotFileLabels(const juce::Array<in
             }
         }
 
+        bool isFailed = false;
+
         if (embeddedResource.isNotEmpty())
         {
             juce::String display = getEmbeddedSampleDisplay(embeddedResource);
@@ -4145,6 +4147,7 @@ void SlotMachineAudioProcessorEditor::refreshSlotFileLabels(const juce::Array<in
                 display = embeddedResource;
 
             const bool failed = failedSlots.contains(i) || !hasSample;
+            isFailed = failed;
             label = failed ? display + " (missing)" : display + " (embedded)";
         }
         else
@@ -4167,6 +4170,7 @@ void SlotMachineAudioProcessorEditor::refreshSlotFileLabels(const juce::Array<in
             if (path.isNotEmpty())
             {
                 const bool failed = failedSlots.contains(i);
+                isFailed = failed;
                 juce::File f(path);
                 const bool exists = f.existsAsFile();
                 const juce::String fileName = f.getFileName().isNotEmpty() ? f.getFileName() : path;
@@ -4180,6 +4184,12 @@ void SlotMachineAudioProcessorEditor::refreshSlotFileLabels(const juce::Array<in
 
         ui->hasFile = hasSample;
         ui->fileLabel.setText(label, juce::dontSendNotification);
+
+        // Set color to red for failed samples, default color otherwise
+        if (isFailed)
+            ui->fileLabel.setColour(juce::Label::textColourId, juce::Colours::red);
+        else
+            ui->fileLabel.setColour(juce::Label::textColourId, juce::Label().findColour(juce::Label::textColourId));
     }
 }
 
