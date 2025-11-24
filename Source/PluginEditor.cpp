@@ -2042,9 +2042,15 @@ public:
 
         // Calculate position for upper right alignment
         // Position it directly adjacent to the main window with no gap
-        // Since both bounds include window decorations, just align at the same Y position
         int newX = mainBounds.getRight();
-        int newY = mainBounds.getY();
+
+        // Calculate the visualizer's title bar height
+        // vizBounds includes the title bar, getHeight() does not
+        int titleBarHeight = vizBounds.getHeight() - getHeight();
+
+        // Align at the same Y position but lower by the title bar height
+        // This ensures the visualizer's content area aligns with the main window's top
+        int newY = mainBounds.getY() + titleBarHeight;
 
         // Make sure the window stays on screen
         auto displays = juce::Desktop::getInstance().getDisplays();
