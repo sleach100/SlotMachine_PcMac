@@ -1991,7 +1991,7 @@ public:
 
         // Get mouse position and create target area with offset
         auto mousePos = juce::Desktop::getMousePosition();
-        constexpr int MENU_VERTICAL_OFFSET = 25;  // <-- Adjust this value to fine-tune menu position
+        constexpr int MENU_VERTICAL_OFFSET = 0;  // <-- Adjust this value to fine-tune menu position/ *** NO NEED FOR OFFSET AFTER ALL.  WORKING ON WRONG WINDOW.
 
         // Create a target rectangle: the menu will appear below this rectangle
         // By making the rectangle's height equal to the offset, the menu appears offset from mouse position
@@ -2045,7 +2045,7 @@ public:
         int newX = mainBounds.getRight();
 
         // Manual vertical offset adjustment for fine-tuning visualizer alignment
-        constexpr int VISUALIZER_VERTICAL_OFFSET = 0;  // <-- Adjust this value to fine-tune window position
+        constexpr int VISUALIZER_VERTICAL_OFFSET = 30;  // <-- Adjust this value to fine-tune window position
 
         // Calculate the visualizer's title bar height
         // vizBounds includes the title bar, getHeight() does not
