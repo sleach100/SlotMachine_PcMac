@@ -128,16 +128,17 @@ void PolyrhythmVizComponent::timerCallback()
     if (auto* timingParam = apvts.getRawParameterValue("optTimingMode"))
         timingMode = juce::jlimit(0, 1, (int)std::round(timingParam->load()));
 
-    bool preferEdgeWalk = true;
-    if (auto* edgeParam = apvts.getRawParameterValue("optVisualizerEdgeWalk"))
-        preferEdgeWalk = edgeParam->load() >= 0.5f;
+    int visualizerMode = 0;  // 0=Edge Walk, 1=Orbit, 2=Mixed
+    if (auto* modeParam = apvts.getRawParameterValue("optVisualizerEdgeWalk"))
+        visualizerMode = juce::jlimit(0, 2, (int)std::round(modeParam->load()));
 
     activeCount = 0;
 
     for (int i = 0; i < kNumSlots; ++i)
     {
         auto& slot = slotVisuals[(size_t)i];
-        slot.edgeWalk = preferEdgeWalk;
+        // Default edgeWalk to true, will be updated per-slot in mixed mode
+        slot.edgeWalk = (visualizerMode == 0);
         const bool mute = [this, i]()
         {
             if (auto* muteParam = apvts.getRawParameterValue("slot" + juce::String(i + 1) + "_Mute"))
@@ -216,6 +217,14 @@ void PolyrhythmVizComponent::timerCallback()
         for (int order = 0; order < activeCount; ++order)
         {
             const int slotIndex = activeOrder[(size_t)order];
+            auto& slot = slotVisuals[(size_t)slotIndex];
+
+            // In mixed mode, every 3rd bead from center (order % 3 == 2) uses orbit
+            if (visualizerMode == 2)
+            {
+                slot.edgeWalk = (order % 3 != 2);  // Edge walk unless it's every 3rd
+            }
+
             const float radius = spacing * (float)(order + 1);
             updateSlotGeometry(slotIndex, centre, radius);
         }

@@ -2025,12 +2025,13 @@ public:
 
         menu.addSeparator();
 
-        // Get current visualizer mode
-        const bool edgeWalkActive = Opt::getBool(owner.apvts, "optVisualizerEdgeWalk", true);
+        // Get current visualizer mode (0=Edge, 1=Orbit, 2=Mixed)
+        const int currentMode = Opt::getInt(owner.apvts, "optVisualizerEdgeWalk", 0);
 
         // Add visualizer mode menu items with checkmarks
-        menu.addItem(2, "Beads: Edge Walk", true, edgeWalkActive);
-        menu.addItem(3, "Beads: Orbit", true, !edgeWalkActive);
+        menu.addItem(2, "Beads: Edge Walk", true, currentMode == 0);
+        menu.addItem(3, "Beads: Orbit", true, currentMode == 1);
+        menu.addItem(4, "Beads: Mixed", true, currentMode == 2);
 
         // Get mouse position and create target area with offset
         auto mousePos = juce::Desktop::getMousePosition();
@@ -2052,11 +2053,15 @@ public:
                 }
                 else if (result == 2)
                 {
-                    setVisualizerMode(true);  // Edge Walk
+                    setVisualizerMode(0);  // Edge Walk
                 }
                 else if (result == 3)
                 {
-                    setVisualizerMode(false);  // Orbit
+                    setVisualizerMode(1);  // Orbit
+                }
+                else if (result == 4)
+                {
+                    setVisualizerMode(2);  // Mixed
                 }
             });
     }
@@ -2124,13 +2129,13 @@ public:
         vizPeer->setBounds(juce::Rectangle<int>(newX, newY, vizBounds.getWidth(), vizBounds.getHeight()), false);
     }
 
-    void setVisualizerMode(bool edgeWalk)
+    void setVisualizerMode(int mode)
     {
-        // Update the visualizer mode parameter
-        if (auto* param = dynamic_cast<juce::AudioParameterBool*>(owner.apvts.getParameter("optVisualizerEdgeWalk")))
+        // Update the visualizer mode parameter (0=Edge Walk, 1=Orbit, 2=Mixed)
+        if (auto* param = dynamic_cast<juce::AudioParameterInt*>(owner.apvts.getParameter("optVisualizerEdgeWalk")))
         {
             param->beginChangeGesture();
-            *param = edgeWalk;
+            *param = juce::jlimit(0, 2, mode);
             param->endChangeGesture();
         }
     }
@@ -2207,6 +2212,7 @@ public:
         visualizerModeCombo.setJustificationType(juce::Justification::centredLeft);
         visualizerModeCombo.addItem("Edge Walk (perimeter)", 1);
         visualizerModeCombo.addItem("Orbit (circular)", 2);
+        visualizerModeCombo.addItem("Mixed (every 3rd orbits)", 3);
         visualizerModeCombo.onChange = [this]() { handleVisualizerModeSelection(); };
 
         // sample rate
@@ -2450,9 +2456,9 @@ private:
         showMasterBar.setToggleState(Opt::getBool(apvts, "optShowMasterBar", true), juce::dontSendNotification);
         showSlotBars.setToggleState(Opt::getBool(apvts, "optShowSlotBars", true), juce::dontSendNotification);
 
-        const bool edgeWalk = Opt::getBool(apvts, "optVisualizerEdgeWalk", true);
+        const int visualizerMode = Opt::getInt(apvts, "optVisualizerEdgeWalk", 0);  // 0=Edge, 1=Orbit, 2=Mixed
         blockVisualizerModeUpdate = true;
-        visualizerModeCombo.setSelectedId(edgeWalk ? 1 : 2, juce::dontSendNotification);
+        visualizerModeCombo.setSelectedId(visualizerMode + 1, juce::dontSendNotification);  // Map to combo ID
         blockVisualizerModeUpdate = false;
 
         const int timingModeValue = Opt::getInt(apvts, "optTimingMode", timingModeValues.back());
@@ -2560,8 +2566,9 @@ private:
             return;
 
         const int id = visualizerModeCombo.getSelectedId();
-        const bool edgeWalk = (id <= 0 || id == 1);
-        setBoolParam("optVisualizerEdgeWalk", edgeWalk);
+        // Map combo ID (1,2,3) to parameter value (0,1,2)
+        const int mode = juce::jlimit(0, 2, id - 1);  // 1→0 (Edge), 2→1 (Orbit), 3→2 (Mixed)
+        setIntParam("optVisualizerEdgeWalk", mode);
     }
 
     void handleSampleRateSelection()
@@ -2620,7 +2627,7 @@ private:
 
         setBoolParam("optShowMasterBar", true);
         setBoolParam("optShowSlotBars", true);
-        setBoolParam("optVisualizerEdgeWalk", true);
+        setIntParam("optVisualizerEdgeWalk", 0);  // 0=Edge Walk (default)
         setIntParam("optSampleRate", kDefaultSampleRate);
         setIntParam("optTimingMode", kDefaultTimingMode);
         setFloatParam("optSlotScale", kDefaultSlotScale);

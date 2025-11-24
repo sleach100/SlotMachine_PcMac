@@ -1513,8 +1513,8 @@ APVTS::ParameterLayout SlotMachineAudioProcessor::createParameterLayout()
         "optShowSlotBars", "Show Slot Progress Bars", true));
     layout.add(std::make_unique<juce::AudioParameterBool>(
         "optShowVisualizer", "Show Visualizer", false));
-    layout.add(std::make_unique<juce::AudioParameterBool>(
-        "optVisualizerEdgeWalk", "Visualizer Edge Walk", true));
+    layout.add(std::make_unique<juce::AudioParameterInt>(
+        "optVisualizerEdgeWalk", "Visualizer Mode", 0, 2, 0));  // 0=Edge Walk, 1=Orbit, 2=Mixed
 
     layout.add(std::make_unique<juce::AudioParameterInt>(
         "optSampleRate", "Export Sample Rate (Hz)", 44100, 48000, 48000));
