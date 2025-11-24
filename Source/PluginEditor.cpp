@@ -2040,11 +2040,16 @@ public:
         auto mainBounds = mainPeer->getBounds();
         auto vizBounds = vizPeer->getBounds();
 
+        // Get the frame sizes (border/title bar insets) for both windows
+        auto mainFrameSize = mainPeer->getFrameSize();
+        auto vizFrameSize = vizPeer->getFrameSize();
+
         // Calculate position for upper right alignment
         // Position it directly adjacent to the main window with no gap
-        // Align the top edges of the native windows
+        // Align the top edges of the content areas (accounting for title bar differences)
         int newX = mainBounds.getRight();
-        int newY = mainBounds.getY();
+        // Align based on content area tops, not window frame tops
+        int newY = mainBounds.getY() + mainFrameSize.getTop() - vizFrameSize.getTop();
 
         // Make sure the window stays on screen
         auto displays = juce::Desktop::getInstance().getDisplays();
