@@ -55,4 +55,5 @@ private:
     double masterPhase = 0.0;
     double lastPhase = 0.0;
     float wrapFlash = 0.0f;
+    float masterPulse = 0.0f;
 };

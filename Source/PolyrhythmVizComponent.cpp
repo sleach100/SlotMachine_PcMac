@@ -50,6 +50,11 @@ void PolyrhythmVizComponent::paint(juce::Graphics& g)
         g.drawEllipse(centre.x - maxRadius, centre.y - maxRadius, diameter, diameter, 2.0f + 6.0f * alpha);
     }
 
+    // Check if master pulse effect is enabled
+    bool masterPulseEnabled = false;
+    if (auto* param = apvts.getRawParameterValue("optVisualizerMasterPulse"))
+        masterPulseEnabled = param->load() >= 0.5f;
+
     for (int order = activeCount - 1; order >= 0; --order)
     {
         const int slotIndex = activeOrder[(size_t)order];
@@ -70,11 +75,21 @@ void PolyrhythmVizComponent::paint(juce::Graphics& g)
             g.fillEllipse(point.x - flashRadius, point.y - flashRadius, flashRadius * 2.0f, flashRadius * 2.0f);
         }
 
-        g.setColour(colour.withAlpha(0.9f));
-        g.fillEllipse(slot.beadPos.x - kBeadRadius,
-                      slot.beadPos.y - kBeadRadius,
-                      kBeadRadius * 2.0f,
-                      kBeadRadius * 2.0f);
+        // Apply master pulse effect to bead size
+        float beadRadius = kBeadRadius;
+        float beadAlpha = 0.9f;
+        if (masterPulseEnabled && masterPulse > 0.001f)
+        {
+            const float pulseAmount = juce::jlimit(0.0f, 1.0f, masterPulse);
+            beadRadius = kBeadRadius * (1.0f + pulseAmount * 0.8f);  // Scale up to 1.8x size
+            beadAlpha = juce::jlimit(0.5f, 1.0f, 0.9f + pulseAmount * 0.1f);  // Slight brightness increase
+        }
+
+        g.setColour(colour.withAlpha(beadAlpha));
+        g.fillEllipse(slot.beadPos.x - beadRadius,
+                      slot.beadPos.y - beadRadius,
+                      beadRadius * 2.0f,
+                      beadRadius * 2.0f);
     }
 }
 
@@ -102,11 +117,15 @@ void PolyrhythmVizComponent::timerCallback()
     const double currentPhase = processor.getMasterPhase();
     const bool wrapped = (currentPhase + 0.02) < lastPhase;
     if (wrapped)
+    {
         wrapFlash = 1.0f;
+        masterPulse = 1.0f;  // Trigger master pulse on wrap
+    }
 
     lastPhase = currentPhase;
     masterPhase = currentPhase;
     wrapFlash = juce::jmax(0.0f, wrapFlash * 0.88f - 0.01f);
+    masterPulse = juce::jmax(0.0f, masterPulse * 0.88f - 0.01f);  // Same decay as wrapFlash
 
     std::array<bool, kNumSlots> soloMask{};
     bool anySolo = false;

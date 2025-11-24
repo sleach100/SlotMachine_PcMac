@@ -1874,7 +1874,7 @@ void SlotMachineAudioProcessorEditor::SlotUI::updateTimingModeVisibility(int tim
 
 // ===== Standalone persistence for Options =====
 static const juce::StringArray kOptionParamIds{
-    "optShowMasterBar", "optShowSlotBars", "optShowVisualizer", "optVisualizerEdgeWalk",
+    "optShowMasterBar", "optShowSlotBars", "optShowVisualizer", "optVisualizerEdgeWalk", "optVisualizerMasterPulse",
     "optSampleRate", "optTimingMode",
     "optSlotScale",
     "optGlowColor", "optGlowAlpha", "optGlowWidth",
@@ -2033,6 +2033,12 @@ public:
         menu.addItem(3, "Beads: Orbit", true, currentMode == 1);
         menu.addItem(4, "Beads: Mixed", true, currentMode == 2);
 
+        menu.addSeparator();
+
+        // Get master pulse state
+        const bool masterPulseEnabled = Opt::getBool(owner.apvts, "optVisualizerMasterPulse", true);
+        menu.addItem(5, "Master Pulse", true, masterPulseEnabled);
+
         // Get mouse position and create target area with offset
         auto mousePos = juce::Desktop::getMousePosition();
         constexpr int MENU_VERTICAL_OFFSET = 0;  // <-- Adjust this value to fine-tune menu position/ *** NO NEED FOR OFFSET AFTER ALL.  WORKING ON WRONG WINDOW.
@@ -2062,6 +2068,10 @@ public:
                 else if (result == 4)
                 {
                     setVisualizerMode(2);  // Mixed
+                }
+                else if (result == 5)
+                {
+                    toggleMasterPulse();
                 }
             });
     }
@@ -2140,6 +2150,17 @@ public:
         }
     }
 
+    void toggleMasterPulse()
+    {
+        // Toggle the master pulse parameter
+        if (auto* param = dynamic_cast<juce::AudioParameterBool*>(owner.apvts.getParameter("optVisualizerMasterPulse")))
+        {
+            param->beginChangeGesture();
+            *param = !param->get();
+            param->endChangeGesture();
+        }
+    }
+
 private:
     SlotMachineAudioProcessorEditor& owner;
 };
@@ -2214,6 +2235,10 @@ public:
         visualizerModeCombo.addItem("Orbit (circular)", 2);
         visualizerModeCombo.addItem("Mixed (every 3rd orbits)", 3);
         visualizerModeCombo.onChange = [this]() { handleVisualizerModeSelection(); };
+
+        addAndMakeVisible(masterPulseToggle);
+        masterPulseToggle.setButtonText("Visualizer Master Pulse");
+        masterPulseToggle.addListener(this);
 
         // sample rate
         sampleRateLabel.setText("Export Sample Rate", juce::dontSendNotification);
@@ -2323,6 +2348,11 @@ public:
         vizRow.removeFromLeft(12);
         visualizerModeCombo.setBounds(vizRow.removeFromLeft(200).reduced(0, 8));
 
+        auto pulseToggleRow = a.removeFromTop(28);
+        masterPulseToggle.setBounds(pulseToggleRow);
+
+        a.removeFromTop(8);
+
         auto sampleRateRow = a.removeFromTop(48);
         sampleRateLabel.setBounds(sampleRateRow.removeFromLeft(getWidth() / 2 - 16));
         sampleRateCombo.setBounds(sampleRateRow.removeFromLeft(180).reduced(0, 8));
@@ -2379,6 +2409,7 @@ private:
     juce::ToggleButton showMasterBar, showSlotBars;
     juce::Label visualizerModeLabel;
     juce::ComboBox visualizerModeCombo;
+    juce::ToggleButton masterPulseToggle;
 
     juce::Label sampleRateLabel;
     juce::ComboBox sampleRateCombo;
@@ -2455,6 +2486,7 @@ private:
         // toggles
         showMasterBar.setToggleState(Opt::getBool(apvts, "optShowMasterBar", true), juce::dontSendNotification);
         showSlotBars.setToggleState(Opt::getBool(apvts, "optShowSlotBars", true), juce::dontSendNotification);
+        masterPulseToggle.setToggleState(Opt::getBool(apvts, "optVisualizerMasterPulse", true), juce::dontSendNotification);
 
         const int visualizerMode = Opt::getInt(apvts, "optVisualizerEdgeWalk", 0);  // 0=Edge, 1=Orbit, 2=Mixed
         blockVisualizerModeUpdate = true;
@@ -2527,6 +2559,8 @@ private:
             setBoolParam("optShowMasterBar", showMasterBar.getToggleState());
         else if (b == &showSlotBars)
             setBoolParam("optShowSlotBars", showSlotBars.getToggleState());
+        else if (b == &masterPulseToggle)
+            setBoolParam("optVisualizerMasterPulse", masterPulseToggle.getToggleState());
         else if (b == &btnResetDefaults)
             resetToDefaultOptions();
         else if (b == &btnClose)
@@ -2628,6 +2662,7 @@ private:
         setBoolParam("optShowMasterBar", true);
         setBoolParam("optShowSlotBars", true);
         setIntParam("optVisualizerEdgeWalk", 0);  // 0=Edge Walk (default)
+        setBoolParam("optVisualizerMasterPulse", true);
         setIntParam("optSampleRate", kDefaultSampleRate);
         setIntParam("optTimingMode", kDefaultTimingMode);
         setFloatParam("optSlotScale", kDefaultSlotScale);
