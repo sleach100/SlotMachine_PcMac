@@ -2021,9 +2021,9 @@ public:
         }
 
         // Calculate position for upper right alignment
-        // Position it at the right edge of the main window, with a small margin
+        // Position it to the right of the main window, with a small margin between them
         int margin = 10;
-        int newX = mainBounds.getRight() - vizWidth - margin;
+        int newX = mainBounds.getRight() + margin;
         int newY = mainBounds.getY() + margin;
 
         // Make sure the window stays on screen
