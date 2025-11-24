@@ -2006,9 +2006,6 @@ public:
         if (topLevelComp == nullptr)
             return;
 
-        // Use screen bounds to get actual window position including title bar
-        auto mainBounds = topLevelComp->getScreenBounds();
-
         // Set visualizer to a smaller size if it's currently too large
         int vizWidth = getWidth();
         int vizHeight = getHeight();
@@ -2021,8 +2018,20 @@ public:
             setSize(vizWidth, vizHeight);
         }
 
+        // Get the native window bounds for both windows including title bars
+        auto* mainPeer = topLevelComp->getPeer();
+        auto* vizPeer = getPeer();
+
+        if (mainPeer == nullptr || vizPeer == nullptr)
+            return;
+
+        // Get actual native window bounds (includes title bar and borders)
+        auto mainBounds = mainPeer->getBounds();
+        auto vizBounds = vizPeer->getBounds();
+
         // Calculate position for upper right alignment
         // Position it directly adjacent to the main window with no gap
+        // Align the top edges of the native windows
         int newX = mainBounds.getRight();
         int newY = mainBounds.getY();
 
@@ -2033,14 +2042,15 @@ public:
         {
             auto displayArea = mainDisplay->userArea;
             newX = juce::jlimit(displayArea.getX(),
-                              displayArea.getRight() - vizWidth,
+                              displayArea.getRight() - vizBounds.getWidth(),
                               newX);
             newY = juce::jlimit(displayArea.getY(),
-                              displayArea.getBottom() - vizHeight,
+                              displayArea.getBottom() - vizBounds.getHeight(),
                               newY);
         }
 
-        setTopLeftPosition(newX, newY);
+        // Set the native window position
+        vizPeer->setBounds(juce::Rectangle<int>(newX, newY, vizBounds.getWidth(), vizBounds.getHeight()), false);
     }
 
 private:
