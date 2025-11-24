@@ -1989,6 +1989,15 @@ public:
         juce::PopupMenu menu;
         menu.addItem(1, "Align to right side");
 
+        menu.addSeparator();
+
+        // Get current visualizer mode
+        const bool edgeWalkActive = Opt::getBool(owner.apvts, "optVisualizerEdgeWalk", true);
+
+        // Add visualizer mode menu items with checkmarks
+        menu.addItem(2, "Beads: Edge Walk", true, edgeWalkActive);
+        menu.addItem(3, "Beads: Orbit", true, !edgeWalkActive);
+
         // Get mouse position and create target area with offset
         auto mousePos = juce::Desktop::getMousePosition();
         constexpr int MENU_VERTICAL_OFFSET = 0;  // <-- Adjust this value to fine-tune menu position/ *** NO NEED FOR OFFSET AFTER ALL.  WORKING ON WRONG WINDOW.
@@ -2006,6 +2015,14 @@ public:
                 if (result == 1)
                 {
                     alignToRightSide();
+                }
+                else if (result == 2)
+                {
+                    setVisualizerMode(true);  // Edge Walk
+                }
+                else if (result == 3)
+                {
+                    setVisualizerMode(false);  // Orbit
                 }
             });
     }
@@ -2071,6 +2088,17 @@ public:
 
         // Set the native window position
         vizPeer->setBounds(juce::Rectangle<int>(newX, newY, vizBounds.getWidth(), vizBounds.getHeight()), false);
+    }
+
+    void setVisualizerMode(bool edgeWalk)
+    {
+        // Update the visualizer mode parameter
+        if (auto* param = dynamic_cast<juce::AudioParameterBool*>(owner.apvts.getParameter("optVisualizerEdgeWalk")))
+        {
+            param->beginChangeGesture();
+            *param = edgeWalk;
+            param->endChangeGesture();
+        }
     }
 
 private:
