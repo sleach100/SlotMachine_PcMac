@@ -1989,7 +1989,15 @@ public:
         juce::PopupMenu menu;
         menu.addItem(1, "Align to right side");
 
-        menu.showMenuAsync(juce::PopupMenu::Options(),
+        // Get mouse position and add vertical offset
+        auto mousePos = juce::Desktop::getMousePosition();
+        constexpr int MENU_VERTICAL_OFFSET = 20;  // <-- Adjust this value to fine-tune menu position
+        mousePos.y += MENU_VERTICAL_OFFSET;
+
+        auto options = juce::PopupMenu::Options()
+                          .withTargetScreenArea(juce::Rectangle<int>(mousePos.x, mousePos.y, 1, 1));
+
+        menu.showMenuAsync(options,
             [this](int result)
             {
                 if (result == 1)
