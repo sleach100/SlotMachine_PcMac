@@ -42,6 +42,25 @@ void PolyrhythmVizComponent::paint(juce::Graphics& g)
     const float margin = 28.0f;
     const float maxRadius = juce::jmax(0.0f, juce::jmin(bounds.getWidth(), bounds.getHeight()) * 0.5f - margin);
 
+    // Check if master pulse effect is enabled
+    bool masterPulseEnabled = false;
+    if (auto* param = apvts.getRawParameterValue("optVisualizerMasterPulse"))
+        masterPulseEnabled = param->load() >= 0.5f;
+
+    // Apply master pulse zoom effect to entire visualization
+    juce::Graphics::ScopedSaveState saveState(g);
+    if (masterPulseEnabled && masterPulse > 0.001f)
+    {
+        const float pulseAmount = juce::jlimit(0.0f, 1.0f, masterPulse);
+        const float scale = 1.0f + pulseAmount * 0.05f;  // Subtle 5% zoom at peak
+
+        // Transform around the center point
+        auto transform = juce::AffineTransform::translation(-centre.x, -centre.y)
+                            .scaled(scale, scale)
+                            .translated(centre.x, centre.y);
+        g.addTransform(transform);
+    }
+
     if (wrapFlash > 0.001f && maxRadius > 4.0f)
     {
         const float alpha = juce::jlimit(0.0f, 1.0f, wrapFlash);
@@ -49,11 +68,6 @@ void PolyrhythmVizComponent::paint(juce::Graphics& g)
         const float diameter = maxRadius * 2.0f;
         g.drawEllipse(centre.x - maxRadius, centre.y - maxRadius, diameter, diameter, 2.0f + 6.0f * alpha);
     }
-
-    // Check if master pulse effect is enabled
-    bool masterPulseEnabled = false;
-    if (auto* param = apvts.getRawParameterValue("optVisualizerMasterPulse"))
-        masterPulseEnabled = param->load() >= 0.5f;
 
     for (int order = activeCount - 1; order >= 0; --order)
     {
