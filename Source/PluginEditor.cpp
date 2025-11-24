@@ -5449,7 +5449,7 @@ void SlotMachineAudioProcessorEditor::showOptionsDialog()
         {
             applySlotScale(newScale);
         });
-    content->setSize(640, 668);
+    content->setSize(640, 720);
 
     juce::DialogWindow::LaunchOptions opt;
     opt.dialogTitle = "Options";
@@ -5461,7 +5461,7 @@ void SlotMachineAudioProcessorEditor::showOptionsDialog()
     opt.dialogBackgroundColour = juce::Colours::black;
 
     if (auto* dlg = opt.launchAsync())
-        dlg->setResizeLimits(480, 668, 2000, 1368);
+        dlg->setResizeLimits(480, 720, 2000, 1368);
 }
 
 void SlotMachineAudioProcessorEditor::promptForExportCycles(const juce::String& dialogTitle,
