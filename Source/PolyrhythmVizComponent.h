@@ -16,6 +16,9 @@ public:
 
     void paint(juce::Graphics& g) override;
     void resized() override;
+    void mouseDown(const juce::MouseEvent& e) override;
+
+    std::function<void()> onRightClick;
 
 private:
     void timerCallback() override;
@@ -52,4 +55,5 @@ private:
     double masterPhase = 0.0;
     double lastPhase = 0.0;
     float wrapFlash = 0.0f;
+    float masterPulse = 0.0f;
 };

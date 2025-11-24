@@ -1874,7 +1874,7 @@ void SlotMachineAudioProcessorEditor::SlotUI::updateTimingModeVisibility(int tim
 
 // ===== Standalone persistence for Options =====
 static const juce::StringArray kOptionParamIds{
-    "optShowMasterBar", "optShowSlotBars", "optShowVisualizer", "optVisualizerEdgeWalk",
+    "optShowMasterBar", "optShowSlotBars", "optShowVisualizer", "optVisualizerEdgeWalk", "optVisualizerMasterPulse",
     "optSampleRate", "optTimingMode",
     "optSlotScale",
     "optGlowColor", "optGlowAlpha", "optGlowWidth",
@@ -1953,29 +1953,6 @@ static void loadOptionsFromDiskIfNoHostState(juce::AudioProcessorValueTreeState&
     }
 }
 
-class SlotMachineAudioProcessorEditor::VisualizerWindow : public juce::DocumentWindow
-{
-public:
-    explicit VisualizerWindow(SlotMachineAudioProcessorEditor& ownerRef)
-        : juce::DocumentWindow("Polyrhythm Visualizer",
-                               juce::Colours::darkgrey,
-                               juce::DocumentWindow::closeButton)
-        , owner(ownerRef)
-    {
-        setUsingNativeTitleBar(true);
-        setResizable(true, true);
-        setAlwaysOnTop(true);
-    }
-
-    void closeButtonPressed() override
-    {
-        owner.handleVisualizerWindowCloseRequest();
-    }
-
-private:
-    SlotMachineAudioProcessorEditor& owner;
-};
-
 // ===== Options helpers =====
 namespace Opt
 {
@@ -2009,6 +1986,184 @@ namespace Opt
         return c.withAlpha(juce::jlimit(0.0f, 1.0f, alpha));
     }
 }
+
+class SlotMachineAudioProcessorEditor::VisualizerWindow : public juce::DocumentWindow
+{
+public:
+    explicit VisualizerWindow(SlotMachineAudioProcessorEditor& ownerRef)
+        : juce::DocumentWindow("Polyrhythm Visualizer",
+                               juce::Colours::darkgrey,
+                               juce::DocumentWindow::closeButton)
+        , owner(ownerRef)
+    {
+        setUsingNativeTitleBar(true);
+        setResizable(true, true);
+        setAlwaysOnTop(true);
+    }
+
+    void closeButtonPressed() override
+    {
+        owner.handleVisualizerWindowCloseRequest();
+    }
+
+    void mouseDown(const juce::MouseEvent& e) override
+    {
+        if (e.mods.isPopupMenu())
+        {
+            showContextMenu();
+        }
+        else
+        {
+            juce::DocumentWindow::mouseDown(e);
+        }
+    }
+
+    void showContextMenu()
+    {
+        juce::PopupMenu menu;
+        menu.addItem(1, "Align to right side");
+
+        menu.addSeparator();
+
+        // Get current visualizer mode (0=Edge, 1=Orbit, 2=Mixed)
+        const int currentMode = Opt::getInt(owner.apvts, "optVisualizerEdgeWalk", 0);
+
+        // Add visualizer mode menu items with checkmarks
+        menu.addItem(2, "Beads: Edge Walk", true, currentMode == 0);
+        menu.addItem(3, "Beads: Orbit", true, currentMode == 1);
+        menu.addItem(4, "Beads: Mixed", true, currentMode == 2);
+
+        menu.addSeparator();
+
+        // Get master pulse state
+        const bool masterPulseEnabled = Opt::getBool(owner.apvts, "optVisualizerMasterPulse", true);
+        menu.addItem(5, "Master Pulse", true, masterPulseEnabled);
+
+        // Get mouse position and create target area with offset
+        auto mousePos = juce::Desktop::getMousePosition();
+        constexpr int MENU_VERTICAL_OFFSET = 0;  // <-- Adjust this value to fine-tune menu position/ *** NO NEED FOR OFFSET AFTER ALL.  WORKING ON WRONG WINDOW.
+
+        // Create a target rectangle: the menu will appear below this rectangle
+        // By making the rectangle's height equal to the offset, the menu appears offset from mouse position
+        auto targetRect = juce::Rectangle<int>(mousePos.x, mousePos.y, 1, MENU_VERTICAL_OFFSET);
+
+        auto options = juce::PopupMenu::Options()
+                          .withTargetScreenArea(targetRect);
+
+        menu.showMenuAsync(options,
+            [this](int result)
+            {
+                if (result == 1)
+                {
+                    alignToRightSide();
+                }
+                else if (result == 2)
+                {
+                    setVisualizerMode(0);  // Edge Walk
+                }
+                else if (result == 3)
+                {
+                    setVisualizerMode(1);  // Orbit
+                }
+                else if (result == 4)
+                {
+                    setVisualizerMode(2);  // Mixed
+                }
+                else if (result == 5)
+                {
+                    toggleMasterPulse();
+                }
+            });
+    }
+
+    void alignToRightSide()
+    {
+        // Get the main application window bounds
+        auto* topLevelComp = owner.getTopLevelComponent();
+        if (topLevelComp == nullptr)
+            return;
+
+        // Set visualizer to a smaller size if it's currently too large
+        int vizWidth = getWidth();
+        int vizHeight = getHeight();
+
+        // Make it smaller (480x480) if it's the default size or larger
+        if (vizWidth >= 640 || vizHeight >= 640)
+        {
+            vizWidth = 480;
+            vizHeight = 480;
+            setSize(vizWidth, vizHeight);
+        }
+
+        // Get the native window bounds for both windows including title bars
+        auto* mainPeer = topLevelComp->getPeer();
+        auto* vizPeer = getPeer();
+
+        if (mainPeer == nullptr || vizPeer == nullptr)
+            return;
+
+        // Get actual native window bounds (includes title bar and borders)
+        auto mainBounds = mainPeer->getBounds();
+        auto vizBounds = vizPeer->getBounds();
+
+        // Calculate position for upper right alignment
+        // Position it directly adjacent to the main window with no gap
+        int newX = mainBounds.getRight();
+
+        // Manual vertical offset adjustment for fine-tuning visualizer alignment
+        constexpr int VISUALIZER_VERTICAL_OFFSET = 30;  // <-- Adjust this value to fine-tune window position
+
+        // Calculate the visualizer's title bar height
+        // vizBounds includes the title bar, getHeight() does not
+        int titleBarHeight = vizBounds.getHeight() - getHeight();
+
+        // Align at the same Y position but lower by the title bar height plus manual offset
+        // This ensures the visualizer's content area aligns with the main window's top
+        int newY = mainBounds.getY() + titleBarHeight + VISUALIZER_VERTICAL_OFFSET;
+
+        // Make sure the window stays on screen
+        auto displays = juce::Desktop::getInstance().getDisplays();
+        auto mainDisplay = displays.getDisplayForRect(mainBounds);
+        if (mainDisplay != nullptr)
+        {
+            auto displayArea = mainDisplay->userArea;
+            newX = juce::jlimit(displayArea.getX(),
+                              displayArea.getRight() - vizBounds.getWidth(),
+                              newX);
+            newY = juce::jlimit(displayArea.getY(),
+                              displayArea.getBottom() - vizBounds.getHeight(),
+                              newY);
+        }
+
+        // Set the native window position
+        vizPeer->setBounds(juce::Rectangle<int>(newX, newY, vizBounds.getWidth(), vizBounds.getHeight()), false);
+    }
+
+    void setVisualizerMode(int mode)
+    {
+        // Update the visualizer mode parameter (0=Edge Walk, 1=Orbit, 2=Mixed)
+        if (auto* param = dynamic_cast<juce::AudioParameterInt*>(owner.apvts.getParameter("optVisualizerEdgeWalk")))
+        {
+            param->beginChangeGesture();
+            *param = juce::jlimit(0, 2, mode);
+            param->endChangeGesture();
+        }
+    }
+
+    void toggleMasterPulse()
+    {
+        // Toggle the master pulse parameter
+        if (auto* param = dynamic_cast<juce::AudioParameterBool*>(owner.apvts.getParameter("optVisualizerMasterPulse")))
+        {
+            param->beginChangeGesture();
+            *param = !param->get();
+            param->endChangeGesture();
+        }
+    }
+
+private:
+    SlotMachineAudioProcessorEditor& owner;
+};
 
 // ===== Neon frame rendering =====
 namespace
@@ -2078,7 +2233,12 @@ public:
         visualizerModeCombo.setJustificationType(juce::Justification::centredLeft);
         visualizerModeCombo.addItem("Edge Walk (perimeter)", 1);
         visualizerModeCombo.addItem("Orbit (circular)", 2);
+        visualizerModeCombo.addItem("Mixed (every 3rd orbits)", 3);
         visualizerModeCombo.onChange = [this]() { handleVisualizerModeSelection(); };
+
+        addAndMakeVisible(masterPulseToggle);
+        masterPulseToggle.setButtonText("Visualizer Master Pulse");
+        masterPulseToggle.addListener(this);
 
         // sample rate
         sampleRateLabel.setText("Export Sample Rate", juce::dontSendNotification);
@@ -2188,6 +2348,11 @@ public:
         vizRow.removeFromLeft(12);
         visualizerModeCombo.setBounds(vizRow.removeFromLeft(200).reduced(0, 8));
 
+        auto pulseToggleRow = a.removeFromTop(28);
+        masterPulseToggle.setBounds(pulseToggleRow);
+
+        a.removeFromTop(8);
+
         auto sampleRateRow = a.removeFromTop(48);
         sampleRateLabel.setBounds(sampleRateRow.removeFromLeft(getWidth() / 2 - 16));
         sampleRateCombo.setBounds(sampleRateRow.removeFromLeft(180).reduced(0, 8));
@@ -2244,6 +2409,7 @@ private:
     juce::ToggleButton showMasterBar, showSlotBars;
     juce::Label visualizerModeLabel;
     juce::ComboBox visualizerModeCombo;
+    juce::ToggleButton masterPulseToggle;
 
     juce::Label sampleRateLabel;
     juce::ComboBox sampleRateCombo;
@@ -2320,10 +2486,11 @@ private:
         // toggles
         showMasterBar.setToggleState(Opt::getBool(apvts, "optShowMasterBar", true), juce::dontSendNotification);
         showSlotBars.setToggleState(Opt::getBool(apvts, "optShowSlotBars", true), juce::dontSendNotification);
+        masterPulseToggle.setToggleState(Opt::getBool(apvts, "optVisualizerMasterPulse", true), juce::dontSendNotification);
 
-        const bool edgeWalk = Opt::getBool(apvts, "optVisualizerEdgeWalk", true);
+        const int visualizerMode = Opt::getInt(apvts, "optVisualizerEdgeWalk", 0);  // 0=Edge, 1=Orbit, 2=Mixed
         blockVisualizerModeUpdate = true;
-        visualizerModeCombo.setSelectedId(edgeWalk ? 1 : 2, juce::dontSendNotification);
+        visualizerModeCombo.setSelectedId(visualizerMode + 1, juce::dontSendNotification);  // Map to combo ID
         blockVisualizerModeUpdate = false;
 
         const int timingModeValue = Opt::getInt(apvts, "optTimingMode", timingModeValues.back());
@@ -2392,6 +2559,8 @@ private:
             setBoolParam("optShowMasterBar", showMasterBar.getToggleState());
         else if (b == &showSlotBars)
             setBoolParam("optShowSlotBars", showSlotBars.getToggleState());
+        else if (b == &masterPulseToggle)
+            setBoolParam("optVisualizerMasterPulse", masterPulseToggle.getToggleState());
         else if (b == &btnResetDefaults)
             resetToDefaultOptions();
         else if (b == &btnClose)
@@ -2431,8 +2600,9 @@ private:
             return;
 
         const int id = visualizerModeCombo.getSelectedId();
-        const bool edgeWalk = (id <= 0 || id == 1);
-        setBoolParam("optVisualizerEdgeWalk", edgeWalk);
+        // Map combo ID (1,2,3) to parameter value (0,1,2)
+        const int mode = juce::jlimit(0, 2, id - 1);  // 1→0 (Edge), 2→1 (Orbit), 3→2 (Mixed)
+        setIntParam("optVisualizerEdgeWalk", mode);
     }
 
     void handleSampleRateSelection()
@@ -2491,7 +2661,8 @@ private:
 
         setBoolParam("optShowMasterBar", true);
         setBoolParam("optShowSlotBars", true);
-        setBoolParam("optVisualizerEdgeWalk", true);
+        setIntParam("optVisualizerEdgeWalk", 0);  // 0=Edge Walk (default)
+        setBoolParam("optVisualizerMasterPulse", true);
         setIntParam("optSampleRate", kDefaultSampleRate);
         setIntParam("optTimingMode", kDefaultTimingMode);
         setFloatParam("optSlotScale", kDefaultSlotScale);
@@ -5574,6 +5745,13 @@ void SlotMachineAudioProcessorEditor::openVisualizerWindow()
 
     auto window = std::make_unique<VisualizerWindow>(*this);
     window->setContentOwned(componentPtr, true);
+
+    // Connect right-click handler to show context menu
+    componentPtr->onRightClick = [windowPtr = window.get()]()
+    {
+        windowPtr->showContextMenu();
+    };
+
     window->centreWithSize(640, 640);
     window->setAlwaysOnTop(true);
     window->setVisible(true);

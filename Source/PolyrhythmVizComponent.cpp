@@ -42,6 +42,25 @@ void PolyrhythmVizComponent::paint(juce::Graphics& g)
     const float margin = 28.0f;
     const float maxRadius = juce::jmax(0.0f, juce::jmin(bounds.getWidth(), bounds.getHeight()) * 0.5f - margin);
 
+    // Check if master pulse effect is enabled
+    bool masterPulseEnabled = false;
+    if (auto* param = apvts.getRawParameterValue("optVisualizerMasterPulse"))
+        masterPulseEnabled = param->load() >= 0.5f;
+
+    // Apply master pulse zoom effect to entire visualization
+    juce::Graphics::ScopedSaveState saveState(g);
+    if (masterPulseEnabled && masterPulse > 0.001f)
+    {
+        const float pulseAmount = juce::jlimit(0.0f, 1.0f, masterPulse);
+        const float scale = 1.0f + pulseAmount * 0.05f;  // Subtle 5% zoom at peak
+
+        // Transform around the center point
+        auto transform = juce::AffineTransform::translation(-centre.x, -centre.y)
+                            .scaled(scale, scale)
+                            .translated(centre.x, centre.y);
+        g.addTransform(transform);
+    }
+
     if (wrapFlash > 0.001f && maxRadius > 4.0f)
     {
         const float alpha = juce::jlimit(0.0f, 1.0f, wrapFlash);
@@ -70,11 +89,21 @@ void PolyrhythmVizComponent::paint(juce::Graphics& g)
             g.fillEllipse(point.x - flashRadius, point.y - flashRadius, flashRadius * 2.0f, flashRadius * 2.0f);
         }
 
-        g.setColour(colour.withAlpha(0.9f));
-        g.fillEllipse(slot.beadPos.x - kBeadRadius,
-                      slot.beadPos.y - kBeadRadius,
-                      kBeadRadius * 2.0f,
-                      kBeadRadius * 2.0f);
+        // Apply master pulse effect to bead size
+        float beadRadius = kBeadRadius;
+        float beadAlpha = 0.9f;
+        if (masterPulseEnabled && masterPulse > 0.001f)
+        {
+            const float pulseAmount = juce::jlimit(0.0f, 1.0f, masterPulse);
+            beadRadius = kBeadRadius * (1.0f + pulseAmount * 0.8f);  // Scale up to 1.8x size
+            beadAlpha = juce::jlimit(0.5f, 1.0f, 0.9f + pulseAmount * 0.1f);  // Slight brightness increase
+        }
+
+        g.setColour(colour.withAlpha(beadAlpha));
+        g.fillEllipse(slot.beadPos.x - beadRadius,
+                      slot.beadPos.y - beadRadius,
+                      beadRadius * 2.0f,
+                      beadRadius * 2.0f);
     }
 }
 
@@ -88,16 +117,29 @@ void PolyrhythmVizComponent::resized()
     }
 }
 
+void PolyrhythmVizComponent::mouseDown(const juce::MouseEvent& e)
+{
+    if (e.mods.isPopupMenu())
+    {
+        if (onRightClick)
+            onRightClick();
+    }
+}
+
 void PolyrhythmVizComponent::timerCallback()
 {
     const double currentPhase = processor.getMasterPhase();
     const bool wrapped = (currentPhase + 0.02) < lastPhase;
     if (wrapped)
+    {
         wrapFlash = 1.0f;
+        masterPulse = 1.0f;  // Trigger master pulse on wrap
+    }
 
     lastPhase = currentPhase;
     masterPhase = currentPhase;
     wrapFlash = juce::jmax(0.0f, wrapFlash * 0.88f - 0.01f);
+    masterPulse = juce::jmax(0.0f, masterPulse * 0.88f - 0.01f);  // Same decay as wrapFlash
 
     std::array<bool, kNumSlots> soloMask{};
     bool anySolo = false;
@@ -119,16 +161,17 @@ void PolyrhythmVizComponent::timerCallback()
     if (auto* timingParam = apvts.getRawParameterValue("optTimingMode"))
         timingMode = juce::jlimit(0, 1, (int)std::round(timingParam->load()));
 
-    bool preferEdgeWalk = true;
-    if (auto* edgeParam = apvts.getRawParameterValue("optVisualizerEdgeWalk"))
-        preferEdgeWalk = edgeParam->load() >= 0.5f;
+    int visualizerMode = 0;  // 0=Edge Walk, 1=Orbit, 2=Mixed
+    if (auto* modeParam = apvts.getRawParameterValue("optVisualizerEdgeWalk"))
+        visualizerMode = juce::jlimit(0, 2, (int)std::round(modeParam->load()));
 
     activeCount = 0;
 
     for (int i = 0; i < kNumSlots; ++i)
     {
         auto& slot = slotVisuals[(size_t)i];
-        slot.edgeWalk = preferEdgeWalk;
+        // Default edgeWalk to true, will be updated per-slot in mixed mode
+        slot.edgeWalk = (visualizerMode == 0);
         const bool mute = [this, i]()
         {
             if (auto* muteParam = apvts.getRawParameterValue("slot" + juce::String(i + 1) + "_Mute"))
@@ -207,6 +250,14 @@ void PolyrhythmVizComponent::timerCallback()
         for (int order = 0; order < activeCount; ++order)
         {
             const int slotIndex = activeOrder[(size_t)order];
+            auto& slot = slotVisuals[(size_t)slotIndex];
+
+            // In mixed mode, every 3rd bead from center (order % 3 == 2) uses orbit
+            if (visualizerMode == 2)
+            {
+                slot.edgeWalk = (order % 3 != 2);  // Edge walk unless it's every 3rd
+            }
+
             const float radius = spacing * (float)(order + 1);
             updateSlotGeometry(slotIndex, centre, radius);
         }
