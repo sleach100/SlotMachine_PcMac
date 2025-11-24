@@ -1953,6 +1953,40 @@ static void loadOptionsFromDiskIfNoHostState(juce::AudioProcessorValueTreeState&
     }
 }
 
+// ===== Options helpers =====
+namespace Opt
+{
+    static inline bool getBool(APVTS& apvts, const juce::String& id, bool def)
+    {
+        if (auto* p = apvts.getParameter(id))
+            if (auto* b = dynamic_cast<juce::AudioParameterBool*>(p))
+                return b->get();
+        return def;
+    }
+    static inline float getFloat(APVTS& apvts, const juce::String& id, float def)
+    {
+        if (auto* p = apvts.getParameter(id))
+            if (auto* f = dynamic_cast<juce::AudioParameterFloat*> (p))
+                return f->get();
+        return def;
+    }
+    static inline int getInt(APVTS& apvts, const juce::String& id, int def)
+    {
+        if (auto* p = apvts.getParameter(id))
+            if (auto* i = dynamic_cast<juce::AudioParameterInt*> (p))
+                return i->get();
+        return def;
+    }
+    static inline juce::Colour rgbParam(APVTS& apvts, const juce::String& id, int defRGB, float alpha)
+    {
+        const int rgb = getInt(apvts, id, defRGB);
+        juce::Colour c((juce::uint8)((rgb >> 16) & 0xFF),
+            (juce::uint8)((rgb >> 8) & 0xFF),
+            (juce::uint8)(rgb & 0xFF));
+        return c.withAlpha(juce::jlimit(0.0f, 1.0f, alpha));
+    }
+}
+
 class SlotMachineAudioProcessorEditor::VisualizerWindow : public juce::DocumentWindow
 {
 public:
@@ -2104,40 +2138,6 @@ public:
 private:
     SlotMachineAudioProcessorEditor& owner;
 };
-
-// ===== Options helpers =====
-namespace Opt
-{
-    static inline bool getBool(APVTS& apvts, const juce::String& id, bool def)
-    {
-        if (auto* p = apvts.getParameter(id))
-            if (auto* b = dynamic_cast<juce::AudioParameterBool*>(p))
-                return b->get();
-        return def;
-    }
-    static inline float getFloat(APVTS& apvts, const juce::String& id, float def)
-    {
-        if (auto* p = apvts.getParameter(id))
-            if (auto* f = dynamic_cast<juce::AudioParameterFloat*> (p))
-                return f->get();
-        return def;
-    }
-    static inline int getInt(APVTS& apvts, const juce::String& id, int def)
-    {
-        if (auto* p = apvts.getParameter(id))
-            if (auto* i = dynamic_cast<juce::AudioParameterInt*> (p))
-                return i->get();
-        return def;
-    }
-    static inline juce::Colour rgbParam(APVTS& apvts, const juce::String& id, int defRGB, float alpha)
-    {
-        const int rgb = getInt(apvts, id, defRGB);
-        juce::Colour c((juce::uint8)((rgb >> 16) & 0xFF),
-            (juce::uint8)((rgb >> 8) & 0xFF),
-            (juce::uint8)(rgb & 0xFF));
-        return c.withAlpha(juce::jlimit(0.0f, 1.0f, alpha));
-    }
-}
 
 // ===== Neon frame rendering =====
 namespace
