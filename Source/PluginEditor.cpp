@@ -2021,10 +2021,9 @@ public:
         }
 
         // Calculate position for upper right alignment
-        // Position it to the right of the main window, with a small margin between them
-        int margin = 10;
-        int newX = mainBounds.getRight() + margin;
-        int newY = mainBounds.getY() + margin;
+        // Position it directly adjacent to the main window with no gap
+        int newX = mainBounds.getRight();
+        int newY = mainBounds.getY();
 
         // Make sure the window stays on screen
         auto displays = juce::Desktop::getInstance().getDisplays();
