@@ -1972,7 +1972,78 @@ public:
         owner.handleVisualizerWindowCloseRequest();
     }
 
+    void mouseDown(const juce::MouseEvent& e) override
+    {
+        if (e.mods.isPopupMenu())
+        {
+            showContextMenu();
+        }
+        else
+        {
+            juce::DocumentWindow::mouseDown(e);
+        }
+    }
+
 private:
+    void showContextMenu()
+    {
+        juce::PopupMenu menu;
+        menu.addItem(1, "Align to right side");
+
+        menu.showMenuAsync(juce::PopupMenu::Options(),
+            [this](int result)
+            {
+                if (result == 1)
+                {
+                    alignToRightSide();
+                }
+            });
+    }
+
+    void alignToRightSide()
+    {
+        // Get the main application window bounds
+        auto* topLevelComp = owner.getTopLevelComponent();
+        if (topLevelComp == nullptr)
+            return;
+
+        auto mainBounds = topLevelComp->getBounds();
+
+        // Set visualizer to a smaller size if it's currently too large
+        int vizWidth = getWidth();
+        int vizHeight = getHeight();
+
+        // Make it smaller (480x480) if it's the default size or larger
+        if (vizWidth >= 640 || vizHeight >= 640)
+        {
+            vizWidth = 480;
+            vizHeight = 480;
+            setSize(vizWidth, vizHeight);
+        }
+
+        // Calculate position for upper right alignment
+        // Position it at the right edge of the main window, with a small margin
+        int margin = 10;
+        int newX = mainBounds.getRight() - vizWidth - margin;
+        int newY = mainBounds.getY() + margin;
+
+        // Make sure the window stays on screen
+        auto displays = juce::Desktop::getInstance().getDisplays();
+        auto mainDisplay = displays.getDisplayForRect(mainBounds);
+        if (mainDisplay != nullptr)
+        {
+            auto displayArea = mainDisplay->userArea;
+            newX = juce::jlimit(displayArea.getX(),
+                              displayArea.getRight() - vizWidth,
+                              newX);
+            newY = juce::jlimit(displayArea.getY(),
+                              displayArea.getBottom() - vizHeight,
+                              newY);
+        }
+
+        setTopLeftPosition(newX, newY);
+    }
+
     SlotMachineAudioProcessorEditor& owner;
 };
 
