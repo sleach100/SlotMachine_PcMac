@@ -5844,11 +5844,22 @@ void SlotMachineAudioProcessorEditor::doLoadPreset()
             if (!f.existsAsFile()) return;
 
             std::unique_ptr<juce::XmlElement> xml(juce::XmlDocument::parse(f));
-            if (xml == nullptr) return;
+            if (xml == nullptr)
+            {
+                juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
+                    "Load Preset",
+                    "The file is corrupt or unable to be read.");
+                return;
+            }
 
             auto newState = juce::ValueTree::fromXml(*xml);
             if (!newState.isValid())
+            {
+                juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
+                    "Load Preset",
+                    "The selected file does not contain a valid preset configuration.");
                 return;
+            }
 
             doResetAll();
 
