@@ -1984,7 +1984,6 @@ public:
         }
     }
 
-private:
     void showContextMenu()
     {
         juce::PopupMenu menu;
@@ -2044,6 +2043,7 @@ private:
         setTopLeftPosition(newX, newY);
     }
 
+private:
     SlotMachineAudioProcessorEditor& owner;
 };
 
@@ -5645,6 +5645,13 @@ void SlotMachineAudioProcessorEditor::openVisualizerWindow()
 
     auto window = std::make_unique<VisualizerWindow>(*this);
     window->setContentOwned(componentPtr, true);
+
+    // Connect right-click handler to show context menu
+    componentPtr->onRightClick = [windowPtr = window.get()]()
+    {
+        windowPtr->showContextMenu();
+    };
+
     window->centreWithSize(640, 640);
     window->setAlwaysOnTop(true);
     window->setVisible(true);

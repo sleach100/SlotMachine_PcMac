@@ -88,6 +88,15 @@ void PolyrhythmVizComponent::resized()
     }
 }
 
+void PolyrhythmVizComponent::mouseDown(const juce::MouseEvent& e)
+{
+    if (e.mods.isPopupMenu())
+    {
+        if (onRightClick)
+            onRightClick();
+    }
+}
+
 void PolyrhythmVizComponent::timerCallback()
 {
     const double currentPhase = processor.getMasterPhase();
