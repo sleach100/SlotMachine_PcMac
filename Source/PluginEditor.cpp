@@ -2006,7 +2006,8 @@ public:
         if (topLevelComp == nullptr)
             return;
 
-        auto mainBounds = topLevelComp->getBounds();
+        // Use screen bounds to get actual window position including title bar
+        auto mainBounds = topLevelComp->getScreenBounds();
 
         // Set visualizer to a smaller size if it's currently too large
         int vizWidth = getWidth();
