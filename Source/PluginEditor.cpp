@@ -2044,13 +2044,16 @@ public:
         // Position it directly adjacent to the main window with no gap
         int newX = mainBounds.getRight();
 
+        // Manual vertical offset adjustment for fine-tuning visualizer alignment
+        constexpr int VISUALIZER_VERTICAL_OFFSET = 0;  // <-- Adjust this value to fine-tune window position
+
         // Calculate the visualizer's title bar height
         // vizBounds includes the title bar, getHeight() does not
         int titleBarHeight = vizBounds.getHeight() - getHeight();
 
-        // Align at the same Y position but lower by the title bar height
+        // Align at the same Y position but lower by the title bar height plus manual offset
         // This ensures the visualizer's content area aligns with the main window's top
-        int newY = mainBounds.getY() + titleBarHeight;
+        int newY = mainBounds.getY() + titleBarHeight + VISUALIZER_VERTICAL_OFFSET;
 
         // Make sure the window stays on screen
         auto displays = juce::Desktop::getInstance().getDisplays();
