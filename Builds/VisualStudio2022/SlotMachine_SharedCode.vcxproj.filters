@@ -703,6 +703,9 @@
     <ClCompile Include="..\..\Source\WindowsPowerMonitor.cpp">
       <Filter>SlotMachine\Source</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\Source\UpdateChecker.cpp">
+      <Filter>SlotMachine\Source</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\Source\license.cpp">
       <Filter>SlotMachine</Filter>
     </ClCompile>
@@ -3598,6 +3601,9 @@
       <Filter>SlotMachine\Source</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\WindowsPowerMonitor.h">
+      <Filter>SlotMachine\Source</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\UpdateChecker.h">
       <Filter>SlotMachine\Source</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\base32.h">

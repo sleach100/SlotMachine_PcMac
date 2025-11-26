@@ -6,6 +6,7 @@
 #include "LicenseRegistry.h"
 #include "LemonSqueezyAPI.h"
 #include "InstanceIdentifier.h"
+#include "UpdateChecker.h"
 
 #include <memory>
 #include <cmath>
@@ -3047,7 +3048,68 @@ SlotMachineAudioProcessorEditor::SlotMachineAudioProcessorEditor(SlotMachineAudi
         }
     }
 
+    // Check for updates (standalone only, before license check)
+    checkForUpdatesOnStartup();
+
     initialiseLicenseState();
+}
+
+void SlotMachineAudioProcessorEditor::checkForUpdatesOnStartup()
+{
+#if JUCE_STANDALONE_APPLICATION
+    // Use a weak reference to safely access 'this' in the callback
+    juce::Component::SafePointer<SlotMachineAudioProcessorEditor> safeThis(this);
+
+    updateChecker.checkForUpdatesAsync([safeThis](UpdateChecker::CheckResult result,
+                                                   const UpdateChecker::VersionInfo& latestVersion)
+    {
+        // Check if the editor is still alive
+        if (safeThis == nullptr)
+            return;
+
+        switch (result)
+        {
+            case UpdateChecker::CheckResult::UpdateAvailable:
+            {
+                DBG("Update available: " + latestVersion.toString());
+
+                // Show update dialog
+                UpdateChecker::showUpdateDialog(
+                    safeThis.getComponent(),
+                    latestVersion,
+                    // On Accept
+                    []()
+                    {
+                        DBG("User accepted update");
+                        UpdateChecker::launchUpdaterAndTerminate();
+                    },
+                    // On Decline
+                    []()
+                    {
+                        DBG("User declined update");
+                        UpdateChecker::recordUpdateDeclined();
+                    });
+                break;
+            }
+
+            case UpdateChecker::CheckResult::UpToDate:
+                DBG("Application is up to date");
+                break;
+
+            case UpdateChecker::CheckResult::DeclinedRecently:
+                DBG("Update available but user declined recently, skipping prompt");
+                break;
+
+            case UpdateChecker::CheckResult::NetworkError:
+                DBG("Could not check for updates (network error)");
+                break;
+
+            case UpdateChecker::CheckResult::ParseError:
+                DBG("Could not parse updates.txt");
+                break;
+        }
+    });
+#endif
 }
 
 void SlotMachineAudioProcessorEditor::initialiseLicenseState()

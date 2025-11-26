@@ -12,6 +12,7 @@
 #include "PluginProcessor.h"
 #include "WaveformUtils.h"
 #include "AppLookAndFeel.h"
+#include "UpdateChecker.h"
 
 class PolyrhythmVizComponent;
 
@@ -41,6 +42,7 @@ public:
 
 
 private:
+    void checkForUpdatesOnStartup();
     void initialiseLicenseState();
     void setUnlocked(bool unlocked);
     void showUnlockDialog();
@@ -491,6 +493,9 @@ private:
     int patternWarningCounter = 0;
     bool lastAudioExportPlaythrough = false;
     bool lastMidiExportPlaythrough = false;
+
+    // Update checker (standalone only)
+    UpdateChecker updateChecker;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SlotMachineAudioProcessorEditor)
 };
