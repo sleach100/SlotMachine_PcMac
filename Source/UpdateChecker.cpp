@@ -241,6 +241,15 @@ std::pair<UpdateChecker::CheckResult, UpdateChecker::VersionInfo> UpdateChecker:
 
     juce::String content = stream->readEntireStreamAsString();
 
+    // DEBUG: Show what was received
+    juce::MessageManager::callAsync([content]() {
+        juce::AlertWindow::showMessageBoxAsync(
+            juce::MessageBoxIconType::InfoIcon,
+            "Update Checker Debug",
+            "Received content:\n\n" + content.substring(0, 500),
+            "OK");
+    });
+
     if (content.isEmpty())
     {
         DBG("UpdateChecker: Received empty response from updates.txt");
