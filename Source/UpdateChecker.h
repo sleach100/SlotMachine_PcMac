@@ -110,7 +110,7 @@ public:
     /**
      * URL for the updates.txt file
      */
-    static constexpr const char* UPDATES_URL = "https://lonepearlogic.com/updates.txt";
+    static constexpr const char* UPDATES_URL = "https://lonepearlogic.com/Update.txt";
 
     /**
      * Base URL for downloading installer files
