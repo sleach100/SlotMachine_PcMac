@@ -56,8 +56,10 @@ public:
      * The callback will be invoked on the message thread when complete.
      *
      * @param callback Function to call with the result
+     * @param forceCheck If true, ignores the "declined recently" state and
+     *                   returns UpdateAvailable instead of DeclinedRecently
      */
-    void checkForUpdatesAsync(CheckCallback callback);
+    void checkForUpdatesAsync(CheckCallback callback, bool forceCheck = false);
 
     /**
      * Show the update prompt dialog.

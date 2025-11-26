@@ -696,8 +696,10 @@ namespace
     public:
         AboutComponent(const juce::String& registrationInfo,
                       std::function<void()> deactivateCallback,
-                      bool showDeactivateButton)
+                      bool showDeactivateButton,
+                      std::function<void()> checkForUpdatesCallback = nullptr)
             : onDeactivate(std::move(deactivateCallback))
+            , onCheckForUpdates(std::move(checkForUpdatesCallback))
             , shouldShowDeactivateButton(showDeactivateButton)
         {
             logo = juce::ImageCache::getFromMemory(BinaryData::LonePearLogic_png,
@@ -717,10 +719,14 @@ namespace
             auto versionInfo = UpdateChecker::getInstalledVersion();
             versionLabel.setText("Version " + versionInfo.toString(),
                                  juce::dontSendNotification);
-            versionLabel.setJustificationType(juce::Justification::centred);
+            versionLabel.setJustificationType(juce::Justification::centredRight);
             versionLabel.setColour(juce::Label::textColourId, juce::Colours::whitesmoke);
             versionLabel.setFont(createRegularFont(14.0f));
             addAndMakeVisible(versionLabel);
+
+            checkForUpdatesButton.setButtonText("Check for updates");
+            checkForUpdatesButton.addListener(this);
+            addAndMakeVisible(checkForUpdatesButton);
 
             contactLabel.setText("Contact:  lonepearlogic@gmail.com",
                                  juce::dontSendNotification);
@@ -766,7 +772,14 @@ namespace
             aboutLabel.setBounds(bounds.removeFromTop(aboutLabelHeight));
 
             bounds.removeFromTop(5);
-            versionLabel.setBounds(bounds.removeFromTop(versionLabelHeight));
+            auto versionRow = bounds.removeFromTop(versionLabelHeight);
+            const int buttonWidth = 120;
+            const int spacing = 8;
+            const int totalWidth = 100 + spacing + buttonWidth; // version label width + spacing + button
+            auto centeredRow = versionRow.withSizeKeepingCentre(totalWidth, versionLabelHeight);
+            versionLabel.setBounds(centeredRow.removeFromLeft(100));
+            centeredRow.removeFromLeft(spacing);
+            checkForUpdatesButton.setBounds(centeredRow);
 
             bounds.removeFromTop(10);
             contactLabel.setBounds(bounds.removeFromTop(contactLabelHeight));
@@ -788,6 +801,10 @@ namespace
             {
                 onDeactivate();
             }
+            else if (button == &checkForUpdatesButton && onCheckForUpdates)
+            {
+                onCheckForUpdates();
+            }
         }
 
     private:
@@ -798,7 +815,9 @@ namespace
         juce::Label contactLabel;
         juce::Label registrationLabel;
         juce::TextButton deactivateButton;
+        juce::TextButton checkForUpdatesButton;
         std::function<void()> onDeactivate;
+        std::function<void()> onCheckForUpdates;
         bool shouldShowDeactivateButton;
     };
 }
@@ -5380,7 +5399,68 @@ void SlotMachineAudioProcessorEditor::buttonClicked(juce::Button* b)
             }
         };
 
-        auto aboutContent = std::make_unique<AboutComponent>(getRegistrationDisplayName(), deactivateCallback, isUnlocked);
+        auto checkForUpdatesCallback = [this]()
+        {
+            // Use a weak reference to safely access 'this' in the callback
+            juce::Component::SafePointer<SlotMachineAudioProcessorEditor> safeThis(this);
+
+            // Force check ignores "declined recently" state
+            updateChecker.checkForUpdatesAsync([safeThis](UpdateChecker::CheckResult result,
+                                                          const UpdateChecker::VersionInfo& latestVersion)
+            {
+                if (safeThis == nullptr)
+                    return;
+
+                switch (result)
+                {
+                    case UpdateChecker::CheckResult::UpdateAvailable:
+                    {
+                        UpdateChecker::showUpdateDialog(
+                            safeThis.getComponent(),
+                            latestVersion,
+                            []()
+                            {
+                                UpdateChecker::launchUpdaterAndTerminate();
+                            },
+                            []()
+                            {
+                                UpdateChecker::recordUpdateDeclined();
+                            });
+                        break;
+                    }
+
+                    case UpdateChecker::CheckResult::UpToDate:
+                        juce::AlertWindow::showMessageBoxAsync(
+                            juce::AlertWindow::InfoIcon,
+                            "Check for Updates",
+                            "You're running the latest version of S.L.O.T. Machine.",
+                            "OK");
+                        break;
+
+                    case UpdateChecker::CheckResult::NetworkError:
+                        juce::AlertWindow::showMessageBoxAsync(
+                            juce::AlertWindow::WarningIcon,
+                            "Check for Updates",
+                            "Could not check for updates. Please check your internet connection and try again.",
+                            "OK");
+                        break;
+
+                    case UpdateChecker::CheckResult::ParseError:
+                        juce::AlertWindow::showMessageBoxAsync(
+                            juce::AlertWindow::WarningIcon,
+                            "Check for Updates",
+                            "Could not check for updates. Please try again later.",
+                            "OK");
+                        break;
+
+                    case UpdateChecker::CheckResult::DeclinedRecently:
+                        // This shouldn't happen with forceCheck=true, but handle it anyway
+                        break;
+                }
+            }, true);  // forceCheck = true
+        };
+
+        auto aboutContent = std::make_unique<AboutComponent>(getRegistrationDisplayName(), deactivateCallback, isUnlocked, checkForUpdatesCallback);
         aboutContent->setSize(420, 460);
 
         juce::DialogWindow::LaunchOptions options;

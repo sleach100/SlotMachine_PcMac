@@ -288,13 +288,13 @@ UpdateChecker::VersionInfo UpdateChecker::parseUpdatesFile(const juce::String& c
 // Main update check logic
 //==============================================================================
 
-void UpdateChecker::checkForUpdatesAsync(CheckCallback callback)
+void UpdateChecker::checkForUpdatesAsync(CheckCallback callback, bool forceCheck)
 {
     // Run network check on background thread
-    juce::Thread::launch([callback]()
+    juce::Thread::launch([callback, forceCheck]()
     {
-        // Check if user recently declined
-        bool declinedRecently = wasUpdateDeclinedRecently();
+        // Check if user recently declined (only if not forcing)
+        bool declinedRecently = forceCheck ? false : wasUpdateDeclinedRecently();
 
         // Fetch latest version from server
         auto [fetchResult, latestVersion] = fetchLatestVersion();
