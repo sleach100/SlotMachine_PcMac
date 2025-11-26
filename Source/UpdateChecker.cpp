@@ -236,6 +236,16 @@ std::pair<UpdateChecker::CheckResult, UpdateChecker::VersionInfo> UpdateChecker:
     if (stream == nullptr)
     {
         DBG("UpdateChecker: Failed to connect to " + juce::String(UPDATES_URL));
+
+        // DEBUG: Show error message
+        juce::MessageManager::callAsync([]() {
+            juce::AlertWindow::showMessageBoxAsync(
+                juce::MessageBoxIconType::WarningIcon,
+                "Update Checker Debug",
+                "Failed to connect to:\n" + juce::String(UPDATES_URL) + "\n\nStream is null - network error.",
+                "OK");
+        });
+
         return { CheckResult::NetworkError, latestVersion };
     }
 
@@ -244,6 +254,16 @@ std::pair<UpdateChecker::CheckResult, UpdateChecker::VersionInfo> UpdateChecker:
     if (content.isEmpty())
     {
         DBG("UpdateChecker: Received empty response from updates.txt");
+
+        // DEBUG: Show error message
+        juce::MessageManager::callAsync([]() {
+            juce::AlertWindow::showMessageBoxAsync(
+                juce::MessageBoxIconType::WarningIcon,
+                "Update Checker Debug",
+                "Connected to:\n" + juce::String(UPDATES_URL) + "\n\nBut received empty response.",
+                "OK");
+        });
+
         return { CheckResult::NetworkError, latestVersion };
     }
 
@@ -268,16 +288,51 @@ UpdateChecker::VersionInfo UpdateChecker::parseUpdatesFile(const juce::String& c
     juce::StringArray lines;
     lines.addTokens(content, "\r\n", "");
 
+    // DEBUG: Build a string showing all lines being tested
+    juce::String debugInfo = "DEBUG: Parsing updates.txt\n\nRaw content received:\n" + content + "\n\nLines found: " + juce::String(lines.size()) + "\n\n";
+
     for (int i = lines.size() - 1; i >= 0; --i)
     {
         juce::String line = lines[i].trim();
+
+        debugInfo += "Line " + juce::String(i) + ": \"" + line + "\"\n";
+        debugInfo += "  - isEmpty: " + juce::String(line.isEmpty() ? "yes" : "no") + "\n";
+        debugInfo += "  - startsWith SlotMachineSetup-: " + juce::String(line.startsWith("SlotMachineSetup-") ? "yes" : "no") + "\n";
+        debugInfo += "  - endsWith .exe: " + juce::String(line.endsWith(".exe") ? "yes" : "no") + "\n";
+
         if (line.isNotEmpty() && line.startsWith("SlotMachineSetup-") && line.endsWith(".exe"))
         {
             info = VersionInfo::fromFilename(line);
+            debugInfo += "\n=== MATCH FOUND ===\n";
+            debugInfo += "Filename: " + line + "\n";
+            debugInfo += "Parsed Version: " + info.toString() + "\n";
+            debugInfo += "(major=" + juce::String(info.major) + ", minor=" + juce::String(info.minor) + ", patch=" + juce::String(info.patch) + ")";
+
+            // Show debug message box on message thread
+            juce::MessageManager::callAsync([debugInfo]() {
+                juce::AlertWindow::showMessageBoxAsync(
+                    juce::MessageBoxIconType::InfoIcon,
+                    "Update Checker Debug",
+                    debugInfo,
+                    "OK");
+            });
+
             DBG("UpdateChecker: Parsed latest version: " + info.toString() + " from " + line);
             return info;
         }
     }
+
+    debugInfo += "\n=== NO MATCH FOUND ===\n";
+    debugInfo += "No valid installer filename found in updates.txt";
+
+    // Show debug message box on message thread
+    juce::MessageManager::callAsync([debugInfo]() {
+        juce::AlertWindow::showMessageBoxAsync(
+            juce::MessageBoxIconType::WarningIcon,
+            "Update Checker Debug",
+            debugInfo,
+            "OK");
+    });
 
     DBG("UpdateChecker: No valid installer filename found in updates.txt");
     return info;
