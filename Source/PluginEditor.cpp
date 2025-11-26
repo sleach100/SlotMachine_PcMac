@@ -714,6 +714,14 @@ namespace
             aboutLabel.setFont(createBoldFont(16.0f));
             addAndMakeVisible(aboutLabel);
 
+            auto versionInfo = UpdateChecker::getInstalledVersion();
+            versionLabel.setText("Version " + versionInfo.toString(),
+                                 juce::dontSendNotification);
+            versionLabel.setJustificationType(juce::Justification::centred);
+            versionLabel.setColour(juce::Label::textColourId, juce::Colours::whitesmoke);
+            versionLabel.setFont(createRegularFont(14.0f));
+            addAndMakeVisible(versionLabel);
+
             contactLabel.setText("Contact:  lonepearlogic@gmail.com",
                                  juce::dontSendNotification);
             contactLabel.setJustificationType(juce::Justification::centred);
@@ -746,15 +754,19 @@ namespace
             auto bounds = getLocalBounds().reduced(20);
 
             const int aboutLabelHeight = 48;
+            const int versionLabelHeight = 24;
             const int contactLabelHeight = 32;
             const int registrationLabelHeight = 32;
             const int buttonHeight = 32;
             const int buttonSpacing = shouldShowDeactivateButton ? buttonHeight + 20 : 0;
-            auto imageArea = bounds.removeFromTop(juce::jmax(120, bounds.getHeight() - aboutLabelHeight - contactLabelHeight - registrationLabelHeight - buttonSpacing - 40));
+            auto imageArea = bounds.removeFromTop(juce::jmax(120, bounds.getHeight() - aboutLabelHeight - versionLabelHeight - contactLabelHeight - registrationLabelHeight - buttonSpacing - 50));
             logoComponent.setBounds(imageArea);
 
             bounds.removeFromTop(20);
             aboutLabel.setBounds(bounds.removeFromTop(aboutLabelHeight));
+
+            bounds.removeFromTop(5);
+            versionLabel.setBounds(bounds.removeFromTop(versionLabelHeight));
 
             bounds.removeFromTop(10);
             contactLabel.setBounds(bounds.removeFromTop(contactLabelHeight));
@@ -782,6 +794,7 @@ namespace
         juce::Image logo;
         juce::ImageComponent logoComponent;
         juce::Label aboutLabel;
+        juce::Label versionLabel;
         juce::Label contactLabel;
         juce::Label registrationLabel;
         juce::TextButton deactivateButton;
