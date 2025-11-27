@@ -392,6 +392,7 @@ bool UpdateChecker::launchUpdaterAndTerminate()
     juce::File appFile = juce::File::getSpecialLocation(juce::File::currentExecutableFile);
     juce::File appDir = appFile.getParentDirectory();
     juce::File updaterFile = appDir.getChildFile("SlotMachineUpdater.exe");
+    juce::File workingUpdaterFile = appDir.getChildFile("SlotMachineUpdater.working.exe");
 
     if (!updaterFile.existsAsFile())
     {
@@ -407,12 +408,38 @@ bool UpdateChecker::launchUpdaterAndTerminate()
         return false;
     }
 
-    DBG("UpdateChecker: Launching updater: " + updaterFile.getFullPathName());
+    // Delete any existing working copy from a previous update
+    if (workingUpdaterFile.existsAsFile())
+    {
+        DBG("UpdateChecker: Deleting existing working updater file");
+        workingUpdaterFile.deleteFile();
+    }
 
-    // Launch the updater
-    if (!updaterFile.startAsProcess())
+    // Rename SlotMachineUpdater.exe to SlotMachineUpdater.working.exe
+    // This allows the installer to overwrite SlotMachineUpdater.exe while the update runs
+    if (!updaterFile.moveFileTo(workingUpdaterFile))
+    {
+        DBG("UpdateChecker: Failed to rename updater to working copy");
+
+        juce::AlertWindow::showMessageBoxAsync(
+            juce::MessageBoxIconType::WarningIcon,
+            "Update Error",
+            "Could not prepare the updater application.\n\n"
+            "Please try again or download the latest version manually from lonepearlogic.com",
+            "OK");
+
+        return false;
+    }
+
+    DBG("UpdateChecker: Launching updater: " + workingUpdaterFile.getFullPathName());
+
+    // Launch the renamed updater
+    if (!workingUpdaterFile.startAsProcess())
     {
         DBG("UpdateChecker: Failed to launch updater");
+
+        // Try to restore the original file
+        workingUpdaterFile.moveFileTo(updaterFile);
 
         juce::AlertWindow::showMessageBoxAsync(
             juce::MessageBoxIconType::WarningIcon,
