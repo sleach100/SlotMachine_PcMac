@@ -438,10 +438,14 @@ bool UpdateChecker::launchUpdaterAndTerminate()
         return false;
     }
 
-    DBG("UpdateChecker: Launching updater from temp: " + tempUpdaterFile.getFullPathName());
+    // Launch the updater from temp directory, passing the original app directory
+    // as a command line argument so it knows where to relaunch SlotMachine.exe from
+    juce::String parameters = "\"" + appDir.getFullPathName() + "\"";
 
-    // Launch the updater from temp directory
-    if (!tempUpdaterFile.startAsProcess())
+    DBG("UpdateChecker: Launching updater from temp: " + tempUpdaterFile.getFullPathName());
+    DBG("UpdateChecker: With parameters: " + parameters);
+
+    if (!tempUpdaterFile.startAsProcess(parameters))
     {
         DBG("UpdateChecker: Failed to launch updater");
 
