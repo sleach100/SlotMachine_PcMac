@@ -392,39 +392,10 @@ bool UpdateChecker::launchUpdaterAndTerminate()
     juce::File appFile = juce::File::getSpecialLocation(juce::File::currentExecutableFile);
     juce::File appDir = appFile.getParentDirectory();
     juce::File updaterFile = appDir.getChildFile("SlotMachineUpdater.exe");
-    juce::File workingUpdaterFile = appDir.getChildFile("SlotMachineUpdater.working.exe");
 
-    if (updaterFile.existsAsFile())
+    if (!updaterFile.existsAsFile())
     {
-        // Delete any existing working copy from a previous update
-        // (safe to delete since we have the main updater file)
-        if (workingUpdaterFile.existsAsFile())
-        {
-            DBG("UpdateChecker: Deleting existing working updater file");
-            workingUpdaterFile.deleteFile();
-        }
-
-        // Rename SlotMachineUpdater.exe to SlotMachineUpdater.working.exe
-        // This allows the installer to overwrite SlotMachineUpdater.exe while the update runs
-        if (!updaterFile.moveFileTo(workingUpdaterFile))
-        {
-            DBG("UpdateChecker: Failed to rename updater to working copy");
-
-            juce::AlertWindow::showMessageBoxAsync(
-                juce::MessageBoxIconType::WarningIcon,
-                "Update Error",
-                "Could not prepare the updater application.\n\n"
-                "Please try again or download the latest version manually from lonepearlogic.com",
-                "OK");
-
-            return false;
-        }
-    }
-    else if (!workingUpdaterFile.existsAsFile())
-    {
-        // Neither updater file exists
-        DBG("UpdateChecker: No updater found at " + updaterFile.getFullPathName() +
-            " or " + workingUpdaterFile.getFullPathName());
+        DBG("UpdateChecker: No updater found at " + updaterFile.getFullPathName());
 
         juce::AlertWindow::showMessageBoxAsync(
             juce::MessageBoxIconType::WarningIcon,
@@ -435,22 +406,48 @@ bool UpdateChecker::launchUpdaterAndTerminate()
 
         return false;
     }
-    else
+
+    // Copy the updater to a temp directory so we can run it from there.
+    // This avoids permission issues when the app is installed in Program Files,
+    // and allows the installer to overwrite the original updater file during update.
+    juce::File tempDir = juce::File::getSpecialLocation(juce::File::tempDirectory)
+                            .getChildFile("SlotMachineUpdater");
+    tempDir.createDirectory();
+
+    juce::File tempUpdaterFile = tempDir.getChildFile("SlotMachineUpdater.exe");
+
+    // Delete any existing copy from a previous update attempt
+    if (tempUpdaterFile.existsAsFile())
     {
-        // SlotMachineUpdater.exe doesn't exist but working copy does
-        // (possibly from a previous failed/cancelled update)
-        DBG("UpdateChecker: Using existing working updater file from previous attempt");
+        DBG("UpdateChecker: Deleting existing temp updater file");
+        tempUpdaterFile.deleteFile();
     }
 
-    DBG("UpdateChecker: Launching updater: " + workingUpdaterFile.getFullPathName());
+    // Copy updater to temp directory
+    if (!updaterFile.copyFileTo(tempUpdaterFile))
+    {
+        DBG("UpdateChecker: Failed to copy updater to temp directory");
 
-    // Launch the working updater
-    if (!workingUpdaterFile.startAsProcess())
+        juce::AlertWindow::showMessageBoxAsync(
+            juce::MessageBoxIconType::WarningIcon,
+            "Update Error",
+            "Could not prepare the updater application.\n\n"
+            "Please try again or download the latest version manually from lonepearlogic.com",
+            "OK");
+
+        return false;
+    }
+
+    // Launch the updater from temp directory, passing the original app directory
+    // as a command line argument so it knows where to relaunch SlotMachine.exe from
+    juce::String parameters = "\"" + appDir.getFullPathName() + "\"";
+
+    DBG("UpdateChecker: Launching updater from temp: " + tempUpdaterFile.getFullPathName());
+    DBG("UpdateChecker: With parameters: " + parameters);
+
+    if (!tempUpdaterFile.startAsProcess(parameters))
     {
         DBG("UpdateChecker: Failed to launch updater");
-
-        // Try to restore the original file
-        workingUpdaterFile.moveFileTo(updaterFile);
 
         juce::AlertWindow::showMessageBoxAsync(
             juce::MessageBoxIconType::WarningIcon,
