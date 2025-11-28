@@ -143,14 +143,41 @@ void UpdateChecker::saveUpdateOptions(const juce::ValueTree& updateOptions)
 
 UpdateChecker::VersionInfo UpdateChecker::getInstalledVersion()
 {
-    auto options = loadUpdateOptions();
+    // Read version from version.txt in the same folder as the executable
+    juce::File appFile = juce::File::getSpecialLocation(juce::File::currentExecutableFile);
+    juce::File appDir = appFile.getParentDirectory();
+    juce::File versionFile = appDir.getChildFile("version.txt");
 
-    if (options.hasProperty(kInstalledVersionProperty))
+    if (versionFile.existsAsFile())
     {
-        juce::String versionStr = options.getProperty(kInstalledVersionProperty).toString();
-        if (versionStr.isNotEmpty())
-            return VersionInfo::fromString(versionStr);
+        juce::StringArray lines;
+        versionFile.readLines(lines);
+
+        if (lines.size() > 0)
+        {
+            juce::String firstLine = lines[0].trim();
+
+            // Parse format: installedVersion="1.0.1"
+            if (firstLine.startsWith("installedVersion=\"") && firstLine.endsWith("\""))
+            {
+                // Extract version string between quotes
+                int startQuote = firstLine.indexOf("\"");
+                int endQuote = firstLine.lastIndexOf("\"");
+
+                if (startQuote >= 0 && endQuote > startQuote)
+                {
+                    juce::String versionStr = firstLine.substring(startQuote + 1, endQuote);
+                    if (versionStr.isNotEmpty())
+                    {
+                        DBG("UpdateChecker: Read version " + versionStr + " from version.txt");
+                        return VersionInfo::fromString(versionStr);
+                    }
+                }
+            }
+        }
     }
+
+    DBG("UpdateChecker: Could not read version from version.txt, defaulting to 1.0.0");
 
     // Default to 1.0.0 if no version found
     VersionInfo defaultVersion;
