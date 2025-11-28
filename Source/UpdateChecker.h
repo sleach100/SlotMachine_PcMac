@@ -82,7 +82,8 @@ public:
     static bool launchUpdaterAndTerminate();
 
     /**
-     * Get the currently installed version from options.xml.
+     * Get the currently installed version from version.txt in the executable directory.
+     * Reads line 1 in format: installedVersion="X.Y.Z"
      * If not found, returns version 1.0.0 as default.
      */
     static VersionInfo getInstalledVersion();
