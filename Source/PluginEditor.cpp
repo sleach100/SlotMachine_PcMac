@@ -2199,6 +2199,7 @@ public:
             param->beginChangeGesture();
             *param = !param->get();
             param->endChangeGesture();
+            saveOptionsToDisk(owner.apvts);
         }
     }
 
@@ -2210,6 +2211,7 @@ public:
             param->beginChangeGesture();
             *param = !param->get();
             param->endChangeGesture();
+            saveOptionsToDisk(owner.apvts);
         }
     }
 
