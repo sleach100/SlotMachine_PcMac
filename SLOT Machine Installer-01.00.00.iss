@@ -70,6 +70,10 @@ Source: "{#MySourceRoot}\SlotMachineUpdater.exe"; DestDir: "{app}"; \
 ; --- Version file used by the app ---
 Source: "C:\Users\Stever Leach\source\repos\Slot-Machine-V2\Version.txt"; DestDir: "{app}"; \
   Flags: ignoreversion restartreplace
+  
+; --- Release Notes ---
+Source: "C:\Users\Stever Leach\source\repos\Slot-Machine-V2\ReleaseNotes.txt"; DestDir: "{app}"; \
+  Flags: ignoreversion restartreplace
 
 ; --- Optional tutorial/media ---
 Source: "{#MySourceRoot}\tutorialslotmachine.mp4"; DestDir: "{app}"; \
