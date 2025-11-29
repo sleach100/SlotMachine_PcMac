@@ -42,6 +42,12 @@ public:
 
 
 private:
+    // VST3-specific behavior
+    bool isRunningAsVST3() const;
+    void showVST3LockOverlayIfNeeded();
+    class VST3LockOverlay;
+    std::unique_ptr<VST3LockOverlay> vst3LockOverlay;
+
     void checkForUpdatesOnStartup();
     void checkForUpdateCompletedMessage();
     void initialiseLicenseState();
