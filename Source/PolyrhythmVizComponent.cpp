@@ -42,21 +42,28 @@ void PolyrhythmVizComponent::paint(juce::Graphics& g)
     const float margin = 28.0f;
     const float maxRadius = juce::jmax(0.0f, juce::jmin(bounds.getWidth(), bounds.getHeight()) * 0.5f - margin);
 
-    // Check if master pulse effect is enabled
+    // Check if effects are enabled
     bool masterPulseEnabled = false;
     if (auto* param = apvts.getRawParameterValue("optVisualizerMasterPulse"))
         masterPulseEnabled = param->load() >= 0.5f;
 
+    bool breatheEnabled = true;
+    if (auto* param = apvts.getRawParameterValue("optVisualizerBreathe"))
+        breatheEnabled = param->load() >= 0.5f;
+
     // Calculate breathing effect (slow expansion/contraction over entire cycle)
     // Uses sine wave: 0 at start, 1 at middle (phase 0.5), 0 at end
-    const float breathingAmount = std::sin((float)masterPhase * juce::MathConstants<float>::pi);
+    const float breathingAmount = breatheEnabled
+        ? std::sin((float)masterPhase * juce::MathConstants<float>::pi)
+        : 0.0f;
 
     // Apply combined breathing and master pulse zoom effect to entire visualization
     juce::Graphics::ScopedSaveState saveState(g);
 
     // Combine breathing (continuous) with master pulse (triggered at wrap)
     float totalScale = 1.0f;
-    totalScale += breathingAmount * 0.03f;  // Breathing: subtle 3% expansion at peak
+    if (breatheEnabled)
+        totalScale += breathingAmount * 0.03f;  // Breathing: subtle 3% expansion at peak
 
     if (masterPulseEnabled && masterPulse > 0.001f)
     {

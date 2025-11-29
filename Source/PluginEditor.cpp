@@ -1907,7 +1907,7 @@ void SlotMachineAudioProcessorEditor::SlotUI::updateTimingModeVisibility(int tim
 
 // ===== Standalone persistence for Options =====
 static const juce::StringArray kOptionParamIds{
-    "optShowMasterBar", "optShowSlotBars", "optShowVisualizer", "optVisualizerEdgeWalk", "optVisualizerMasterPulse",
+    "optShowMasterBar", "optShowSlotBars", "optShowVisualizer", "optVisualizerEdgeWalk", "optVisualizerMasterPulse", "optVisualizerBreathe",
     "optSampleRate", "optTimingMode",
     "optSlotScale",
     "optGlowColor", "optGlowAlpha", "optGlowWidth",
@@ -2069,8 +2069,12 @@ public:
         menu.addSeparator();
 
         // Get master pulse state
-        const bool masterPulseEnabled = Opt::getBool(owner.apvts, "optVisualizerMasterPulse", true);
+        const bool masterPulseEnabled = Opt::getBool(owner.apvts, "optVisualizerMasterPulse", false);
         menu.addItem(5, "Master Pulse", true, masterPulseEnabled);
+
+        // Get breathe state
+        const bool breatheEnabled = Opt::getBool(owner.apvts, "optVisualizerBreathe", true);
+        menu.addItem(6, "Breathe", true, breatheEnabled);
 
         // Get mouse position and create target area with offset
         auto mousePos = juce::Desktop::getMousePosition();
@@ -2105,6 +2109,10 @@ public:
                 else if (result == 5)
                 {
                     toggleMasterPulse();
+                }
+                else if (result == 6)
+                {
+                    toggleBreathe();
                 }
             });
     }
@@ -2194,6 +2202,17 @@ public:
         }
     }
 
+    void toggleBreathe()
+    {
+        // Toggle the breathe parameter
+        if (auto* param = dynamic_cast<juce::AudioParameterBool*>(owner.apvts.getParameter("optVisualizerBreathe")))
+        {
+            param->beginChangeGesture();
+            *param = !param->get();
+            param->endChangeGesture();
+        }
+    }
+
 private:
     SlotMachineAudioProcessorEditor& owner;
 };
@@ -2272,6 +2291,10 @@ public:
         addAndMakeVisible(masterPulseToggle);
         masterPulseToggle.setButtonText("Visualizer Master Pulse");
         masterPulseToggle.addListener(this);
+
+        addAndMakeVisible(breatheToggle);
+        breatheToggle.setButtonText("Visualizer Breathe");
+        breatheToggle.addListener(this);
 
         // sample rate
         sampleRateLabel.setText("Export Sample Rate", juce::dontSendNotification);
@@ -2384,6 +2407,9 @@ public:
         auto pulseToggleRow = a.removeFromTop(28);
         masterPulseToggle.setBounds(pulseToggleRow);
 
+        auto breatheToggleRow = a.removeFromTop(28);
+        breatheToggle.setBounds(breatheToggleRow);
+
         a.removeFromTop(8);
 
         auto sampleRateRow = a.removeFromTop(48);
@@ -2443,6 +2469,7 @@ private:
     juce::Label visualizerModeLabel;
     juce::ComboBox visualizerModeCombo;
     juce::ToggleButton masterPulseToggle;
+    juce::ToggleButton breatheToggle;
 
     juce::Label sampleRateLabel;
     juce::ComboBox sampleRateCombo;
@@ -2519,7 +2546,8 @@ private:
         // toggles
         showMasterBar.setToggleState(Opt::getBool(apvts, "optShowMasterBar", true), juce::dontSendNotification);
         showSlotBars.setToggleState(Opt::getBool(apvts, "optShowSlotBars", true), juce::dontSendNotification);
-        masterPulseToggle.setToggleState(Opt::getBool(apvts, "optVisualizerMasterPulse", true), juce::dontSendNotification);
+        masterPulseToggle.setToggleState(Opt::getBool(apvts, "optVisualizerMasterPulse", false), juce::dontSendNotification);
+        breatheToggle.setToggleState(Opt::getBool(apvts, "optVisualizerBreathe", true), juce::dontSendNotification);
 
         const int visualizerMode = Opt::getInt(apvts, "optVisualizerEdgeWalk", 0);  // 0=Edge, 1=Orbit, 2=Mixed
         blockVisualizerModeUpdate = true;
@@ -2594,6 +2622,8 @@ private:
             setBoolParam("optShowSlotBars", showSlotBars.getToggleState());
         else if (b == &masterPulseToggle)
             setBoolParam("optVisualizerMasterPulse", masterPulseToggle.getToggleState());
+        else if (b == &breatheToggle)
+            setBoolParam("optVisualizerBreathe", breatheToggle.getToggleState());
         else if (b == &btnResetDefaults)
             resetToDefaultOptions();
         else if (b == &btnClose)
@@ -2695,7 +2725,8 @@ private:
         setBoolParam("optShowMasterBar", true);
         setBoolParam("optShowSlotBars", true);
         setIntParam("optVisualizerEdgeWalk", 0);  // 0=Edge Walk (default)
-        setBoolParam("optVisualizerMasterPulse", true);
+        setBoolParam("optVisualizerMasterPulse", false);
+        setBoolParam("optVisualizerBreathe", true);
         setIntParam("optSampleRate", kDefaultSampleRate);
         setIntParam("optTimingMode", kDefaultTimingMode);
         setFloatParam("optSlotScale", kDefaultSlotScale);
