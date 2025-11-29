@@ -42,21 +42,40 @@ void PolyrhythmVizComponent::paint(juce::Graphics& g)
     const float margin = 28.0f;
     const float maxRadius = juce::jmax(0.0f, juce::jmin(bounds.getWidth(), bounds.getHeight()) * 0.5f - margin);
 
-    // Check if master pulse effect is enabled
+    // Check if effects are enabled
     bool masterPulseEnabled = false;
     if (auto* param = apvts.getRawParameterValue("optVisualizerMasterPulse"))
         masterPulseEnabled = param->load() >= 0.5f;
 
-    // Apply master pulse zoom effect to entire visualization
+    bool breatheEnabled = true;
+    if (auto* param = apvts.getRawParameterValue("optVisualizerBreathe"))
+        breatheEnabled = param->load() >= 0.5f;
+
+    // Calculate breathing effect (slow expansion/contraction over entire cycle)
+    // Uses sine wave: 0 at start, 1 at middle (phase 0.5), 0 at end
+    const float breathingAmount = breatheEnabled
+        ? std::sin((float)masterPhase * juce::MathConstants<float>::pi)
+        : 0.0f;
+
+    // Apply combined breathing and master pulse zoom effect to entire visualization
     juce::Graphics::ScopedSaveState saveState(g);
+
+    // Combine breathing (continuous) with master pulse (triggered at wrap)
+    float totalScale = 1.0f;
+    if (breatheEnabled)
+        totalScale += breathingAmount * 0.03f;  // Breathing: subtle 3% expansion at peak
+
     if (masterPulseEnabled && masterPulse > 0.001f)
     {
         const float pulseAmount = juce::jlimit(0.0f, 1.0f, masterPulse);
-        const float scale = 1.0f + pulseAmount * 0.05f;  // Subtle 5% zoom at peak
+        totalScale += pulseAmount * 0.05f;  // Master pulse: additional 5% zoom at peak
+    }
 
+    if (std::abs(totalScale - 1.0f) > 0.0001f)
+    {
         // Transform around the center point
         auto transform = juce::AffineTransform::translation(-centre.x, -centre.y)
-                            .scaled(scale, scale)
+                            .scaled(totalScale, totalScale)
                             .translated(centre.x, centre.y);
         g.addTransform(transform);
     }
@@ -89,15 +108,18 @@ void PolyrhythmVizComponent::paint(juce::Graphics& g)
             g.fillEllipse(point.x - flashRadius, point.y - flashRadius, flashRadius * 2.0f, flashRadius * 2.0f);
         }
 
-        // Apply master pulse effect to bead size
-        float beadRadius = kBeadRadius;
-        float beadAlpha = 0.9f;
+        // Apply breathing and master pulse effects to bead size
+        float beadScale = 1.0f;
+        beadScale += breathingAmount * 0.3f;  // Breathing: 30% expansion at peak
+
         if (masterPulseEnabled && masterPulse > 0.001f)
         {
             const float pulseAmount = juce::jlimit(0.0f, 1.0f, masterPulse);
-            beadRadius = kBeadRadius * (1.0f + pulseAmount * 0.8f);  // Scale up to 1.8x size
-            beadAlpha = juce::jlimit(0.5f, 1.0f, 0.9f + pulseAmount * 0.1f);  // Slight brightness increase
+            beadScale += pulseAmount * 0.8f;  // Master pulse: additional 80% expansion at peak
         }
+
+        const float beadRadius = kBeadRadius * beadScale;
+        const float beadAlpha = juce::jlimit(0.5f, 1.0f, 0.9f + (beadScale - 1.0f) * 0.1f);
 
         g.setColour(colour.withAlpha(beadAlpha));
         g.fillEllipse(slot.beadPos.x - beadRadius,
