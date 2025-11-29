@@ -1,9 +1,0 @@
-Slot Machine Release Notes
-============================
-
-Version History and Release Notes
-
-This file contains release notes and version history for Slot Machine by Lone Pear Logic.
-
-For the latest updates and information, visit: WWW.LONEPEARLOGIC.COM
-Contact: lonepearlogic@gmail.com
