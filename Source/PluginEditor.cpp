@@ -728,12 +728,28 @@ namespace
             checkForUpdatesButton.addListener(this);
             addAndMakeVisible(checkForUpdatesButton);
 
-            contactLabel.setText("Contact:  lonepearlogic@gmail.com",
+            viewReleaseNotesButton.setButtonText("View Release Notes");
+            viewReleaseNotesButton.addListener(this);
+            addAndMakeVisible(viewReleaseNotesButton);
+
+            contactLabel.setText("Contact:",
                                  juce::dontSendNotification);
             contactLabel.setJustificationType(juce::Justification::centred);
             contactLabel.setColour(juce::Label::textColourId, juce::Colours::whitesmoke);
             contactLabel.setFont(createRegularFont(15.0f));
             addAndMakeVisible(contactLabel);
+
+            emailLink.setButtonText("lonepearlogic@gmail.com");
+            emailLink.setURL(juce::URL("mailto:lonepearlogic@gmail.com"));
+            emailLink.setFont(createRegularFont(15.0f), false);
+            emailLink.setColour(juce::HyperlinkButton::textColourId, juce::Colours::lightblue);
+            addAndMakeVisible(emailLink);
+
+            websiteLink.setButtonText("WWW.LONEPEARLOGIC.COM");
+            websiteLink.setURL(juce::URL("https://www.lonepearlogic.com"));
+            websiteLink.setFont(createRegularFont(15.0f), false);
+            websiteLink.setColour(juce::HyperlinkButton::textColourId, juce::Colours::lightblue);
+            addAndMakeVisible(websiteLink);
 
             registrationLabel.setText("Registered to: " + registrationInfo,
                                       juce::dontSendNotification);
@@ -761,11 +777,12 @@ namespace
 
             const int aboutLabelHeight = 48;
             const int versionLabelHeight = 24;
+            const int linkHeight = 24;
             const int contactLabelHeight = 32;
             const int registrationLabelHeight = 32;
             const int buttonHeight = 32;
             const int buttonSpacing = shouldShowDeactivateButton ? buttonHeight + 20 : 0;
-            auto imageArea = bounds.removeFromTop(juce::jmax(120, bounds.getHeight() - aboutLabelHeight - versionLabelHeight - contactLabelHeight - registrationLabelHeight - buttonSpacing - 50));
+            auto imageArea = bounds.removeFromTop(juce::jmax(120, bounds.getHeight() - aboutLabelHeight - versionLabelHeight - linkHeight - contactLabelHeight - linkHeight - registrationLabelHeight - buttonSpacing - 70));
             logoComponent.setBounds(imageArea);
 
             bounds.removeFromTop(20);
@@ -781,8 +798,23 @@ namespace
             centeredRow.removeFromLeft(spacing);
             checkForUpdatesButton.setBounds(centeredRow);
 
+            bounds.removeFromTop(8);
+            auto releaseNotesRow = bounds.removeFromTop(linkHeight);
+            viewReleaseNotesButton.setBounds(releaseNotesRow.withSizeKeepingCentre(140, linkHeight));
+
             bounds.removeFromTop(10);
-            contactLabel.setBounds(bounds.removeFromTop(contactLabelHeight));
+            auto contactRow = bounds.removeFromTop(contactLabelHeight);
+            const int contactLabelWidth = 60;
+            const int emailLinkWidth = 200;
+            const int contactTotalWidth = contactLabelWidth + spacing + emailLinkWidth;
+            auto centeredContactRow = contactRow.withSizeKeepingCentre(contactTotalWidth, contactLabelHeight);
+            contactLabel.setBounds(centeredContactRow.removeFromLeft(contactLabelWidth));
+            centeredContactRow.removeFromLeft(spacing);
+            emailLink.setBounds(centeredContactRow.removeFromLeft(emailLinkWidth));
+
+            bounds.removeFromTop(5);
+            auto websiteRow = bounds.removeFromTop(linkHeight);
+            websiteLink.setBounds(websiteRow.withSizeKeepingCentre(220, linkHeight));
 
             bounds.removeFromTop(10);
             registrationLabel.setBounds(bounds.removeFromTop(registrationLabelHeight));
@@ -805,6 +837,28 @@ namespace
             {
                 onCheckForUpdates();
             }
+            else if (button == &viewReleaseNotesButton)
+            {
+                // Get the directory where the executable is located
+                auto exeFile = juce::File::getSpecialLocation(juce::File::currentExecutableFile);
+                auto installDir = exeFile.getParentDirectory();
+                auto releaseNotesFile = installDir.getChildFile("ReleaseNotes.txt");
+
+                // If file exists, open it with the default text editor
+                if (releaseNotesFile.existsAsFile())
+                {
+                    releaseNotesFile.startAsProcess();
+                }
+                else
+                {
+                    // Show alert if file not found
+                    juce::AlertWindow::showMessageBoxAsync(
+                        juce::AlertWindow::InfoIcon,
+                        "Release Notes Not Found",
+                        "ReleaseNotes.txt could not be found in the installation directory.",
+                        "OK");
+                }
+            }
         }
 
     private:
@@ -813,9 +867,12 @@ namespace
         juce::Label aboutLabel;
         juce::Label versionLabel;
         juce::Label contactLabel;
+        juce::HyperlinkButton emailLink;
+        juce::HyperlinkButton websiteLink;
         juce::Label registrationLabel;
         juce::TextButton deactivateButton;
         juce::TextButton checkForUpdatesButton;
+        juce::TextButton viewReleaseNotesButton;
         std::function<void()> onDeactivate;
         std::function<void()> onCheckForUpdates;
         bool shouldShowDeactivateButton;
