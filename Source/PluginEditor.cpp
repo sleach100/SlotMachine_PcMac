@@ -697,10 +697,12 @@ namespace
         AboutComponent(const juce::String& registrationInfo,
                       std::function<void()> deactivateCallback,
                       bool showDeactivateButton,
-                      std::function<void()> checkForUpdatesCallback = nullptr)
+                      std::function<void()> checkForUpdatesCallback = nullptr,
+                      bool isVST3 = false)
             : onDeactivate(std::move(deactivateCallback))
             , onCheckForUpdates(std::move(checkForUpdatesCallback))
             , shouldShowDeactivateButton(showDeactivateButton)
+            , runningAsVST3(isVST3)
         {
             logo = juce::ImageCache::getFromMemory(BinaryData::LonePearLogic_png,
                                                    BinaryData::LonePearLogic_pngSize);
@@ -731,6 +733,12 @@ namespace
             viewReleaseNotesButton.setButtonText("View Release Notes");
             viewReleaseNotesButton.addListener(this);
             addAndMakeVisible(viewReleaseNotesButton);
+
+            // Disable View Release Notes button in VST3 version
+            if (runningAsVST3)
+            {
+                viewReleaseNotesButton.setEnabled(false);
+            }
 
             contactLabel.setText("Contact:",
                                  juce::dontSendNotification);
@@ -876,6 +884,7 @@ namespace
         std::function<void()> onDeactivate;
         std::function<void()> onCheckForUpdates;
         bool shouldShowDeactivateButton;
+        bool runningAsVST3;
     };
 }
 
@@ -3033,6 +3042,11 @@ SlotMachineAudioProcessorEditor::SlotMachineAudioProcessorEditor(SlotMachineAudi
     addAndMakeVisible(btnExportAudio);  beautify(btnExportAudio);  btnExportAudio.addListener(this);
     addAndMakeVisible(btnVisualizer);   beautify(btnVisualizer);   btnVisualizer.addListener(this);
     addAndMakeVisible(btnTutorial);     beautify(btnTutorial);     btnTutorial.addListener(this);
+    // Disable Tutorial button in VST3 version
+    if (isRunningAsVST3())
+    {
+        btnTutorial.setEnabled(false);
+    }
     addAndMakeVisible(btnUserManual);   beautify(btnUserManual);   btnUserManual.addListener(this);
     addAndMakeVisible(btnAbout);        beautify(btnAbout);        btnAbout.addListener(this);
 #if JUCE_DEBUG
@@ -5838,7 +5852,7 @@ void SlotMachineAudioProcessorEditor::buttonClicked(juce::Button* b)
             }, true);  // forceCheck = true
         };
 
-        auto aboutContent = std::make_unique<AboutComponent>(getRegistrationDisplayName(), deactivateCallback, isUnlocked, checkForUpdatesCallback);
+        auto aboutContent = std::make_unique<AboutComponent>(getRegistrationDisplayName(), deactivateCallback, isUnlocked, checkForUpdatesCallback, isRunningAsVST3());
         aboutContent->setSize(420, 460);
 
         juce::DialogWindow::LaunchOptions options;
