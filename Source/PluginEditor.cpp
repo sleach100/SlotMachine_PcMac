@@ -3080,6 +3080,9 @@ SlotMachineAudioProcessorEditor::SlotMachineAudioProcessorEditor(SlotMachineAudi
         }
     }
 
+    // Check if this is a post-update launch (standalone only)
+    checkForUpdateCompletedMessage();
+
     // Check for updates (standalone only, before license check)
     checkForUpdatesOnStartup();
 
@@ -3141,6 +3144,43 @@ void SlotMachineAudioProcessorEditor::checkForUpdatesOnStartup()
                 break;
         }
     });
+#endif
+}
+
+void SlotMachineAudioProcessorEditor::checkForUpdateCompletedMessage()
+{
+#if JUCE_STANDALONE_APPLICATION
+    // Get command line parameters
+    auto* app = juce::JUCEApplicationBase::getInstance();
+    if (app == nullptr)
+        return;
+
+    juce::String commandLine = app->getCommandLineParameters();
+    juce::StringArray args = juce::StringArray::fromTokens(commandLine, true);
+
+    // Check if we have at least 2 arguments and first is /updatecompleted
+    if (args.size() >= 2 && args[0].equalsIgnoreCase("/updatecompleted"))
+    {
+        juce::String newVersion = args[1];
+
+        // Create a nicely formatted message
+        juce::String message = juce::String::fromUTF8("🎉 Update Complete! 🎉\n\n")
+                             + "S.L.O.T. Machine has been successfully updated to version " + newVersion + ".\n\n"
+                             + "You're now running the latest version with all the newest features and improvements.\n\n"
+                             + "Thank you for keeping your software up to date!";
+
+        auto options = juce::MessageBoxOptions()
+            .withIconType(juce::MessageBoxIconType::InfoIcon)
+            .withTitle("Update Successful")
+            .withMessage(message)
+            .withButton("Awesome!");
+
+        options = options.withAssociatedComponent(this);
+
+        juce::AlertWindow::showAsync(options, nullptr);
+
+        DBG("Update completed message displayed for version: " + newVersion);
+    }
 #endif
 }
 

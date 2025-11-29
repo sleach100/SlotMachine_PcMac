@@ -43,6 +43,7 @@ public:
 
 private:
     void checkForUpdatesOnStartup();
+    void checkForUpdateCompletedMessage();
     void initialiseLicenseState();
     void setUnlocked(bool unlocked);
     void showUnlockDialog();
