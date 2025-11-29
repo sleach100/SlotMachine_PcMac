@@ -5480,8 +5480,10 @@ void SlotMachineAudioProcessorEditor::buttonClicked(juce::Button* b)
                 "Lock Slot Machine",
                 "Unable to remove the saved license information from the registry.");
         }
+        LemonSqueezyCache::clearLicenseCache();
 #else
         clearLicenseFromRegistry();
+        LemonSqueezyCache::clearLicenseCache();
 #endif
 
         storedFirstName.clear();
@@ -5607,8 +5609,10 @@ void SlotMachineAudioProcessorEditor::buttonClicked(juce::Button* b)
                     "Deactivate License",
                     "Unable to remove the saved license information from the registry.");
             }
+            LemonSqueezyCache::clearLicenseCache();
 #else
             clearLicenseFromRegistry();
+            LemonSqueezyCache::clearLicenseCache();
 #endif
 
             // Clear instance ID
