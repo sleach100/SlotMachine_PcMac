@@ -3262,8 +3262,9 @@ void SlotMachineAudioProcessorEditor::checkForUpdatesOnStartup()
     juce::Component::SafePointer<SlotMachineAudioProcessorEditor> safeThis(this);
     const bool isVST3 = isRunningAsVST3();
 
-    // For VST3, always force check (ignore declined state) since we just show info message
-    const bool forceCheck = isVST3;
+    // Honor declined state for automatic checks (both standalone and VST3)
+    // Manual "Check for Updates" from about box will force check regardless
+    const bool forceCheck = false;
 
     updateChecker.checkForUpdatesAsync([safeThis, isVST3](UpdateChecker::CheckResult result,
                                                    const UpdateChecker::VersionInfo& latestVersion)
@@ -5671,12 +5672,17 @@ void SlotMachineAudioProcessorEditor::buttonClicked(juce::Button* b)
                         if (isVST3)
                         {
                             // VST3: Show informational message, cannot install from VST3
-                            juce::AlertWindow::showMessageBoxAsync(
-                                juce::AlertWindow::InfoIcon,
-                                "Update Available",
-                                "Update available, but cannot be installed from the VST3 version.\n\n"
-                                "Please run the standalone version to perform the update.",
-                                "OK");
+                            auto options = juce::MessageBoxOptions()
+                                .withIconType(juce::MessageBoxIconType::InfoIcon)
+                                .withTitle("Update Available")
+                                .withMessage("Update available, but cannot be installed from the VST3 version.\n\n"
+                                             "Please run the standalone version to perform the update.")
+                                .withButton("OK");
+
+                            if (safeThis.getComponent() != nullptr)
+                                options = options.withAssociatedComponent(safeThis.getComponent());
+
+                            juce::AlertWindow::showAsync(options, nullptr);
                         }
                         else
                         {
@@ -5697,27 +5703,75 @@ void SlotMachineAudioProcessorEditor::buttonClicked(juce::Button* b)
                     }
 
                     case UpdateChecker::CheckResult::UpToDate:
-                        juce::AlertWindow::showMessageBoxAsync(
-                            juce::AlertWindow::InfoIcon,
-                            "Check for Updates",
-                            "You're running the latest version of S.L.O.T. Machine.",
-                            "OK");
+                        if (isVST3)
+                        {
+                            auto options = juce::MessageBoxOptions()
+                                .withIconType(juce::MessageBoxIconType::InfoIcon)
+                                .withTitle("Check for Updates")
+                                .withMessage("You're running the latest version of S.L.O.T. Machine.")
+                                .withButton("OK");
+
+                            if (safeThis.getComponent() != nullptr)
+                                options = options.withAssociatedComponent(safeThis.getComponent());
+
+                            juce::AlertWindow::showAsync(options, nullptr);
+                        }
+                        else
+                        {
+                            juce::AlertWindow::showMessageBoxAsync(
+                                juce::AlertWindow::InfoIcon,
+                                "Check for Updates",
+                                "You're running the latest version of S.L.O.T. Machine.",
+                                "OK");
+                        }
                         break;
 
                     case UpdateChecker::CheckResult::NetworkError:
-                        juce::AlertWindow::showMessageBoxAsync(
-                            juce::AlertWindow::WarningIcon,
-                            "Check for Updates",
-                            "Could not check for updates. Please check your internet connection and try again.",
-                            "OK");
+                        if (isVST3)
+                        {
+                            auto options = juce::MessageBoxOptions()
+                                .withIconType(juce::MessageBoxIconType::WarningIcon)
+                                .withTitle("Check for Updates")
+                                .withMessage("Could not check for updates. Please check your internet connection and try again.")
+                                .withButton("OK");
+
+                            if (safeThis.getComponent() != nullptr)
+                                options = options.withAssociatedComponent(safeThis.getComponent());
+
+                            juce::AlertWindow::showAsync(options, nullptr);
+                        }
+                        else
+                        {
+                            juce::AlertWindow::showMessageBoxAsync(
+                                juce::AlertWindow::WarningIcon,
+                                "Check for Updates",
+                                "Could not check for updates. Please check your internet connection and try again.",
+                                "OK");
+                        }
                         break;
 
                     case UpdateChecker::CheckResult::ParseError:
-                        juce::AlertWindow::showMessageBoxAsync(
-                            juce::AlertWindow::WarningIcon,
-                            "Check for Updates",
-                            "Could not check for updates. Please try again later.",
-                            "OK");
+                        if (isVST3)
+                        {
+                            auto options = juce::MessageBoxOptions()
+                                .withIconType(juce::MessageBoxIconType::WarningIcon)
+                                .withTitle("Check for Updates")
+                                .withMessage("Could not check for updates. Please try again later.")
+                                .withButton("OK");
+
+                            if (safeThis.getComponent() != nullptr)
+                                options = options.withAssociatedComponent(safeThis.getComponent());
+
+                            juce::AlertWindow::showAsync(options, nullptr);
+                        }
+                        else
+                        {
+                            juce::AlertWindow::showMessageBoxAsync(
+                                juce::AlertWindow::WarningIcon,
+                                "Check for Updates",
+                                "Could not check for updates. Please try again later.",
+                                "OK");
+                        }
                         break;
 
                     case UpdateChecker::CheckResult::DeclinedRecently:
