@@ -729,9 +729,7 @@ namespace
             addAndMakeVisible(checkForUpdatesButton);
 
             viewReleaseNotesButton.setButtonText("View Release Notes");
-            viewReleaseNotesButton.setURL(juce::URL(juce::File::getCurrentWorkingDirectory().getChildFile("ReleaseNotes.txt")));
-            viewReleaseNotesButton.setFont(createRegularFont(12.0f), false);
-            viewReleaseNotesButton.setColour(juce::HyperlinkButton::textColourId, juce::Colours::lightblue);
+            viewReleaseNotesButton.addListener(this);
             addAndMakeVisible(viewReleaseNotesButton);
 
             contactLabel.setText("Contact:",
@@ -839,6 +837,28 @@ namespace
             {
                 onCheckForUpdates();
             }
+            else if (button == &viewReleaseNotesButton)
+            {
+                // Get the directory where the executable is located
+                auto exeFile = juce::File::getSpecialLocation(juce::File::currentExecutableFile);
+                auto installDir = exeFile.getParentDirectory();
+                auto releaseNotesFile = installDir.getChildFile("ReleaseNotes.txt");
+
+                // If file exists, open it with the default text editor
+                if (releaseNotesFile.existsAsFile())
+                {
+                    releaseNotesFile.startAsProcess();
+                }
+                else
+                {
+                    // Show alert if file not found
+                    juce::AlertWindow::showMessageBoxAsync(
+                        juce::AlertWindow::InfoIcon,
+                        "Release Notes Not Found",
+                        "ReleaseNotes.txt could not be found in the installation directory.",
+                        "OK");
+                }
+            }
         }
 
     private:
@@ -852,7 +872,7 @@ namespace
         juce::Label registrationLabel;
         juce::TextButton deactivateButton;
         juce::TextButton checkForUpdatesButton;
-        juce::HyperlinkButton viewReleaseNotesButton;
+        juce::TextButton viewReleaseNotesButton;
         std::function<void()> onDeactivate;
         std::function<void()> onCheckForUpdates;
         bool shouldShowDeactivateButton;
