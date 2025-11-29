@@ -5651,9 +5651,10 @@ void SlotMachineAudioProcessorEditor::buttonClicked(juce::Button* b)
         {
             // Use a weak reference to safely access 'this' in the callback
             juce::Component::SafePointer<SlotMachineAudioProcessorEditor> safeThis(this);
+            const bool isVST3 = isRunningAsVST3();
 
             // Force check ignores "declined recently" state
-            updateChecker.checkForUpdatesAsync([safeThis](UpdateChecker::CheckResult result,
+            updateChecker.checkForUpdatesAsync([safeThis, isVST3](UpdateChecker::CheckResult result,
                                                           const UpdateChecker::VersionInfo& latestVersion)
             {
                 if (safeThis == nullptr)
@@ -5663,17 +5664,31 @@ void SlotMachineAudioProcessorEditor::buttonClicked(juce::Button* b)
                 {
                     case UpdateChecker::CheckResult::UpdateAvailable:
                     {
-                        UpdateChecker::showUpdateDialog(
-                            safeThis.getComponent(),
-                            latestVersion,
-                            []()
-                            {
-                                UpdateChecker::launchUpdaterAndTerminate();
-                            },
-                            []()
-                            {
-                                UpdateChecker::recordUpdateDeclined();
-                            });
+                        if (isVST3)
+                        {
+                            // VST3: Show informational message, cannot install from VST3
+                            juce::AlertWindow::showMessageBoxAsync(
+                                juce::AlertWindow::InfoIcon,
+                                "Update Available",
+                                "Update available, but cannot be installed from the VST3 version.\n\n"
+                                "Please run the standalone version to perform the update.",
+                                "OK");
+                        }
+                        else
+                        {
+                            // Standalone: Show update dialog with install option
+                            UpdateChecker::showUpdateDialog(
+                                safeThis.getComponent(),
+                                latestVersion,
+                                []()
+                                {
+                                    UpdateChecker::launchUpdaterAndTerminate();
+                                },
+                                []()
+                                {
+                                    UpdateChecker::recordUpdateDeclined();
+                                });
+                        }
                         break;
                     }
 
