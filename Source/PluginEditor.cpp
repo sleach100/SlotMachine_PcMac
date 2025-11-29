@@ -2773,6 +2773,140 @@ private:
 
 };
 
+//==============================================================================
+// VST3 Lock Overlay - Blocks unregistered VST3 users from using the plugin
+//==============================================================================
+class SlotMachineAudioProcessorEditor::VST3LockOverlay : public juce::Component
+{
+public:
+    VST3LockOverlay()
+    {
+        setInterceptsMouseClicks(true, true);
+
+        // Title
+        titleLabel.setText("VST3 Activation Required", juce::dontSendNotification);
+        titleLabel.setFont(createBoldFont(24.0f));
+        titleLabel.setJustificationType(juce::Justification::centred);
+        titleLabel.setColour(juce::Label::textColourId, juce::Colours::white);
+        addAndMakeVisible(titleLabel);
+
+        // Message
+        messageLabel.setText(
+            "This VST3 build requires activation.\n\n"
+            "Please unlock in the standalone app.",
+            juce::dontSendNotification);
+        messageLabel.setFont(createRegularFont(16.0f));
+        messageLabel.setJustificationType(juce::Justification::centred);
+        messageLabel.setColour(juce::Label::textColourId, juce::Colours::lightgrey);
+        addAndMakeVisible(messageLabel);
+
+        // Close button
+        closeButton.setButtonText("Close");
+        closeButton.onClick = [this]()
+        {
+            if (onCloseRequested)
+                onCloseRequested();
+        };
+        addAndMakeVisible(closeButton);
+    }
+
+    void paint(juce::Graphics& g) override
+    {
+        // Semi-transparent dark overlay
+        g.fillAll(juce::Colour(0, 0, 0).withAlpha(0.92f));
+
+        // Draw a subtle border around the message area
+        auto centerBounds = getLocalBounds().reduced(80).withSizeKeepingCentre(400, 250);
+        g.setColour(juce::Colours::darkgrey);
+        g.drawRoundedRectangle(centerBounds.toFloat(), 10.0f, 2.0f);
+
+        // Fill with slightly lighter background
+        g.setColour(juce::Colour(30, 30, 35));
+        g.fillRoundedRectangle(centerBounds.toFloat().reduced(1), 9.0f);
+    }
+
+    void resized() override
+    {
+        auto centerBounds = getLocalBounds().reduced(80).withSizeKeepingCentre(400, 250);
+        auto area = centerBounds.reduced(20);
+
+        titleLabel.setBounds(area.removeFromTop(40));
+        area.removeFromTop(20);
+        messageLabel.setBounds(area.removeFromTop(80));
+        area.removeFromTop(20);
+
+        auto buttonArea = area.removeFromTop(36);
+        closeButton.setBounds(buttonArea.withSizeKeepingCentre(120, 32));
+    }
+
+    // Block all mouse events from reaching components behind
+    void mouseDown(const juce::MouseEvent&) override {}
+    void mouseUp(const juce::MouseEvent&) override {}
+    void mouseDrag(const juce::MouseEvent&) override {}
+    void mouseMove(const juce::MouseEvent&) override {}
+    void mouseDoubleClick(const juce::MouseEvent&) override {}
+    void mouseWheelMove(const juce::MouseEvent&, const juce::MouseWheelDetails&) override {}
+
+    std::function<void()> onCloseRequested;
+
+private:
+    juce::Label titleLabel;
+    juce::Label messageLabel;
+    juce::TextButton closeButton;
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(VST3LockOverlay)
+};
+
+//==============================================================================
+// VST3 Runtime Detection Helper
+//==============================================================================
+bool SlotMachineAudioProcessorEditor::isRunningAsVST3() const
+{
+    return processor.wrapperType == juce::AudioProcessor::wrapperType_VST3;
+}
+
+void SlotMachineAudioProcessorEditor::showVST3LockOverlayIfNeeded()
+{
+    // Only show overlay for unregistered VST3 users
+    if (!isRunningAsVST3() || isUnlocked)
+    {
+        // Hide overlay if it exists
+        if (vst3LockOverlay)
+        {
+            vst3LockOverlay->setVisible(false);
+        }
+        return;
+    }
+
+    // Create overlay if it doesn't exist
+    if (!vst3LockOverlay)
+    {
+        vst3LockOverlay = std::make_unique<VST3LockOverlay>();
+        vst3LockOverlay->onCloseRequested = [this]()
+        {
+            // Request the host to close this plugin window
+            // This is DAW-friendly: we just hide ourselves and let the DAW handle it
+            if (auto* topLevel = getTopLevelComponent())
+            {
+                if (auto* window = dynamic_cast<juce::DocumentWindow*>(topLevel))
+                {
+                    window->closeButtonPressed();
+                }
+                else
+                {
+                    // For plugin windows in DAWs, hide the component
+                    setVisible(false);
+                }
+            }
+        };
+        addAndMakeVisible(vst3LockOverlay.get());
+    }
+
+    // Ensure overlay covers entire editor and is on top
+    vst3LockOverlay->setBounds(getLocalBounds());
+    vst3LockOverlay->toFront(false);
+    vst3LockOverlay->setVisible(true);
+}
 
 // ===== Editor =====
 SlotMachineAudioProcessorEditor::SlotMachineAudioProcessorEditor(SlotMachineAudioProcessor& p, APVTS& state)
@@ -3124,11 +3258,14 @@ SlotMachineAudioProcessorEditor::SlotMachineAudioProcessorEditor(SlotMachineAudi
 
 void SlotMachineAudioProcessorEditor::checkForUpdatesOnStartup()
 {
-#if JUCE_STANDALONE_APPLICATION
     // Use a weak reference to safely access 'this' in the callback
     juce::Component::SafePointer<SlotMachineAudioProcessorEditor> safeThis(this);
+    const bool isVST3 = isRunningAsVST3();
 
-    updateChecker.checkForUpdatesAsync([safeThis](UpdateChecker::CheckResult result,
+    // For VST3, always force check (ignore declined state) since we just show info message
+    const bool forceCheck = isVST3;
+
+    updateChecker.checkForUpdatesAsync([safeThis, isVST3](UpdateChecker::CheckResult result,
                                                    const UpdateChecker::VersionInfo& latestVersion)
     {
         // Check if the editor is still alive
@@ -3141,22 +3278,40 @@ void SlotMachineAudioProcessorEditor::checkForUpdatesOnStartup()
             {
                 DBG("Update available: " + latestVersion.toString());
 
-                // Show update dialog
-                UpdateChecker::showUpdateDialog(
-                    safeThis.getComponent(),
-                    latestVersion,
-                    // On Accept
-                    []()
-                    {
-                        DBG("User accepted update");
-                        UpdateChecker::launchUpdaterAndTerminate();
-                    },
-                    // On Decline
-                    []()
-                    {
-                        DBG("User declined update");
-                        UpdateChecker::recordUpdateDeclined();
-                    });
+                if (isVST3)
+                {
+                    // VST3: Show informational message, cannot install from VST3
+                    auto options = juce::MessageBoxOptions()
+                        .withIconType(juce::MessageBoxIconType::InfoIcon)
+                        .withTitle("Update Available")
+                        .withMessage("Update available, but cannot be installed from the VST3 version.\n\n"
+                                     "Please run the standalone version to perform the update.")
+                        .withButton("OK");
+
+                    if (safeThis.getComponent() != nullptr)
+                        options = options.withAssociatedComponent(safeThis.getComponent());
+
+                    juce::AlertWindow::showAsync(options, nullptr);
+                }
+                else
+                {
+                    // Standalone: Show update dialog with install option
+                    UpdateChecker::showUpdateDialog(
+                        safeThis.getComponent(),
+                        latestVersion,
+                        // On Accept
+                        []()
+                        {
+                            DBG("User accepted update");
+                            UpdateChecker::launchUpdaterAndTerminate();
+                        },
+                        // On Decline
+                        []()
+                        {
+                            DBG("User declined update");
+                            UpdateChecker::recordUpdateDeclined();
+                        });
+                }
                 break;
             }
 
@@ -3176,8 +3331,7 @@ void SlotMachineAudioProcessorEditor::checkForUpdatesOnStartup()
                 DBG("Could not parse updates.txt");
                 break;
         }
-    });
-#endif
+    }, forceCheck);
 }
 
 void SlotMachineAudioProcessorEditor::checkForUpdateCompletedMessage()
@@ -3292,6 +3446,9 @@ void SlotMachineAudioProcessorEditor::setUnlocked(bool unlocked)
     btnLock.setButtonText(unlocked ? "Lock" : "Locked");
 
     updateLockIconPositions();
+
+    // VST3: Show or hide the lock overlay based on registration state
+    showVST3LockOverlayIfNeeded();
 }
 
 void SlotMachineAudioProcessorEditor::showUnlockDialog()
@@ -3767,6 +3924,17 @@ void SlotMachineAudioProcessorEditor::paint(juce::Graphics& g)
                     (float)logoImage.getWidth(),
                     (float)logoImage.getHeight());
 
+    // VST3: Draw BETA watermark to the right of the logo
+    if (isRunningAsVST3() && !logoBounds.isEmpty())
+    {
+        g.setFont(createBoldFont(16.0f));
+        g.setColour(juce::Colours::orange.withAlpha(0.9f));
+
+        const int betaX = logoBounds.getRight() + 8;
+        const int betaY = logoBounds.getCentreY() - 8;
+        g.drawText("BETA", betaX, betaY, 50, 20, juce::Justification::centredLeft, false);
+    }
+
     // Options
     const bool showMasterBar = Opt::getBool(apvts, "optShowMasterBar", true);
     const bool showSlotBars = Opt::getBool(apvts, "optShowSlotBars", true);
@@ -4201,6 +4369,13 @@ void SlotMachineAudioProcessorEditor::resized()
 
         ui.soloBtn.setBounds(decayCentreX - buttonW / 2, buttonY, buttonW, buttonH);
         ui.soloLabel.setBounds(decayCentreX - buttonW / 2, labelY, buttonW, labelHeight);
+    }
+
+    // VST3: Ensure lock overlay covers entire editor if visible
+    if (vst3LockOverlay && vst3LockOverlay->isVisible())
+    {
+        vst3LockOverlay->setBounds(getLocalBounds());
+        vst3LockOverlay->toFront(false);
     }
 }
 
