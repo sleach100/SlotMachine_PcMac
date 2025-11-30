@@ -2142,9 +2142,9 @@ public:
         const bool breatheEnabled = Opt::getBool(owner.apvts, "optVisualizerBreathe", true);
         menu.addItem(6, "Breathe", true, breatheEnabled);
 
-        // Get electric arc state
-        const bool electricArcEnabled = Opt::getBool(owner.apvts, "optVisualizerElectricArc", false);
-        menu.addItem(7, "Electric Arc", true, electricArcEnabled);
+        // Get neural chaos state
+        const bool neuralChaosEnabled = Opt::getBool(owner.apvts, "optVisualizerElectricArc", false);
+        menu.addItem(7, "Neural Chaos", true, neuralChaosEnabled);
 
         // Get mouse position and create target area with offset
         auto mousePos = juce::Desktop::getMousePosition();
@@ -2186,7 +2186,7 @@ public:
                 }
                 else if (result == 7)
                 {
-                    toggleElectricArc();
+                    toggleNeuralChaos();
                 }
             });
     }
@@ -2289,9 +2289,9 @@ public:
         }
     }
 
-    void toggleElectricArc()
+    void toggleNeuralChaos()
     {
-        // Toggle the electric arc parameter
+        // Toggle the neural chaos parameter
         if (auto* param = dynamic_cast<juce::AudioParameterBool*>(owner.apvts.getParameter("optVisualizerElectricArc")))
         {
             param->beginChangeGesture();

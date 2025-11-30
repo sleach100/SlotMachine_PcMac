@@ -92,7 +92,7 @@ void PolyrhythmVizComponent::paint(juce::Graphics& g)
         g.drawEllipse(centre.x - maxRadius, centre.y - maxRadius, diameter, diameter, 2.0f + 6.0f * alpha);
     }
 
-    // Electric Arc effect: draw faint energy lines from fired vertices to random points on other polygons
+    // Neural Chaos effect: draw faint energy lines from fired vertices to random points on other polygons
     if (electricArcEnabled)
     {
         constexpr float kArcThreshold = 0.3f;  // Minimum arc intensity to draw connection
