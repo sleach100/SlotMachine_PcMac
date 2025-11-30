@@ -62,4 +62,7 @@ private:
     double lastPhase = 0.0;
     float wrapFlash = 0.0f;
     float masterPulse = 0.0f;
+
+    // Alternating Rotation: track cycle count for slow rotation across cycles
+    uint64_t cycleCount = 0;
 };
