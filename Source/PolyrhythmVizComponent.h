@@ -44,6 +44,8 @@ private:
         juce::Colour colour;
         juce::Point<float> beadPos{};
         bool edgeWalk = true;
+        // Electric arc effect: track when this slot last fired
+        float arcIntensity = 0.0f;  // Decays over time, used for arc brightness
     };
 
     static constexpr int kNumSlots = SlotMachineAudioProcessor::kNumSlots;
