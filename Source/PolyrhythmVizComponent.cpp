@@ -148,8 +148,10 @@ void PolyrhythmVizComponent::paint(juce::Graphics& g)
 
                     // Add perpendicular offset for jagged effect
                     const float perpScale = std::sin(seed * 6.28f + t * 3.14f) * 8.0f * combinedIntensity;
-                    const auto perp = juce::Point<float>(-diff.y, diff.x).normalised() * perpScale;
-                    midPoint += perp;
+                    const auto perpRaw = juce::Point<float>(-diff.y, diff.x);
+                    const float perpLen = perpRaw.getDistanceFromOrigin();
+                    if (perpLen > 0.001f)
+                        midPoint = midPoint + perpRaw * (perpScale / perpLen);
 
                     arcPath.lineTo(midPoint);
                 }
