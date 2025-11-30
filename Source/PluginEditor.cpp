@@ -1997,7 +1997,20 @@ static juce::File optionsFile()
 
 static void saveOptionsToDisk(juce::AudioProcessorValueTreeState& apvts)
 {
-    juce::ValueTree vt("OPTIONS");
+    auto f = optionsFile();
+
+    // Load existing options to preserve other settings (e.g., lastDeclinedUpdateDate, installedVersion)
+    juce::ValueTree vt;
+    if (f.existsAsFile())
+    {
+        std::unique_ptr<juce::XmlElement> xml(juce::XmlDocument::parse(f));
+        if (xml)
+            vt = juce::ValueTree::fromXml(*xml);
+    }
+
+    if (!vt.isValid() || vt.getType() != juce::Identifier("OPTIONS"))
+        vt = juce::ValueTree("OPTIONS");
+
     for (auto& id : kOptionParamIds)
     {
         if (auto* p = apvts.getParameter(id))
@@ -2011,7 +2024,7 @@ static void saveOptionsToDisk(juce::AudioProcessorValueTreeState& apvts)
         }
     }
     if (auto xml = vt.createXml())
-        xml->writeTo(optionsFile());
+        xml->writeTo(f);
 }
 
 static void loadOptionsFromDiskIfNoHostState(juce::AudioProcessorValueTreeState& apvts)
