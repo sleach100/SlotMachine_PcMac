@@ -2425,26 +2425,6 @@ public:
         showSlotBars.setButtonText("Show slot progress bars");
         showSlotBars.addListener(this);
 
-        addAndMakeVisible(visualizerModeLabel);
-        visualizerModeLabel.setText("Visualizer Path", juce::dontSendNotification);
-        visualizerModeLabel.setJustificationType(juce::Justification::centredLeft);
-        visualizerModeLabel.setColour(juce::Label::textColourId, juce::Colours::white);
-
-        addAndMakeVisible(visualizerModeCombo);
-        visualizerModeCombo.setJustificationType(juce::Justification::centredLeft);
-        visualizerModeCombo.addItem("Edge Walk (perimeter)", 1);
-        visualizerModeCombo.addItem("Orbit (circular)", 2);
-        visualizerModeCombo.addItem("Mixed (every 3rd orbits)", 3);
-        visualizerModeCombo.onChange = [this]() { handleVisualizerModeSelection(); };
-
-        addAndMakeVisible(masterPulseToggle);
-        masterPulseToggle.setButtonText("Visualizer Master Pulse");
-        masterPulseToggle.addListener(this);
-
-        addAndMakeVisible(breatheToggle);
-        breatheToggle.setButtonText("Visualizer Breathe");
-        breatheToggle.addListener(this);
-
         // sample rate
         sampleRateLabel.setText("Export Sample Rate", juce::dontSendNotification);
         sampleRateLabel.setColour(juce::Label::textColourId, juce::Colours::white);
@@ -2548,19 +2528,6 @@ public:
 
         a.removeFromTop(8);
 
-        auto vizRow = a.removeFromTop(48);
-        visualizerModeLabel.setBounds(vizRow.removeFromLeft(150));
-        vizRow.removeFromLeft(12);
-        visualizerModeCombo.setBounds(vizRow.removeFromLeft(200).reduced(0, 8));
-
-        auto pulseToggleRow = a.removeFromTop(28);
-        masterPulseToggle.setBounds(pulseToggleRow);
-
-        auto breatheToggleRow = a.removeFromTop(28);
-        breatheToggle.setBounds(breatheToggleRow);
-
-        a.removeFromTop(8);
-
         auto sampleRateRow = a.removeFromTop(48);
         sampleRateLabel.setBounds(sampleRateRow.removeFromLeft(getWidth() / 2 - 16));
         sampleRateCombo.setBounds(sampleRateRow.removeFromLeft(180).reduced(0, 8));
@@ -2615,10 +2582,6 @@ private:
     APVTS& apvts;
 
     juce::ToggleButton showMasterBar, showSlotBars;
-    juce::Label visualizerModeLabel;
-    juce::ComboBox visualizerModeCombo;
-    juce::ToggleButton masterPulseToggle;
-    juce::ToggleButton breatheToggle;
 
     juce::Label sampleRateLabel;
     juce::ComboBox sampleRateCombo;
@@ -2653,7 +2616,6 @@ private:
     std::array<int, 2>   timingModeValues{ { 0, 1 } };
     bool blockSampleRateUpdate = false;
     bool blockTimingModeUpdate = false;
-    bool blockVisualizerModeUpdate = false;
     std::array<float, 6> slotScaleValues{ { 0.75f, 0.8f, 0.85f, 0.9f, 0.95f, 1.0f } };
     bool blockSlotScaleUpdate = false;
 
@@ -2695,13 +2657,6 @@ private:
         // toggles
         showMasterBar.setToggleState(Opt::getBool(apvts, "optShowMasterBar", true), juce::dontSendNotification);
         showSlotBars.setToggleState(Opt::getBool(apvts, "optShowSlotBars", true), juce::dontSendNotification);
-        masterPulseToggle.setToggleState(Opt::getBool(apvts, "optVisualizerMasterPulse", false), juce::dontSendNotification);
-        breatheToggle.setToggleState(Opt::getBool(apvts, "optVisualizerBreathe", true), juce::dontSendNotification);
-
-        const int visualizerMode = Opt::getInt(apvts, "optVisualizerEdgeWalk", 0);  // 0=Edge, 1=Orbit, 2=Mixed
-        blockVisualizerModeUpdate = true;
-        visualizerModeCombo.setSelectedId(visualizerMode + 1, juce::dontSendNotification);  // Map to combo ID
-        blockVisualizerModeUpdate = false;
 
         const int timingModeValue = Opt::getInt(apvts, "optTimingMode", timingModeValues.back());
 
@@ -2769,10 +2724,6 @@ private:
             setBoolParam("optShowMasterBar", showMasterBar.getToggleState());
         else if (b == &showSlotBars)
             setBoolParam("optShowSlotBars", showSlotBars.getToggleState());
-        else if (b == &masterPulseToggle)
-            setBoolParam("optVisualizerMasterPulse", masterPulseToggle.getToggleState());
-        else if (b == &breatheToggle)
-            setBoolParam("optVisualizerBreathe", breatheToggle.getToggleState());
         else if (b == &btnResetDefaults)
             resetToDefaultOptions();
         else if (b == &btnClose)
@@ -2804,17 +2755,6 @@ private:
         if (s == &glowWidth)  setFloatParam("optGlowWidth", (float)glowWidth.getValue());
         if (s == &pulseAlpha) setFloatParam("optPulseAlpha", (float)pulseAlpha.getValue());
         if (s == &pulseWidth) setFloatParam("optPulseWidth", (float)pulseWidth.getValue());
-    }
-
-    void handleVisualizerModeSelection()
-    {
-        if (blockVisualizerModeUpdate)
-            return;
-
-        const int id = visualizerModeCombo.getSelectedId();
-        // Map combo ID (1,2,3) to parameter value (0,1,2)
-        const int mode = juce::jlimit(0, 2, id - 1);  // 1→0 (Edge), 2→1 (Orbit), 3→2 (Mixed)
-        setIntParam("optVisualizerEdgeWalk", mode);
     }
 
     void handleSampleRateSelection()
