@@ -2146,6 +2146,10 @@ public:
         const bool neuralChaosEnabled = Opt::getBool(owner.apvts, "optVisualizerElectricArc", false);
         menu.addItem(7, "Neural Chaos", true, neuralChaosEnabled);
 
+        // Get starlight twinkle state
+        const bool starlightTwinkleEnabled = Opt::getBool(owner.apvts, "optVisualizerStarlightTwinkle", false);
+        menu.addItem(8, "Starlight Twinkle", true, starlightTwinkleEnabled);
+
         // Get mouse position and create target area with offset
         auto mousePos = juce::Desktop::getMousePosition();
         constexpr int MENU_VERTICAL_OFFSET = 0;  // <-- Adjust this value to fine-tune menu position/ *** NO NEED FOR OFFSET AFTER ALL.  WORKING ON WRONG WINDOW.
@@ -2187,6 +2191,10 @@ public:
                 else if (result == 7)
                 {
                     toggleNeuralChaos();
+                }
+                else if (result == 8)
+                {
+                    toggleStarlightTwinkle();
                 }
             });
     }
@@ -2293,6 +2301,18 @@ public:
     {
         // Toggle the neural chaos parameter
         if (auto* param = dynamic_cast<juce::AudioParameterBool*>(owner.apvts.getParameter("optVisualizerElectricArc")))
+        {
+            param->beginChangeGesture();
+            *param = !param->get();
+            param->endChangeGesture();
+            saveOptionsToDisk(owner.apvts);
+        }
+    }
+
+    void toggleStarlightTwinkle()
+    {
+        // Toggle the starlight twinkle parameter
+        if (auto* param = dynamic_cast<juce::AudioParameterBool*>(owner.apvts.getParameter("optVisualizerStarlightTwinkle")))
         {
             param->beginChangeGesture();
             *param = !param->get();

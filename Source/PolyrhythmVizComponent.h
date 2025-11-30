@@ -46,6 +46,8 @@ private:
         bool edgeWalk = true;
         // Electric arc effect: track when this slot last fired
         float arcIntensity = 0.0f;  // Decays over time, used for arc brightness
+        // Starlight Twinkle effect: per-vertex brightness values
+        std::vector<float> twinkleBrightness;  // Brightness for each vertex (0-1), decays over time
     };
 
     static constexpr int kNumSlots = SlotMachineAudioProcessor::kNumSlots;

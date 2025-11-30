@@ -8,6 +8,7 @@ namespace
     constexpr float kPolygonAlpha = 0.6f;
     constexpr float kBeadRadius = 6.0f;
     constexpr float kFlashDecay = 0.06f;
+    constexpr float kTwinkleDecay = 0.04f;  // Slower decay for starlight effect
 }
 
 PolyrhythmVizComponent::PolyrhythmVizComponent(SlotMachineAudioProcessor& proc, APVTS& state)
@@ -54,6 +55,10 @@ void PolyrhythmVizComponent::paint(juce::Graphics& g)
     bool electricArcEnabled = false;
     if (auto* param = apvts.getRawParameterValue("optVisualizerElectricArc"))
         electricArcEnabled = param->load() >= 0.5f;
+
+    bool starlightTwinkleEnabled = false;
+    if (auto* param = apvts.getRawParameterValue("optVisualizerStarlightTwinkle"))
+        starlightTwinkleEnabled = param->load() >= 0.5f;
 
     // Calculate breathing effect (slow expansion/contraction over entire cycle)
     // Uses sine wave: 0 at start, 1 at middle (phase 0.5), 0 at end
@@ -226,6 +231,59 @@ void PolyrhythmVizComponent::paint(juce::Graphics& g)
             g.fillEllipse(point.x - flashRadius, point.y - flashRadius, flashRadius * 2.0f, flashRadius * 2.0f);
         }
 
+        // Starlight Twinkle effect: draw bright star-like highlights at twinkling vertices
+        if (starlightTwinkleEnabled && slot.twinkleBrightness.size() == slot.vertices.size())
+        {
+            for (size_t v = 0; v < slot.vertices.size(); ++v)
+            {
+                const float brightness = slot.twinkleBrightness[v];
+                if (brightness > 0.01f)
+                {
+                    const auto& point = slot.vertices[v];
+                    const float alpha = juce::jlimit(0.0f, 1.0f, brightness);
+
+                    // Draw a 4-pointed star shape for the twinkle
+                    const float innerRadius = 2.0f + 3.0f * alpha;
+                    const float outerRadius = 4.0f + 8.0f * alpha;
+
+                    // Draw soft glow circle first
+                    g.setColour(juce::Colours::white.withAlpha(0.25f * alpha));
+                    g.fillEllipse(point.x - outerRadius, point.y - outerRadius,
+                                  outerRadius * 2.0f, outerRadius * 2.0f);
+
+                    // Draw 4-pointed star
+                    juce::Path starPath;
+                    for (int spike = 0; spike < 4; ++spike)
+                    {
+                        const float angle = (float)spike * juce::MathConstants<float>::halfPi;
+                        const float nextAngle = angle + juce::MathConstants<float>::halfPi * 0.5f;
+
+                        const auto outerPt = point + juce::Point<float>(
+                            std::cos(angle) * outerRadius,
+                            std::sin(angle) * outerRadius);
+                        const auto innerPt = point + juce::Point<float>(
+                            std::cos(nextAngle) * innerRadius,
+                            std::sin(nextAngle) * innerRadius);
+
+                        if (spike == 0)
+                            starPath.startNewSubPath(outerPt);
+                        else
+                            starPath.lineTo(outerPt);
+                        starPath.lineTo(innerPt);
+                    }
+                    starPath.closeSubPath();
+
+                    // Fill with bright white/color
+                    g.setColour(juce::Colours::white.withAlpha(0.7f * alpha));
+                    g.fillPath(starPath);
+
+                    // Bright center dot
+                    g.setColour(juce::Colours::white.withAlpha(0.9f * alpha));
+                    g.fillEllipse(point.x - 1.5f, point.y - 1.5f, 3.0f, 3.0f);
+                }
+            }
+        }
+
         // Apply breathing and master pulse effects to bead size
         float beadScale = 1.0f;
         beadScale += breathingAmount * 0.3f;  // Breathing: 30% expansion at peak
@@ -305,6 +363,10 @@ void PolyrhythmVizComponent::timerCallback()
     if (auto* modeParam = apvts.getRawParameterValue("optVisualizerEdgeWalk"))
         visualizerMode = juce::jlimit(0, 2, (int)std::round(modeParam->load()));
 
+    bool starlightTwinkleEnabled = false;
+    if (auto* param = apvts.getRawParameterValue("optVisualizerStarlightTwinkle"))
+        starlightTwinkleEnabled = param->load() >= 0.5f;
+
     activeCount = 0;
 
     for (int i = 0; i < kNumSlots; ++i)
@@ -373,11 +435,37 @@ void PolyrhythmVizComponent::timerCallback()
                 ? (int)std::floor(masterPhase * (double)sides + 0.5) % sides
                 : -1;
             slot.flashVertex = corner;
+
+            // Starlight Twinkle: trigger random vertices on hit
+            if (starlightTwinkleEnabled && sides > 0)
+            {
+                // Ensure twinkleBrightness is the right size
+                if (slot.twinkleBrightness.size() != (size_t)sides)
+                    slot.twinkleBrightness.resize((size_t)sides, 0.0f);
+
+                // Use hit counter for deterministic "randomness" that varies per hit
+                const uint32_t seed = hits * 31u + (uint32_t)i * 17u;
+
+                // Trigger 1-3 random vertices (based on number of sides)
+                const int numTwinkles = juce::jmin(sides, 1 + (int)(seed % 3u));
+                for (int t = 0; t < numTwinkles; ++t)
+                {
+                    const int vertexIdx = (int)((seed * (31u + (uint32_t)t)) % (uint32_t)sides);
+                    slot.twinkleBrightness[(size_t)vertexIdx] = 1.0f;
+                }
+            }
         }
         else
         {
             slot.flash = juce::jmax(0.0f, slot.flash - kFlashDecay);
             slot.arcIntensity = juce::jmax(0.0f, slot.arcIntensity * 0.92f - 0.008f);  // Slower decay for arcs
+        }
+
+        // Decay starlight twinkle brightness for all vertices (even when hit, for independent decay)
+        if (starlightTwinkleEnabled && !slot.twinkleBrightness.empty())
+        {
+            for (auto& brightness : slot.twinkleBrightness)
+                brightness = juce::jmax(0.0f, brightness - kTwinkleDecay);
         }
     }
 
@@ -425,6 +513,10 @@ void PolyrhythmVizComponent::updateSlotGeometry(int slotIndex, juce::Point<float
     {
         slot.vertices.resize((size_t)sides);
         slot.polygonPath.clear();
+
+        // Resize twinkleBrightness to match vertices (preserve existing values where possible)
+        if (slot.twinkleBrightness.size() != (size_t)sides)
+            slot.twinkleBrightness.resize((size_t)sides, 0.0f);
 
         const float angleStep = juce::MathConstants<float>::twoPi / (float)sides;
         float angle = -juce::MathConstants<float>::halfPi;
