@@ -76,7 +76,7 @@ void PolyrhythmVizComponent::paint(juce::Graphics& g)
     // Combine breathing (continuous) with master pulse (triggered at wrap)
     float totalScale = 1.0f;
     if (breatheEnabled)
-        totalScale += breathingAmount * 0.15f;  // Breathing: DEBUG - 15% expansion to test
+        totalScale += breathingAmount * 0.05f;  // Breathing: 5% expansion at peak
 
     if (masterPulseEnabled && masterPulse > 0.001f)
     {
