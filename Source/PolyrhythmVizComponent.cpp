@@ -375,6 +375,7 @@ void PolyrhythmVizComponent::timerCallback()
     {
         wrapFlash = 1.0f;
         masterPulse = 1.0f;  // Trigger master pulse on wrap
+        ++cycleCount;        // Increment cycle count for slow rotation effect
     }
 
     lastPhase = currentPhase;
@@ -541,11 +542,14 @@ void PolyrhythmVizComponent::timerCallback()
             // Calculate rotation angle for alternating rotation effect
             if (alternatingRotationEnabled)
             {
-                // Rotation speed: one full rotation per cycle, alternating directions
+                // Slow rotation: completes one full rotation every CPR cycles (e.g., CPR=4 = ¼ turn per cycle)
                 // Even order (0, 2, 4...) = clockwise, Odd order (1, 3, 5...) = counter-clockwise
+                constexpr float kCyclesPerRotation = 4.0f;  // Full rotation every 4 cycles
                 const float direction = (order % 2 == 0) ? 1.0f : -1.0f;
-                const float rotationSpeed = juce::MathConstants<float>::twoPi;  // Full rotation per cycle
-                slot.rotationAngle = direction * rotationSpeed * (float)masterPhase;
+                const float rotationPerCycle = juce::MathConstants<float>::twoPi / kCyclesPerRotation;
+                // Total rotation accumulates across cycles: (completed cycles + current phase progress)
+                const float totalCycles = (float)(cycleCount % 4) + (float)masterPhase;
+                slot.rotationAngle = direction * rotationPerCycle * totalCycles;
             }
             else
             {
