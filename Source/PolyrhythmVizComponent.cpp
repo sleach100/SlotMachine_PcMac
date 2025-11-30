@@ -60,6 +60,10 @@ void PolyrhythmVizComponent::paint(juce::Graphics& g)
     if (auto* param = apvts.getRawParameterValue("optVisualizerStarlightTwinkle"))
         starlightTwinkleEnabled = param->load() >= 0.5f;
 
+    bool alternatingRotationEnabled = false;
+    if (auto* param = apvts.getRawParameterValue("optVisualizerAlternatingRotation"))
+        alternatingRotationEnabled = param->load() >= 0.5f;
+
     // Calculate breathing effect (slow expansion/contraction over entire cycle)
     // Uses sine wave: 0 at start, 1 at middle (phase 0.5), 0 at end
     const float breathingAmount = breatheEnabled
@@ -104,6 +108,17 @@ void PolyrhythmVizComponent::paint(juce::Graphics& g)
         constexpr float kArcAlphaMax = 0.4f;   // Maximum arc alpha
         constexpr float kArcWidth = 1.2f;      // Base arc line width
 
+        // Helper lambda to apply rotation to a point for a given slot
+        auto rotatePointForSlot = [alternatingRotationEnabled](const SlotVisual& s, juce::Point<float> p) -> juce::Point<float>
+        {
+            if (alternatingRotationEnabled && std::abs(s.rotationAngle) > 0.0001f)
+            {
+                const auto transform = juce::AffineTransform::rotation(s.rotationAngle, s.centre.x, s.centre.y);
+                return p.transformedBy(transform);
+            }
+            return p;
+        };
+
         // Collect all active slots with high arc intensity (recently fired)
         std::vector<int> firedSlots;
         for (int i = 0; i < kNumSlots; ++i)
@@ -128,7 +143,8 @@ void PolyrhythmVizComponent::paint(juce::Graphics& g)
         for (int srcIdx : firedSlots)
         {
             const auto& srcSlot = slotVisuals[(size_t)srcIdx];
-            const auto srcPoint = srcSlot.vertices[(size_t)srcSlot.flashVertex];
+            // Apply rotation to source vertex position
+            const auto srcPoint = rotatePointForSlot(srcSlot, srcSlot.vertices[(size_t)srcSlot.flashVertex]);
 
             // Create 1-3 arcs per fired vertex based on intensity
             const int numArcs = 1 + (int)(srcSlot.arcIntensity * 2.0f);
@@ -157,8 +173,9 @@ void PolyrhythmVizComponent::paint(juce::Graphics& g)
                 const int v1 = (v0 + 1) % numVerts;
                 const float t = edgePos - std::floor(edgePos);
 
-                const auto p0 = targetSlot.vertices[(size_t)v0];
-                const auto p1 = targetSlot.vertices[(size_t)v1];
+                // Apply rotation to target vertex positions
+                const auto p0 = rotatePointForSlot(targetSlot, targetSlot.vertices[(size_t)v0]);
+                const auto p1 = rotatePointForSlot(targetSlot, targetSlot.vertices[(size_t)v1]);
                 const auto targetPoint = p0 + (p1 - p0) * t;
 
                 // Calculate distance for color tinting
@@ -219,19 +236,45 @@ void PolyrhythmVizComponent::paint(juce::Graphics& g)
             continue;
 
         const auto colour = slot.colour;
-        g.setColour(colour.withAlpha(kPolygonAlpha));
-        g.strokePath(slot.polygonPath, juce::PathStrokeType(1.6f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
 
+        // Create rotation transform for this polygon (rotates around polygon center)
+        const auto rotationTransform = alternatingRotationEnabled && std::abs(slot.rotationAngle) > 0.0001f
+            ? juce::AffineTransform::rotation(slot.rotationAngle, slot.centre.x, slot.centre.y)
+            : juce::AffineTransform();
+
+        // Helper lambda to apply rotation to a point
+        auto rotatePoint = [&rotationTransform, alternatingRotationEnabled, &slot](juce::Point<float> p) -> juce::Point<float>
+        {
+            if (alternatingRotationEnabled && std::abs(slot.rotationAngle) > 0.0001f)
+                return p.transformedBy(rotationTransform);
+            return p;
+        };
+
+        // Stroke the polygon path with rotation applied
+        g.setColour(colour.withAlpha(kPolygonAlpha));
+        if (alternatingRotationEnabled && std::abs(slot.rotationAngle) > 0.0001f)
+        {
+            juce::Path rotatedPath;
+            rotatedPath.addPath(slot.polygonPath, rotationTransform);
+            g.strokePath(rotatedPath, juce::PathStrokeType(1.6f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
+        }
+        else
+        {
+            g.strokePath(slot.polygonPath, juce::PathStrokeType(1.6f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
+        }
+
+        // Flash at hit vertex (rotates with polygon)
         if (slot.flash > 0.001f && slot.flashVertex >= 0 && slot.flashVertex < (int)slot.vertices.size())
         {
             const float flashAlpha = juce::jlimit(0.0f, 1.0f, slot.flash);
             const float flashRadius = 5.0f + 4.0f * flashAlpha;
             g.setColour(colour.brighter(0.6f).withAlpha(0.65f * flashAlpha));
-            const auto point = slot.vertices[(size_t)slot.flashVertex];
+            const auto point = rotatePoint(slot.vertices[(size_t)slot.flashVertex]);
             g.fillEllipse(point.x - flashRadius, point.y - flashRadius, flashRadius * 2.0f, flashRadius * 2.0f);
         }
 
         // Starlight Twinkle effect: draw bright star-like highlights at twinkling vertices
+        // Twinkle stars rotate with the polygon
         if (starlightTwinkleEnabled && slot.twinkleBrightness.size() == slot.vertices.size())
         {
             for (size_t v = 0; v < slot.vertices.size(); ++v)
@@ -239,7 +282,7 @@ void PolyrhythmVizComponent::paint(juce::Graphics& g)
                 const float brightness = slot.twinkleBrightness[v];
                 if (brightness > 0.01f)
                 {
-                    const auto& point = slot.vertices[v];
+                    const auto point = rotatePoint(slot.vertices[v]);
                     const float alpha = juce::jlimit(0.0f, 1.0f, brightness);
 
                     // Draw a 4-pointed star shape for the twinkle
@@ -367,6 +410,10 @@ void PolyrhythmVizComponent::timerCallback()
     if (auto* param = apvts.getRawParameterValue("optVisualizerStarlightTwinkle"))
         starlightTwinkleEnabled = param->load() >= 0.5f;
 
+    bool alternatingRotationEnabled = false;
+    if (auto* param = apvts.getRawParameterValue("optVisualizerAlternatingRotation"))
+        alternatingRotationEnabled = param->load() >= 0.5f;
+
     activeCount = 0;
 
     for (int i = 0; i < kNumSlots; ++i)
@@ -490,6 +537,20 @@ void PolyrhythmVizComponent::timerCallback()
 
             const float radius = spacing * (float)(order + 1);
             updateSlotGeometry(slotIndex, centre, radius);
+
+            // Calculate rotation angle for alternating rotation effect
+            if (alternatingRotationEnabled)
+            {
+                // Rotation speed: one full rotation per cycle, alternating directions
+                // Even order (0, 2, 4...) = clockwise, Odd order (1, 3, 5...) = counter-clockwise
+                const float direction = (order % 2 == 0) ? 1.0f : -1.0f;
+                const float rotationSpeed = juce::MathConstants<float>::twoPi;  // Full rotation per cycle
+                slot.rotationAngle = direction * rotationSpeed * (float)masterPhase;
+            }
+            else
+            {
+                slot.rotationAngle = 0.0f;
+            }
         }
     }
 

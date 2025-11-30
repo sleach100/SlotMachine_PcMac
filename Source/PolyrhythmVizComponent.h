@@ -48,6 +48,8 @@ private:
         float arcIntensity = 0.0f;  // Decays over time, used for arc brightness
         // Starlight Twinkle effect: per-vertex brightness values
         std::vector<float> twinkleBrightness;  // Brightness for each vertex (0-1), decays over time
+        // Alternating Rotation effect: current rotation angle for this polygon
+        float rotationAngle = 0.0f;  // Radians, positive = clockwise visual rotation
     };
 
     static constexpr int kNumSlots = SlotMachineAudioProcessor::kNumSlots;

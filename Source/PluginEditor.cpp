@@ -1974,6 +1974,7 @@ void SlotMachineAudioProcessorEditor::SlotUI::updateTimingModeVisibility(int tim
 // ===== Standalone persistence for Options =====
 static const juce::StringArray kOptionParamIds{
     "optShowMasterBar", "optShowSlotBars", "optShowVisualizer", "optVisualizerEdgeWalk", "optVisualizerMasterPulse", "optVisualizerBreathe", "optVisualizerElectricArc",
+    "optVisualizerStarlightTwinkle", "optVisualizerAlternatingRotation",
     "optSampleRate", "optTimingMode",
     "optSlotScale",
     "optGlowColor", "optGlowAlpha", "optGlowWidth",
@@ -2150,6 +2151,10 @@ public:
         const bool starlightTwinkleEnabled = Opt::getBool(owner.apvts, "optVisualizerStarlightTwinkle", false);
         menu.addItem(8, "Starlight Twinkle", true, starlightTwinkleEnabled);
 
+        // Get alternating rotation state
+        const bool alternatingRotationEnabled = Opt::getBool(owner.apvts, "optVisualizerAlternatingRotation", false);
+        menu.addItem(9, "Alternating Rotation", true, alternatingRotationEnabled);
+
         // Get mouse position and create target area with offset
         auto mousePos = juce::Desktop::getMousePosition();
         constexpr int MENU_VERTICAL_OFFSET = 0;  // <-- Adjust this value to fine-tune menu position/ *** NO NEED FOR OFFSET AFTER ALL.  WORKING ON WRONG WINDOW.
@@ -2195,6 +2200,10 @@ public:
                 else if (result == 8)
                 {
                     toggleStarlightTwinkle();
+                }
+                else if (result == 9)
+                {
+                    toggleAlternatingRotation();
                 }
             });
     }
@@ -2313,6 +2322,18 @@ public:
     {
         // Toggle the starlight twinkle parameter
         if (auto* param = dynamic_cast<juce::AudioParameterBool*>(owner.apvts.getParameter("optVisualizerStarlightTwinkle")))
+        {
+            param->beginChangeGesture();
+            *param = !param->get();
+            param->endChangeGesture();
+            saveOptionsToDisk(owner.apvts);
+        }
+    }
+
+    void toggleAlternatingRotation()
+    {
+        // Toggle the alternating rotation parameter
+        if (auto* param = dynamic_cast<juce::AudioParameterBool*>(owner.apvts.getParameter("optVisualizerAlternatingRotation")))
         {
             param->beginChangeGesture();
             *param = !param->get();
