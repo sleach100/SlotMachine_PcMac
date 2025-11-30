@@ -156,20 +156,26 @@ void PolyrhythmVizComponent::paint(juce::Graphics& g)
                 const auto p1 = targetSlot.vertices[(size_t)v1];
                 const auto targetPoint = p0 + (p1 - p0) * t;
 
+                // Calculate distance for color tinting
+                const auto diff = targetPoint - srcPoint;
+                const float dist = diff.getDistanceFromOrigin();
+                const float distNorm = juce::jlimit(0.0f, 1.0f, dist / (maxRadius * 2.0f));  // Normalize to 0-1
+
                 // Calculate arc intensity
                 const float intensity = srcSlot.arcIntensity * (0.6f + seed1 * 0.4f);
-                const float alpha = kArcAlphaMax * intensity;
 
-                // Use a cyan/white color for electrical look
-                const auto arcColour = juce::Colour::fromHSV(0.52f + seed1 * 0.08f, 0.35f, 1.0f, alpha);
+                // Distance tint: close = bright cyan (0.52), far = teal/blue (0.58) with more fade
+                const float hue = 0.50f + seed1 * 0.06f + distNorm * 0.08f;  // Shift toward blue with distance
+                const float alphaFade = 1.0f - distNorm * 0.4f;  // Fade more with distance
+                const float alpha = kArcAlphaMax * intensity * alphaFade;
+
+                const auto arcColour = juce::Colour::fromHSV(hue, 0.35f + distNorm * 0.15f, 1.0f, alpha);
                 g.setColour(arcColour);
 
                 // Draw a jagged arc path to simulate electrical discharge
                 juce::Path arcPath;
                 arcPath.startNewSubPath(srcPoint);
 
-                const auto diff = targetPoint - srcPoint;
-                const float dist = diff.getDistanceFromOrigin();
                 const int segments = juce::jmax(2, (int)(dist / 35.0f));
 
                 for (int seg = 1; seg < segments; ++seg)
