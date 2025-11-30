@@ -1973,7 +1973,7 @@ void SlotMachineAudioProcessorEditor::SlotUI::updateTimingModeVisibility(int tim
 
 // ===== Standalone persistence for Options =====
 static const juce::StringArray kOptionParamIds{
-    "optShowMasterBar", "optShowSlotBars", "optShowVisualizer", "optVisualizerEdgeWalk", "optVisualizerMasterPulse", "optVisualizerBreathe",
+    "optShowMasterBar", "optShowSlotBars", "optShowVisualizer", "optVisualizerEdgeWalk", "optVisualizerMasterPulse", "optVisualizerBreathe", "optVisualizerElectricArc",
     "optSampleRate", "optTimingMode",
     "optSlotScale",
     "optGlowColor", "optGlowAlpha", "optGlowWidth",
@@ -2142,6 +2142,10 @@ public:
         const bool breatheEnabled = Opt::getBool(owner.apvts, "optVisualizerBreathe", true);
         menu.addItem(6, "Breathe", true, breatheEnabled);
 
+        // Get electric arc state
+        const bool electricArcEnabled = Opt::getBool(owner.apvts, "optVisualizerElectricArc", false);
+        menu.addItem(7, "Electric Arc", true, electricArcEnabled);
+
         // Get mouse position and create target area with offset
         auto mousePos = juce::Desktop::getMousePosition();
         constexpr int MENU_VERTICAL_OFFSET = 0;  // <-- Adjust this value to fine-tune menu position/ *** NO NEED FOR OFFSET AFTER ALL.  WORKING ON WRONG WINDOW.
@@ -2179,6 +2183,10 @@ public:
                 else if (result == 6)
                 {
                     toggleBreathe();
+                }
+                else if (result == 7)
+                {
+                    toggleElectricArc();
                 }
             });
     }
@@ -2273,6 +2281,18 @@ public:
     {
         // Toggle the breathe parameter
         if (auto* param = dynamic_cast<juce::AudioParameterBool*>(owner.apvts.getParameter("optVisualizerBreathe")))
+        {
+            param->beginChangeGesture();
+            *param = !param->get();
+            param->endChangeGesture();
+            saveOptionsToDisk(owner.apvts);
+        }
+    }
+
+    void toggleElectricArc()
+    {
+        // Toggle the electric arc parameter
+        if (auto* param = dynamic_cast<juce::AudioParameterBool*>(owner.apvts.getParameter("optVisualizerElectricArc")))
         {
             param->beginChangeGesture();
             *param = !param->get();
@@ -2795,6 +2815,7 @@ private:
         setIntParam("optVisualizerEdgeWalk", 0);  // 0=Edge Walk (default)
         setBoolParam("optVisualizerMasterPulse", false);
         setBoolParam("optVisualizerBreathe", true);
+        setBoolParam("optVisualizerElectricArc", false);
         setIntParam("optSampleRate", kDefaultSampleRate);
         setIntParam("optTimingMode", kDefaultTimingMode);
         setFloatParam("optSlotScale", kDefaultSlotScale);

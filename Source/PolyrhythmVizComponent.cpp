@@ -51,6 +51,10 @@ void PolyrhythmVizComponent::paint(juce::Graphics& g)
     if (auto* param = apvts.getRawParameterValue("optVisualizerBreathe"))
         breatheEnabled = param->load() >= 0.5f;
 
+    bool electricArcEnabled = false;
+    if (auto* param = apvts.getRawParameterValue("optVisualizerElectricArc"))
+        electricArcEnabled = param->load() >= 0.5f;
+
     // Calculate breathing effect (slow expansion/contraction over entire cycle)
     // Uses sine wave: 0 at start, 1 at middle (phase 0.5), 0 at end
     const float breathingAmount = breatheEnabled
@@ -86,6 +90,81 @@ void PolyrhythmVizComponent::paint(juce::Graphics& g)
         g.setColour(juce::Colours::white.withAlpha(0.12f * alpha));
         const float diameter = maxRadius * 2.0f;
         g.drawEllipse(centre.x - maxRadius, centre.y - maxRadius, diameter, diameter, 2.0f + 6.0f * alpha);
+    }
+
+    // Electric Arc effect: draw faint energy lines between vertices that fire at similar times
+    if (electricArcEnabled)
+    {
+        constexpr float kArcThreshold = 0.3f;  // Minimum arc intensity to draw connection
+        constexpr float kArcAlphaMax = 0.35f;  // Maximum arc alpha
+        constexpr float kArcWidth = 1.2f;      // Base arc line width
+
+        // Collect all active slots with high arc intensity
+        std::vector<std::pair<int, int>> arcCandidates;  // (slotIndex, vertexIndex)
+        for (int i = 0; i < kNumSlots; ++i)
+        {
+            const auto& slot = slotVisuals[(size_t)i];
+            if (!slot.active || slot.arcIntensity < kArcThreshold)
+                continue;
+            if (slot.flashVertex >= 0 && slot.flashVertex < (int)slot.vertices.size())
+                arcCandidates.push_back({i, slot.flashVertex});
+        }
+
+        // Draw arcs between pairs of recently-fired vertices
+        for (size_t a = 0; a < arcCandidates.size(); ++a)
+        {
+            for (size_t b = a + 1; b < arcCandidates.size(); ++b)
+            {
+                const auto& slotA = slotVisuals[(size_t)arcCandidates[a].first];
+                const auto& slotB = slotVisuals[(size_t)arcCandidates[b].first];
+
+                const auto pointA = slotA.vertices[(size_t)arcCandidates[a].second];
+                const auto pointB = slotB.vertices[(size_t)arcCandidates[b].second];
+
+                // Calculate arc intensity based on combined intensities
+                const float combinedIntensity = slotA.arcIntensity * slotB.arcIntensity;
+                const float alpha = kArcAlphaMax * combinedIntensity;
+
+                // Use a cyan/white color for electrical look
+                const auto arcColour = juce::Colour::fromHSV(0.55f, 0.4f, 1.0f, alpha);
+                g.setColour(arcColour);
+
+                // Draw a slightly jagged arc path to simulate electrical discharge
+                juce::Path arcPath;
+                arcPath.startNewSubPath(pointA);
+
+                // Create 2-3 intermediate points with slight random offset for jagged look
+                const auto diff = pointB - pointA;
+                const float dist = diff.getDistanceFromOrigin();
+                const int segments = juce::jmax(2, (int)(dist / 40.0f));
+
+                // Use deterministic "randomness" based on vertex positions for consistent look per frame
+                const float seed = std::fmod(pointA.x * 0.1f + pointA.y * 0.13f + pointB.x * 0.07f, 1.0f);
+
+                for (int seg = 1; seg < segments; ++seg)
+                {
+                    const float t = (float)seg / (float)segments;
+                    auto midPoint = pointA + diff * t;
+
+                    // Add perpendicular offset for jagged effect
+                    const float perpScale = std::sin(seed * 6.28f + t * 3.14f) * 8.0f * combinedIntensity;
+                    const auto perp = juce::Point<float>(-diff.y, diff.x).normalised() * perpScale;
+                    midPoint += perp;
+
+                    arcPath.lineTo(midPoint);
+                }
+
+                arcPath.lineTo(pointB);
+                g.strokePath(arcPath, juce::PathStrokeType(kArcWidth + combinedIntensity * 0.8f));
+
+                // Draw a subtle glow around the arc
+                if (combinedIntensity > 0.5f)
+                {
+                    g.setColour(arcColour.withAlpha(alpha * 0.3f));
+                    g.strokePath(arcPath, juce::PathStrokeType(kArcWidth + 3.0f + combinedIntensity * 2.0f));
+                }
+            }
+        }
     }
 
     for (int order = activeCount - 1; order >= 0; --order)
@@ -249,6 +328,7 @@ void PolyrhythmVizComponent::timerCallback()
         {
             slot.lastHitCounter = hits;
             slot.flash = 1.0f;
+            slot.arcIntensity = 1.0f;  // Trigger arc intensity on hit
             const int sides = juce::jmax(1, slot.sides);
             const int corner = sides > 0
                 ? (int)std::floor(masterPhase * (double)sides + 0.5) % sides
@@ -258,6 +338,7 @@ void PolyrhythmVizComponent::timerCallback()
         else
         {
             slot.flash = juce::jmax(0.0f, slot.flash - kFlashDecay);
+            slot.arcIntensity = juce::jmax(0.0f, slot.arcIntensity * 0.92f - 0.008f);  // Slower decay for arcs
         }
     }
 
