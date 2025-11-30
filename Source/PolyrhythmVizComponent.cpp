@@ -92,78 +92,109 @@ void PolyrhythmVizComponent::paint(juce::Graphics& g)
         g.drawEllipse(centre.x - maxRadius, centre.y - maxRadius, diameter, diameter, 2.0f + 6.0f * alpha);
     }
 
-    // Electric Arc effect: draw faint energy lines between vertices that fire at similar times
+    // Electric Arc effect: draw faint energy lines from fired vertices to random points on other polygons
     if (electricArcEnabled)
     {
         constexpr float kArcThreshold = 0.3f;  // Minimum arc intensity to draw connection
-        constexpr float kArcAlphaMax = 0.35f;  // Maximum arc alpha
+        constexpr float kArcAlphaMax = 0.4f;   // Maximum arc alpha
         constexpr float kArcWidth = 1.2f;      // Base arc line width
 
-        // Collect all active slots with high arc intensity
-        std::vector<std::pair<int, int>> arcCandidates;  // (slotIndex, vertexIndex)
+        // Collect all active slots with high arc intensity (recently fired)
+        std::vector<int> firedSlots;
         for (int i = 0; i < kNumSlots; ++i)
         {
             const auto& slot = slotVisuals[(size_t)i];
-            if (!slot.active || slot.arcIntensity < kArcThreshold)
-                continue;
-            if (slot.flashVertex >= 0 && slot.flashVertex < (int)slot.vertices.size())
-                arcCandidates.push_back({i, slot.flashVertex});
+            if (slot.active && slot.arcIntensity >= kArcThreshold &&
+                slot.flashVertex >= 0 && slot.flashVertex < (int)slot.vertices.size())
+            {
+                firedSlots.push_back(i);
+            }
         }
 
-        // Draw arcs between pairs of recently-fired vertices
-        for (size_t a = 0; a < arcCandidates.size(); ++a)
+        // Collect all active slots (potential arc targets)
+        std::vector<int> activeSlots;
+        for (int i = 0; i < kNumSlots; ++i)
         {
-            for (size_t b = a + 1; b < arcCandidates.size(); ++b)
+            if (slotVisuals[(size_t)i].active && !slotVisuals[(size_t)i].vertices.empty())
+                activeSlots.push_back(i);
+        }
+
+        // Draw arcs from each fired vertex to random points on other polygons
+        for (int srcIdx : firedSlots)
+        {
+            const auto& srcSlot = slotVisuals[(size_t)srcIdx];
+            const auto srcPoint = srcSlot.vertices[(size_t)srcSlot.flashVertex];
+
+            // Create 1-3 arcs per fired vertex based on intensity
+            const int numArcs = 1 + (int)(srcSlot.arcIntensity * 2.0f);
+
+            for (int arcNum = 0; arcNum < numArcs && activeSlots.size() > 1; ++arcNum)
             {
-                const auto& slotA = slotVisuals[(size_t)arcCandidates[a].first];
-                const auto& slotB = slotVisuals[(size_t)arcCandidates[b].first];
+                // Use deterministic "randomness" based on position and arc number for consistent look per frame
+                const float seed1 = std::fmod(srcPoint.x * 0.17f + srcPoint.y * 0.23f + (float)arcNum * 0.31f + (float)masterPhase * 0.1f, 1.0f);
+                const float seed2 = std::fmod(srcPoint.y * 0.13f + srcPoint.x * 0.19f + (float)arcNum * 0.37f + (float)masterPhase * 0.15f, 1.0f);
 
-                const auto pointA = slotA.vertices[(size_t)arcCandidates[a].second];
-                const auto pointB = slotB.vertices[(size_t)arcCandidates[b].second];
+                // Pick a different target slot (not the source)
+                int targetIdx = activeSlots[(size_t)(seed1 * (float)activeSlots.size()) % activeSlots.size()];
+                if (targetIdx == srcIdx)
+                    targetIdx = activeSlots[(size_t)((seed1 + 0.5f) * (float)activeSlots.size()) % activeSlots.size()];
+                if (targetIdx == srcIdx)
+                    continue;
 
-                // Calculate arc intensity based on combined intensities
-                const float combinedIntensity = slotA.arcIntensity * slotB.arcIntensity;
-                const float alpha = kArcAlphaMax * combinedIntensity;
+                const auto& targetSlot = slotVisuals[(size_t)targetIdx];
+                const int numVerts = (int)targetSlot.vertices.size();
+                if (numVerts < 2)
+                    continue;
+
+                // Pick a random point along the polygon edge
+                const float edgePos = seed2 * (float)numVerts;
+                const int v0 = (int)edgePos % numVerts;
+                const int v1 = (v0 + 1) % numVerts;
+                const float t = edgePos - std::floor(edgePos);
+
+                const auto p0 = targetSlot.vertices[(size_t)v0];
+                const auto p1 = targetSlot.vertices[(size_t)v1];
+                const auto targetPoint = p0 + (p1 - p0) * t;
+
+                // Calculate arc intensity
+                const float intensity = srcSlot.arcIntensity * (0.6f + seed1 * 0.4f);
+                const float alpha = kArcAlphaMax * intensity;
 
                 // Use a cyan/white color for electrical look
-                const auto arcColour = juce::Colour::fromHSV(0.55f, 0.4f, 1.0f, alpha);
+                const auto arcColour = juce::Colour::fromHSV(0.52f + seed1 * 0.08f, 0.35f, 1.0f, alpha);
                 g.setColour(arcColour);
 
-                // Draw a slightly jagged arc path to simulate electrical discharge
+                // Draw a jagged arc path to simulate electrical discharge
                 juce::Path arcPath;
-                arcPath.startNewSubPath(pointA);
+                arcPath.startNewSubPath(srcPoint);
 
-                // Create 2-3 intermediate points with slight random offset for jagged look
-                const auto diff = pointB - pointA;
+                const auto diff = targetPoint - srcPoint;
                 const float dist = diff.getDistanceFromOrigin();
-                const int segments = juce::jmax(2, (int)(dist / 40.0f));
-
-                // Use deterministic "randomness" based on vertex positions for consistent look per frame
-                const float seed = std::fmod(pointA.x * 0.1f + pointA.y * 0.13f + pointB.x * 0.07f, 1.0f);
+                const int segments = juce::jmax(2, (int)(dist / 35.0f));
 
                 for (int seg = 1; seg < segments; ++seg)
                 {
-                    const float t = (float)seg / (float)segments;
-                    auto midPoint = pointA + diff * t;
+                    const float segT = (float)seg / (float)segments;
+                    auto midPoint = srcPoint + diff * segT;
 
-                    // Add perpendicular offset for jagged effect
-                    const float perpScale = std::sin(seed * 6.28f + t * 3.14f) * 8.0f * combinedIntensity;
+                    // Add perpendicular offset for jagged effect - varies along the arc
+                    const float jitter = std::sin(seed1 * 6.28f + segT * 4.5f + seed2 * 3.14f) * 10.0f * intensity;
                     const auto perpRaw = juce::Point<float>(-diff.y, diff.x);
                     const float perpLen = perpRaw.getDistanceFromOrigin();
                     if (perpLen > 0.001f)
-                        midPoint = midPoint + perpRaw * (perpScale / perpLen);
+                        midPoint = midPoint + perpRaw * (jitter / perpLen);
 
                     arcPath.lineTo(midPoint);
                 }
 
-                arcPath.lineTo(pointB);
-                g.strokePath(arcPath, juce::PathStrokeType(kArcWidth + combinedIntensity * 0.8f));
+                arcPath.lineTo(targetPoint);
+                g.strokePath(arcPath, juce::PathStrokeType(kArcWidth + intensity * 0.6f));
 
                 // Draw a subtle glow around the arc
-                if (combinedIntensity > 0.5f)
+                if (intensity > 0.6f)
                 {
-                    g.setColour(arcColour.withAlpha(alpha * 0.3f));
-                    g.strokePath(arcPath, juce::PathStrokeType(kArcWidth + 3.0f + combinedIntensity * 2.0f));
+                    g.setColour(arcColour.withAlpha(alpha * 0.25f));
+                    g.strokePath(arcPath, juce::PathStrokeType(kArcWidth + 2.5f + intensity * 1.5f));
                 }
             }
         }
