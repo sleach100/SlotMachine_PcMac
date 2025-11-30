@@ -50,6 +50,8 @@ private:
         std::vector<float> twinkleBrightness;  // Brightness for each vertex (0-1), decays over time
         // Alternating Rotation effect: current rotation angle for this polygon
         float rotationAngle = 0.0f;  // Radians, positive = clockwise visual rotation
+        // Colorwave effect: base hue offset for this ring (0-1), creates unique hue per ring
+        float colorwaveHueOffset = 0.0f;
     };
 
     static constexpr int kNumSlots = SlotMachineAudioProcessor::kNumSlots;

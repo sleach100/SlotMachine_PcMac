@@ -64,6 +64,21 @@ void PolyrhythmVizComponent::paint(juce::Graphics& g)
     if (auto* param = apvts.getRawParameterValue("optVisualizerAlternatingRotation"))
         alternatingRotationEnabled = param->load() >= 0.5f;
 
+    bool colorwaveEnabled = false;
+    if (auto* param = apvts.getRawParameterValue("optVisualizerColorwave"))
+        colorwaveEnabled = param->load() >= 0.5f;
+
+    // Calculate colorwave hue drift: ¼ turn per cycle (one full revolution every 4 cycles)
+    // Uses same timing as Alternating Rotation for coherence
+    float colorwaveHueDrift = 0.0f;
+    if (colorwaveEnabled)
+    {
+        constexpr float kCyclesPerRotation = 4.0f;  // Full hue rotation every 4 cycles
+        const float driftPerCycle = 1.0f / kCyclesPerRotation;  // 0.25 hue shift per cycle
+        const float totalCycles = (float)(cycleCount % 4) + (float)masterPhase;
+        colorwaveHueDrift = std::fmod(driftPerCycle * totalCycles, 1.0f);
+    }
+
     // Calculate breathing effect (slow expansion/contraction over entire cycle)
     // Uses sine wave: 0 at start, 1 at middle (phase 0.5), 0 at end
     const float breathingAmount = breatheEnabled
@@ -250,17 +265,60 @@ void PolyrhythmVizComponent::paint(juce::Graphics& g)
             return p;
         };
 
-        // Stroke the polygon path with rotation applied
-        g.setColour(colour.withAlpha(kPolygonAlpha));
-        if (alternatingRotationEnabled && std::abs(slot.rotationAngle) > 0.0001f)
+        // Stroke the polygon path - either with colorwave gradient or solid color
+        if (colorwaveEnabled && slot.vertices.size() >= 2)
         {
-            juce::Path rotatedPath;
-            rotatedPath.addPath(slot.polygonPath, rotationTransform);
-            g.strokePath(rotatedPath, juce::PathStrokeType(1.6f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
+            // Colorwave: draw each segment with a hue based on its angular position
+            // The hue gradient rotates slowly around the ring (¼ turn per cycle)
+            const int numVerts = (int)slot.vertices.size();
+            const juce::PathStrokeType strokeType(1.6f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded);
+
+            for (int i = 0; i < numVerts; ++i)
+            {
+                const int nextI = (i + 1) % numVerts;
+
+                // Get vertices (apply rotation if enabled)
+                const auto p0 = rotatePoint(slot.vertices[(size_t)i]);
+                const auto p1 = rotatePoint(slot.vertices[(size_t)nextI]);
+
+                // Calculate midpoint of segment for hue calculation
+                const auto midpoint = (p0 + p1) * 0.5f;
+
+                // Calculate angle from center to midpoint
+                // Phase-zero at 12 o'clock (-π/2), so we add π/2 to shift it
+                const float angle = std::atan2(midpoint.y - slot.centre.y, midpoint.x - slot.centre.x);
+                // Normalize angle to 0-1 range with 12 o'clock as 0
+                float normalizedAngle = (angle + juce::MathConstants<float>::halfPi) / juce::MathConstants<float>::twoPi;
+                if (normalizedAngle < 0.0f) normalizedAngle += 1.0f;
+
+                // Calculate final hue: base position + drift + per-ring offset
+                float hue = std::fmod(normalizedAngle + colorwaveHueDrift + slot.colorwaveHueOffset, 1.0f);
+
+                // Create segment color with calculated hue
+                const auto segmentColour = juce::Colour::fromHSV(hue, 0.82f, 0.92f, kPolygonAlpha);
+                g.setColour(segmentColour);
+
+                // Draw this segment
+                juce::Path segmentPath;
+                segmentPath.startNewSubPath(p0);
+                segmentPath.lineTo(p1);
+                g.strokePath(segmentPath, strokeType);
+            }
         }
         else
         {
-            g.strokePath(slot.polygonPath, juce::PathStrokeType(1.6f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
+            // Standard solid color stroke
+            g.setColour(colour.withAlpha(kPolygonAlpha));
+            if (alternatingRotationEnabled && std::abs(slot.rotationAngle) > 0.0001f)
+            {
+                juce::Path rotatedPath;
+                rotatedPath.addPath(slot.polygonPath, rotationTransform);
+                g.strokePath(rotatedPath, juce::PathStrokeType(1.6f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
+            }
+            else
+            {
+                g.strokePath(slot.polygonPath, juce::PathStrokeType(1.6f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
+            }
         }
 
         // Flash at hit vertex (rotates with polygon)
@@ -555,6 +613,10 @@ void PolyrhythmVizComponent::timerCallback()
             {
                 slot.rotationAngle = 0.0f;
             }
+
+            // Calculate colorwave hue offset for this ring
+            // Each ring gets a unique base hue offset (spaced by golden ratio for pleasing variety)
+            slot.colorwaveHueOffset = std::fmod((float)order * 0.618033988749895f, 1.0f);
         }
     }
 

@@ -1974,7 +1974,7 @@ void SlotMachineAudioProcessorEditor::SlotUI::updateTimingModeVisibility(int tim
 // ===== Standalone persistence for Options =====
 static const juce::StringArray kOptionParamIds{
     "optShowMasterBar", "optShowSlotBars", "optShowVisualizer", "optVisualizerEdgeWalk", "optVisualizerMasterPulse", "optVisualizerBreathe", "optVisualizerElectricArc",
-    "optVisualizerStarlightTwinkle", "optVisualizerAlternatingRotation",
+    "optVisualizerStarlightTwinkle", "optVisualizerAlternatingRotation", "optVisualizerColorwave",
     "optSampleRate", "optTimingMode",
     "optSlotScale",
     "optGlowColor", "optGlowAlpha", "optGlowWidth",
@@ -2155,6 +2155,10 @@ public:
         const bool alternatingRotationEnabled = Opt::getBool(owner.apvts, "optVisualizerAlternatingRotation", false);
         menu.addItem(9, "Alternating Rotation", true, alternatingRotationEnabled);
 
+        // Get colorwave state
+        const bool colorwaveEnabled = Opt::getBool(owner.apvts, "optVisualizerColorwave", false);
+        menu.addItem(10, "Colorwave", true, colorwaveEnabled);
+
         // Get mouse position and create target area with offset
         auto mousePos = juce::Desktop::getMousePosition();
         constexpr int MENU_VERTICAL_OFFSET = 0;  // <-- Adjust this value to fine-tune menu position/ *** NO NEED FOR OFFSET AFTER ALL.  WORKING ON WRONG WINDOW.
@@ -2204,6 +2208,10 @@ public:
                 else if (result == 9)
                 {
                     toggleAlternatingRotation();
+                }
+                else if (result == 10)
+                {
+                    toggleColorwave();
                 }
             });
     }
@@ -2334,6 +2342,18 @@ public:
     {
         // Toggle the alternating rotation parameter
         if (auto* param = dynamic_cast<juce::AudioParameterBool*>(owner.apvts.getParameter("optVisualizerAlternatingRotation")))
+        {
+            param->beginChangeGesture();
+            *param = !param->get();
+            param->endChangeGesture();
+            saveOptionsToDisk(owner.apvts);
+        }
+    }
+
+    void toggleColorwave()
+    {
+        // Toggle the colorwave parameter
+        if (auto* param = dynamic_cast<juce::AudioParameterBool*>(owner.apvts.getParameter("optVisualizerColorwave")))
         {
             param->beginChangeGesture();
             *param = !param->get();
