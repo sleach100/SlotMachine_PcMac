@@ -1,0 +1,6 @@
+Slot Machine
+
+Release Notes:
+
+Version 01.00.00
+1st Release.
