@@ -1,6 +1,54 @@
-Slot Machine
+S.L.O.T. Machine – Version 1.0.0
+Initial Release Notes
+Release Date:  November 2025
 
-Release Notes:
+Overview
+  This is the first public release of S.L.O.T. Machine, a standalone drum sequencer and VST3 plugin designed for fast, intuitive beat creation and advanced polyrhythmic experimentation.  This initial version establishes the complete foundation of the app, featuring the full sequencer engine, visualizer, sample system, pattern system, and export tools.
 
-Version 01.00.00
-1st Release.
+Key Features
+  16 Slots
+  Individual sample loading per slot
+  Per-slot controls for count/rate, volume and decay, 
+  Count Mode / Rate Mode timing options
+  Independent step counts for instant polyrhythms
+
+Visualizer
+  Animated polygon-based view of slot activity
+  Real-time beat visualization
+  Smooth performance at all tempos
+  Special Effects
+
+Polyrhythm Engine
+  Create complex, natural-feeling polyrhythms
+  Each slot can run its own loop length
+  Immediate feedback through visualizer + audio
+
+Export Tools
+  Export patterns as WAV
+  Export sequences as MIDI
+  Per-slot MIDI channel assignments
+
+Saves patterns and sessions in .xml format
+
+Standalone version - Primary Version
+
+VST3 Plugin (BETA/Optional - For registered users ONLY)
+  Fully functional VST3 version for DAWs
+  Tested in FL Studio
+  VST3 installs to:  C:\Program Files\Common Files\VST3\SlotMachine.vst3
+
+Utility Features
+  Built-in updater (manual for now)
+  Multiple pattern tabs
+
+Compatibility
+  Windows 10/11 (64-bit)
+  Supports VST3-compatible DAWs
+  Installation Notes
+  Installer includes Standalone app + Updater + optional VST3
+
+Run as Administrator for first install
+
+Support / Feedback
+  Questions or feedback?
+  Email: support@lonepearlogic.com
