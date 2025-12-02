@@ -24,6 +24,8 @@ private:
     void timerCallback() override;
     void updateSlotGeometry(int slotIndex, juce::Point<float> centre, float radius);
     static void approximateRational(double value, int maxDenominator, int& num, int& den);
+    void renderNebulaToBuffer(int bufferWidth, int bufferHeight);
+    void applyBoxBlur(juce::Image& image, int radius);
 
     SlotMachineAudioProcessor& processor;
     APVTS& apvts;
@@ -73,4 +75,10 @@ private:
     // Nebula Drift effect: animation time and global energy tracker
     float nebulaTime = 0.0f;        // Continuous time accumulator for slow drift
     float nebulaEnergy = 0.0f;      // Smoothed global energy (RMS-like) for subtle brightness breath
+
+    // Nebula offscreen buffer for blur effect
+    juce::Image nebulaBuffer;
+    int nebulaBufferWidth = 0;
+    int nebulaBufferHeight = 0;
+    uint32_t nebulaGrainSeed = 0;   // Per-frame noise seed for dither
 };
