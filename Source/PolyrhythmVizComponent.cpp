@@ -398,9 +398,12 @@ void PolyrhythmVizComponent::paint(juce::Graphics& g)
         const float beadRadius = kBeadRadius * beadScale;
         const float beadAlpha = juce::jlimit(0.5f, 1.0f, 0.9f + (beadScale - 1.0f) * 0.1f);
 
+        // Apply rotation to bead position so it stays welded to the polygon
+        const auto beadPosRotated = rotatePoint(slot.beadPos);
+
         g.setColour(colour.withAlpha(beadAlpha));
-        g.fillEllipse(slot.beadPos.x - beadRadius,
-                      slot.beadPos.y - beadRadius,
+        g.fillEllipse(beadPosRotated.x - beadRadius,
+                      beadPosRotated.y - beadRadius,
                       beadRadius * 2.0f,
                       beadRadius * 2.0f);
     }
@@ -537,8 +540,10 @@ void PolyrhythmVizComponent::timerCallback()
             slot.flash = 1.0f;
             slot.arcIntensity = 1.0f;  // Trigger arc intensity on hit
             const int sides = juce::jmax(1, slot.sides);
+            // Use floor (same as edge-walk segment calculation) for consistent vertex indexing
+            // This ensures flash appears at the vertex the bead just passed, not ahead of it
             const int corner = sides > 0
-                ? (int)std::floor(masterPhase * (double)sides + 0.5) % sides
+                ? ((int)std::floor(masterPhase * (double)sides) % sides + sides) % sides
                 : -1;
             slot.flashVertex = corner;
 
