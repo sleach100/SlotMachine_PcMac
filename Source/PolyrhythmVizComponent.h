@@ -52,6 +52,8 @@ private:
         float rotationAngle = 0.0f;  // Radians, positive = clockwise visual rotation
         // Colorwave effect: base hue offset for this ring (0-1), creates unique hue per ring
         float colorwaveHueOffset = 0.0f;
+        // Neon Sweep effect: boost gain for sweep brightness (decays over time, boosted on hit)
+        float sweepGain = 0.0f;
     };
 
     static constexpr int kNumSlots = SlotMachineAudioProcessor::kNumSlots;
@@ -67,4 +69,8 @@ private:
 
     // Alternating Rotation: track cycle count for slow rotation across cycles
     uint64_t cycleCount = 0;
+
+    // Nebula Drift effect: animation time and global energy tracker
+    float nebulaTime = 0.0f;        // Continuous time accumulator for slow drift
+    float nebulaEnergy = 0.0f;      // Smoothed global energy (RMS-like) for subtle brightness breath
 };

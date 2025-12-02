@@ -39,6 +39,62 @@ void PolyrhythmVizComponent::paint(juce::Graphics& g)
     const juce::Colour background = juce::Colours::black.withBrightness(kBackgroundBrightness);
     g.fillAll(background);
 
+    // Check nebula early to render background layer
+    bool nebulaDriftEnabledEarly = false;
+    if (auto* param = apvts.getRawParameterValue("optVisualizerNebulaDrift"))
+        nebulaDriftEnabledEarly = param->load() >= 0.5f;
+
+    // Nebula Drift: dreamy color cloud background (rendered before everything else)
+    if (nebulaDriftEnabledEarly)
+    {
+        // Nebula parameters
+        constexpr float kNebulaBaseAlpha = 0.35f;
+        constexpr int kNumNebulaClouds = 4;
+
+        // Cosmic palette: deep purples, teals, magentas with slow morph
+        const float palettePhase = nebulaTime * 0.02f;  // Very slow palette rotation
+
+        // Energy modulates overall nebula brightness (subtle breathing)
+        const float energyBoost = 1.0f + nebulaEnergy * 0.15f;
+
+        for (int cloud = 0; cloud < kNumNebulaClouds; ++cloud)
+        {
+            // Each cloud has different speed, size, and hue offset
+            const float cloudSeed = (float)cloud * 1.618f;  // Golden ratio spacing
+            const float cloudSpeed = 0.3f + (float)cloud * 0.15f;
+            const float cloudSize = 0.4f + (float)cloud * 0.2f;
+
+            // Cloud center drifts in a Lissajous pattern
+            const float driftX = std::sin(nebulaTime * cloudSpeed * 0.7f + cloudSeed * 2.1f) * 0.3f;
+            const float driftY = std::cos(nebulaTime * cloudSpeed * 0.5f + cloudSeed * 1.7f) * 0.3f;
+
+            // Calculate cloud center in screen coordinates
+            const float cx = bounds.getCentreX() + driftX * bounds.getWidth() * 0.5f;
+            const float cy = bounds.getCentreY() + driftY * bounds.getHeight() * 0.5f;
+
+            // Cloud radius varies with time
+            const float radiusMod = 1.0f + 0.2f * std::sin(nebulaTime * cloudSpeed * 0.3f + cloudSeed);
+            const float cloudRadius = juce::jmin(bounds.getWidth(), bounds.getHeight()) * cloudSize * radiusMod;
+
+            // Hue shifts slowly over time, each cloud offset by golden ratio
+            const float hue = std::fmod(palettePhase + cloudSeed * 0.3f, 1.0f);
+            // Use cosmic colors: purples (0.75-0.85), teals (0.45-0.55), magentas (0.85-0.95)
+            const float cosmicHue = std::fmod(hue * 0.4f + 0.45f, 1.0f);  // Concentrate in teal-purple range
+
+            // Cloud alpha varies: inner clouds brighter, all modulated by energy
+            const float cloudAlpha = kNebulaBaseAlpha * (1.0f - (float)cloud * 0.15f) * energyBoost;
+
+            // Create radial gradient for this cloud
+            const auto cloudColour = juce::Colour::fromHSV(cosmicHue, 0.5f, 0.6f, cloudAlpha);
+            const auto cloudColourFade = cloudColour.withAlpha(0.0f);
+
+            juce::ColourGradient gradient(cloudColour, cx, cy,
+                                          cloudColourFade, cx + cloudRadius, cy, true);
+            g.setGradientFill(gradient);
+            g.fillRect(bounds);
+        }
+    }
+
     const auto centre = bounds.getCentre();
     const float margin = 28.0f;
     const float maxRadius = juce::jmax(0.0f, juce::jmin(bounds.getWidth(), bounds.getHeight()) * 0.5f - margin);
@@ -67,6 +123,14 @@ void PolyrhythmVizComponent::paint(juce::Graphics& g)
     bool colorwaveEnabled = false;
     if (auto* param = apvts.getRawParameterValue("optVisualizerColorwave"))
         colorwaveEnabled = param->load() >= 0.5f;
+
+    bool nebulaDriftEnabled = false;
+    if (auto* param = apvts.getRawParameterValue("optVisualizerNebulaDrift"))
+        nebulaDriftEnabled = param->load() >= 0.5f;
+
+    bool neonSweepEnabled = false;
+    if (auto* param = apvts.getRawParameterValue("optVisualizerNeonSweep"))
+        neonSweepEnabled = param->load() >= 0.5f;
 
     // Calculate colorwave hue drift: ¼ turn per cycle (one full revolution every 4 cycles)
     // Uses same timing as Alternating Rotation for coherence
@@ -321,6 +385,105 @@ void PolyrhythmVizComponent::paint(juce::Graphics& g)
             }
         }
 
+        // Neon Sweep effect: crisp edge-hugging glow that races around the polygon
+        // Peak brightness at bead position, with trailing falloff in direction of travel
+        if (neonSweepEnabled && slot.vertices.size() >= 2)
+        {
+            const int numVerts = (int)slot.vertices.size();
+            const float beadU = (float)slot.beadPhase;  // Position along perimeter [0..1)
+
+            // Sweep direction follows ring rotation parity
+            // Even order = clockwise = increasing u, Odd order = counter-clockwise = decreasing u
+            const bool sweepCW = (order % 2 == 0);
+
+            // Sweep parameters
+            constexpr float kSweepBaseBrightness = 0.4f;   // Base sweep alpha
+            constexpr float kSweepPeakBrightness = 0.95f;  // Peak alpha at bead
+            constexpr float kSweepTrailLength = 0.25f;     // Trail length as fraction of perimeter
+            constexpr float kSweepWidth = 2.5f;            // Stroke width
+            constexpr float kSweepGlowWidth = 5.0f;        // Outer glow width
+
+            // Gain boost from hit (adds brightness pulse)
+            const float hitBoost = juce::jlimit(0.0f, 1.0f, slot.sweepGain);
+
+            // Calculate sweep color (neon version of slot color, brighter and more saturated)
+            const auto sweepColour = colour.brighter(0.4f).withSaturation(juce::jmin(1.0f, colour.getSaturation() + 0.2f));
+
+            // Draw each segment with brightness based on distance from bead
+            for (int i = 0; i < numVerts; ++i)
+            {
+                const int nextI = (i + 1) % numVerts;
+
+                // Segment endpoints (rotated)
+                const auto p0 = rotatePoint(slot.vertices[(size_t)i]);
+                const auto p1 = rotatePoint(slot.vertices[(size_t)nextI]);
+
+                // Calculate segment center position along perimeter [0..1)
+                const float segStart = (float)i / (float)numVerts;
+                const float segEnd = (float)(i + 1) / (float)numVerts;
+                const float segMid = (segStart + segEnd) * 0.5f;
+
+                // Calculate distance from bead (accounting for wrap-around)
+                // For CW sweep, trail is behind (lower u values)
+                // For CCW sweep, trail is behind (higher u values)
+                float distFromBead;
+                if (sweepCW)
+                {
+                    // CW: bead moves toward higher u, trail is at lower u
+                    distFromBead = beadU - segMid;
+                    if (distFromBead < 0.0f) distFromBead += 1.0f;  // Wrap around
+                }
+                else
+                {
+                    // CCW: bead moves toward lower u, trail is at higher u
+                    distFromBead = segMid - beadU;
+                    if (distFromBead < 0.0f) distFromBead += 1.0f;  // Wrap around
+                }
+
+                // Calculate brightness with exponential falloff
+                // Peak at bead position, falls off over trail length
+                float brightness;
+                if (distFromBead < 0.02f)
+                {
+                    // Very close to bead: peak brightness
+                    brightness = kSweepPeakBrightness;
+                }
+                else if (distFromBead < kSweepTrailLength)
+                {
+                    // In trail: exponential falloff
+                    const float t = distFromBead / kSweepTrailLength;
+                    brightness = kSweepBaseBrightness + (kSweepPeakBrightness - kSweepBaseBrightness) * std::exp(-t * 3.0f);
+                }
+                else
+                {
+                    // Outside trail: minimal base brightness
+                    brightness = kSweepBaseBrightness * 0.3f;
+                }
+
+                // Apply hit boost
+                brightness = juce::jmin(1.0f, brightness + hitBoost * 0.4f);
+
+                // Draw outer glow first (wider, more transparent)
+                g.setColour(sweepColour.withAlpha(brightness * 0.25f));
+                juce::Path glowPath;
+                glowPath.startNewSubPath(p0);
+                glowPath.lineTo(p1);
+                g.strokePath(glowPath, juce::PathStrokeType(kSweepGlowWidth, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
+
+                // Draw core sweep line (thinner, brighter)
+                g.setColour(sweepColour.withAlpha(brightness));
+                g.strokePath(glowPath, juce::PathStrokeType(kSweepWidth, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
+            }
+
+            // Draw bright point at bead position for extra emphasis
+            const auto beadPosRotated = rotatePoint(slot.beadPos);
+            const float beadGlowAlpha = 0.7f + hitBoost * 0.3f;
+            g.setColour(sweepColour.withAlpha(beadGlowAlpha));
+            g.fillEllipse(beadPosRotated.x - 4.0f, beadPosRotated.y - 4.0f, 8.0f, 8.0f);
+            g.setColour(juce::Colours::white.withAlpha(0.6f + hitBoost * 0.3f));
+            g.fillEllipse(beadPosRotated.x - 2.0f, beadPosRotated.y - 2.0f, 4.0f, 4.0f);
+        }
+
         // Flash at hit vertex (rotates with polygon)
         if (slot.flash > 0.001f && slot.flashVertex >= 0 && slot.flashVertex < (int)slot.vertices.size())
         {
@@ -444,6 +607,12 @@ void PolyrhythmVizComponent::timerCallback()
     wrapFlash = juce::jmax(0.0f, wrapFlash * 0.88f - 0.01f);
     masterPulse = juce::jmax(0.0f, masterPulse * 0.88f - 0.01f);  // Same decay as wrapFlash
 
+    // Nebula Drift: advance time for continuous animation (60 FPS timer)
+    nebulaTime += 1.0f / 60.0f;
+
+    // Nebula energy: slow decay, will be boosted by hits below
+    nebulaEnergy = juce::jmax(0.0f, nebulaEnergy * 0.97f - 0.002f);
+
     std::array<bool, kNumSlots> soloMask{};
     bool anySolo = false;
     for (int i = 0; i < kNumSlots; ++i)
@@ -539,6 +708,8 @@ void PolyrhythmVizComponent::timerCallback()
             slot.lastHitCounter = hits;
             slot.flash = 1.0f;
             slot.arcIntensity = 1.0f;  // Trigger arc intensity on hit
+            slot.sweepGain = 1.0f;     // Boost neon sweep on hit
+            nebulaEnergy = juce::jmin(1.0f, nebulaEnergy + 0.25f);  // Boost nebula energy on hit
             const int sides = juce::jmax(1, slot.sides);
             // Use floor (same as edge-walk segment calculation) for consistent vertex indexing
             // This ensures flash appears at the vertex the bead just passed, not ahead of it
@@ -570,6 +741,7 @@ void PolyrhythmVizComponent::timerCallback()
         {
             slot.flash = juce::jmax(0.0f, slot.flash - kFlashDecay);
             slot.arcIntensity = juce::jmax(0.0f, slot.arcIntensity * 0.92f - 0.008f);  // Slower decay for arcs
+            slot.sweepGain = juce::jmax(0.0f, slot.sweepGain * 0.88f - 0.015f);  // Fast decay for sweep boost
         }
 
         // Decay starlight twinkle brightness for all vertices (even when hit, for independent decay)

@@ -1975,6 +1975,7 @@ void SlotMachineAudioProcessorEditor::SlotUI::updateTimingModeVisibility(int tim
 static const juce::StringArray kOptionParamIds{
     "optShowMasterBar", "optShowSlotBars", "optShowVisualizer", "optVisualizerEdgeWalk", "optVisualizerMasterPulse", "optVisualizerBreathe", "optVisualizerElectricArc",
     "optVisualizerStarlightTwinkle", "optVisualizerAlternatingRotation", "optVisualizerColorwave",
+    "optVisualizerNebulaDrift", "optVisualizerNeonSweep",
     "optSampleRate", "optTimingMode",
     "optSlotScale",
     "optGlowColor", "optGlowAlpha", "optGlowWidth",
@@ -2172,6 +2173,14 @@ public:
         const bool colorwaveEnabled = Opt::getBool(owner.apvts, "optVisualizerColorwave", false);
         menu.addItem(10, "Colorwave", true, colorwaveEnabled);
 
+        // Get nebula drift state
+        const bool nebulaDriftEnabled = Opt::getBool(owner.apvts, "optVisualizerNebulaDrift", false);
+        menu.addItem(11, "Nebula Drift", true, nebulaDriftEnabled);
+
+        // Get neon sweep state
+        const bool neonSweepEnabled = Opt::getBool(owner.apvts, "optVisualizerNeonSweep", false);
+        menu.addItem(12, "Neon Sweep", true, neonSweepEnabled);
+
         // Get mouse position and create target area with offset
         auto mousePos = juce::Desktop::getMousePosition();
         constexpr int MENU_VERTICAL_OFFSET = 0;  // <-- Adjust this value to fine-tune menu position/ *** NO NEED FOR OFFSET AFTER ALL.  WORKING ON WRONG WINDOW.
@@ -2225,6 +2234,14 @@ public:
                 else if (result == 10)
                 {
                     toggleColorwave();
+                }
+                else if (result == 11)
+                {
+                    toggleNebulaDrift();
+                }
+                else if (result == 12)
+                {
+                    toggleNeonSweep();
                 }
             });
     }
@@ -2367,6 +2384,30 @@ public:
     {
         // Toggle the colorwave parameter
         if (auto* param = dynamic_cast<juce::AudioParameterBool*>(owner.apvts.getParameter("optVisualizerColorwave")))
+        {
+            param->beginChangeGesture();
+            *param = !param->get();
+            param->endChangeGesture();
+            saveOptionsToDisk(owner.apvts);
+        }
+    }
+
+    void toggleNebulaDrift()
+    {
+        // Toggle the nebula drift parameter
+        if (auto* param = dynamic_cast<juce::AudioParameterBool*>(owner.apvts.getParameter("optVisualizerNebulaDrift")))
+        {
+            param->beginChangeGesture();
+            *param = !param->get();
+            param->endChangeGesture();
+            saveOptionsToDisk(owner.apvts);
+        }
+    }
+
+    void toggleNeonSweep()
+    {
+        // Toggle the neon sweep parameter
+        if (auto* param = dynamic_cast<juce::AudioParameterBool*>(owner.apvts.getParameter("optVisualizerNeonSweep")))
         {
             param->beginChangeGesture();
             *param = !param->get();

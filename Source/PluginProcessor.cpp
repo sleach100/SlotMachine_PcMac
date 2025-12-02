@@ -1527,6 +1527,10 @@ APVTS::ParameterLayout SlotMachineAudioProcessor::createParameterLayout()
         "optVisualizerAlternatingRotation", "Visualizer Alternating Rotation", false));
     layout.add(std::make_unique<juce::AudioParameterBool>(
         "optVisualizerColorwave", "Visualizer Colorwave", false));
+    layout.add(std::make_unique<juce::AudioParameterBool>(
+        "optVisualizerNebulaDrift", "Visualizer Nebula Drift", false));
+    layout.add(std::make_unique<juce::AudioParameterBool>(
+        "optVisualizerNeonSweep", "Visualizer Neon Sweep", false));
 
     layout.add(std::make_unique<juce::AudioParameterInt>(
         "optSampleRate", "Export Sample Rate (Hz)", 44100, 48000, 48000));
