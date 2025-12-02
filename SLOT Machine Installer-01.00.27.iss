@@ -47,6 +47,7 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 [Tasks]
 Name: "desktopicon"; Description: "Create a &Desktop icon"; GroupDescription: "Additional icons:"; Flags: checkedonce
 Name: "installvst3"; Description: "Install &VST3 beta plugin (64-bit)"; GroupDescription: "Components:"; Flags: checkedonce
+Name: "viewrelease"; Description: "View Release Notes"; Flags: unchecked
 
 ; ---- PRE-DELETE to guarantee clean overwrite on reinstall ----
 [InstallDelete]
@@ -99,6 +100,7 @@ Flags: postinstall nowait runasoriginaluser skipifsilent
 Filename: "{app}\SlotMachine.exe"; \
 Parameters: "/updatecompleted {#MyAppVersion}"; \
 Flags: nowait runasoriginaluser skipifnotsilent
+Filename: "{app}\ReleaseNotes.txt"; Description: "View Release Notes"; Tasks: viewrelease; Flags: postinstall runasoriginaluser nowait skipifsilent
 
 
 [Registry]
