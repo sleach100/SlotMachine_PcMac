@@ -47,71 +47,88 @@ void PolyrhythmVizComponent::paint(juce::Graphics& g)
     // Nebula Drift: soft, dreamy cinematic background with blur and vignette
     if (nebulaDriftEnabledEarly)
     {
-        // Render to half-resolution buffer for blur effect
-        const int bufW = juce::jmax(1, (int)bounds.getWidth() / 2);
-        const int bufH = juce::jmax(1, (int)bounds.getHeight() / 2);
+        // Render nebula layers directly to screen (no offscreen buffer needed)
+        // Use very large, soft gradients for dreamy effect without expensive blur
 
-        // Recreate buffer if size changed
-        if (nebulaBufferWidth != bufW || nebulaBufferHeight != bufH || !nebulaBuffer.isValid())
+        // Two-color palette: Teal #2BD7D1 → Magenta #FF4DD2
+        const juce::Colour tealAnchor(0x2B, 0xD7, 0xD1);
+        const juce::Colour magentaAnchor(0xFF, 0x4D, 0xD2);
+
+        // Slow sinusoidal crossfade between the two colors
+        const float paletteMix = std::sin(nebulaTime * 0.02f) * 0.5f + 0.5f;
+
+        // Gentle breathing modulation (±10% of alpha, long decay)
+        const float breathMod = 1.0f + nebulaEnergy * 0.10f;
+
+        const float bw = bounds.getWidth();
+        const float bh = bounds.getHeight();
+        const float maxDim = juce::jmax(bw, bh);
+
+        // === Layer 1: Base Aura (very large, covers entire canvas) ===
         {
-            nebulaBuffer = juce::Image(juce::Image::ARGB, bufW, bufH, true);
-            nebulaBufferWidth = bufW;
-            nebulaBufferHeight = bufH;
+            const float driftX = std::sin(nebulaTime * 0.015f) * 0.12f;
+            const float driftY = std::cos(nebulaTime * 0.012f + 0.7f) * 0.10f;
+
+            const float cx = bounds.getCentreX() + driftX * bw;
+            const float cy = bounds.getCentreY() + driftY * bh;
+            const float radius = maxDim * 0.95f;
+
+            const auto layerColour = tealAnchor.interpolatedWith(magentaAnchor, paletteMix * 0.3f);
+            const float alpha = 0.20f * breathMod;
+
+            juce::ColourGradient gradient(layerColour.withAlpha(alpha), cx, cy,
+                                          layerColour.withAlpha(0.0f), cx + radius, cy, true);
+            g.setGradientFill(gradient);
+            g.fillRect(bounds);
         }
 
-        // Render nebula layers to offscreen buffer
-        renderNebulaToBuffer(bufW, bufH);
-
-        // Apply soft box blur (2-pass for smoothness)
-        applyBoxBlur(nebulaBuffer, 3);
-        applyBoxBlur(nebulaBuffer, 2);
-
-        // Draw blurred nebula upscaled to full resolution
-        g.setOpacity(1.0f);
-        g.drawImage(nebulaBuffer, bounds,
-                    juce::RectanglePlacement::stretchToFit);
-
-        // Add subtle grain/dither to prevent banding
+        // === Layer 2: Mid Cloud ===
         {
-            const int grainDensity = 800;  // Number of grain specks
-            const float grainAlpha = 0.018f;  // Very subtle
-            uint32_t seed = nebulaGrainSeed;
+            const float driftX = std::sin(nebulaTime * 0.022f + 1.2f) * 0.14f;
+            const float driftY = std::cos(nebulaTime * 0.018f + 2.1f) * 0.13f;
 
-            for (int i = 0; i < grainDensity; ++i)
-            {
-                // Simple LCG random
-                seed = seed * 1664525u + 1013904223u;
-                const float rx = (float)(seed & 0xFFFF) / 65535.0f;
-                seed = seed * 1664525u + 1013904223u;
-                const float ry = (float)(seed & 0xFFFF) / 65535.0f;
-                seed = seed * 1664525u + 1013904223u;
-                const float brightness = (float)(seed & 0xFF) / 255.0f;
+            const float cx = bounds.getCentreX() + driftX * bw;
+            const float cy = bounds.getCentreY() + driftY * bh;
+            const float radius = maxDim * 0.65f;
 
-                const float gx = bounds.getX() + rx * bounds.getWidth();
-                const float gy = bounds.getY() + ry * bounds.getHeight();
+            const auto layerColour = tealAnchor.interpolatedWith(magentaAnchor, paletteMix * 0.6f + 0.2f);
+            const float alpha = 0.14f * breathMod;
 
-                // Grain color varies slightly warm/cool
-                const auto grainCol = juce::Colour::fromHSV(
-                    brightness > 0.5f ? 0.52f : 0.85f,  // Teal or magenta tint
-                    0.15f,
-                    0.4f + brightness * 0.3f,
-                    grainAlpha * (0.5f + brightness * 0.5f));
-                g.setColour(grainCol);
-                g.fillRect(gx, gy, 1.0f, 1.0f);
-            }
+            juce::ColourGradient gradient(layerColour.withAlpha(alpha), cx, cy,
+                                          layerColour.withAlpha(0.0f), cx + radius, cy, true);
+            g.setGradientFill(gradient);
+            g.fillRect(bounds);
+        }
+
+        // === Layer 3: Small accent cloud ===
+        {
+            const float driftX = std::cos(nebulaTime * 0.025f + 3.5f) * 0.16f;
+            const float driftY = std::sin(nebulaTime * 0.02f + 1.9f) * 0.15f;
+
+            const float cx = bounds.getCentreX() + driftX * bw;
+            const float cy = bounds.getCentreY() + driftY * bh;
+            const float radius = maxDim * 0.5f;
+
+            const auto layerColour = tealAnchor.interpolatedWith(magentaAnchor, paletteMix * 0.8f + 0.5f);
+            const float alpha = 0.10f * breathMod;
+
+            juce::ColourGradient gradient(layerColour.withAlpha(alpha), cx, cy,
+                                          layerColour.withAlpha(0.0f), cx + radius, cy, true);
+            g.setGradientFill(gradient);
+            g.fillRect(bounds);
         }
 
         // Draw soft vignette (darken edges by 3-5%)
         {
-            const float vignetteInnerRadius = juce::jmin(bounds.getWidth(), bounds.getHeight()) * 0.35f;
-            const float vignetteOuterRadius = juce::jmin(bounds.getWidth(), bounds.getHeight()) * 0.7f;
+            const float vignetteInnerRadius = juce::jmin(bw, bh) * 0.35f;
+            const float vignetteOuterRadius = juce::jmin(bw, bh) * 0.7f;
 
             juce::ColourGradient vignette(
                 juce::Colours::transparentBlack,
                 bounds.getCentreX(), bounds.getCentreY(),
                 juce::Colours::black.withAlpha(0.04f),
                 bounds.getCentreX() + vignetteOuterRadius, bounds.getCentreY(),
-                true);  // Radial
+                true);
             vignette.addColour(vignetteInnerRadius / vignetteOuterRadius, juce::Colours::transparentBlack);
             g.setGradientFill(vignette);
             g.fillRect(bounds);
@@ -636,9 +653,6 @@ void PolyrhythmVizComponent::timerCallback()
     // Nebula energy: very slow decay (~2-3 second half-life), will be boosted by hits below
     nebulaEnergy = juce::jmax(0.0f, nebulaEnergy * 0.988f - 0.001f);
 
-    // Nebula grain: advance seed for per-frame dither variation
-    ++nebulaGrainSeed;
-
     std::array<bool, kNumSlots> soloMask{};
     bool anySolo = false;
     for (int i = 0; i < kNumSlots; ++i)
@@ -920,177 +934,4 @@ void PolyrhythmVizComponent::approximateRational(double value, int maxDenominato
 
     num = n1;
     den = d1;
-}
-
-void PolyrhythmVizComponent::renderNebulaToBuffer(int bufferWidth, int bufferHeight)
-{
-    // Clear buffer to transparent
-    nebulaBuffer.clear(nebulaBuffer.getBounds(), juce::Colours::transparentBlack);
-
-    juce::Graphics bg(nebulaBuffer);
-    const float bw = (float)bufferWidth;
-    const float bh = (float)bufferHeight;
-
-    // Two-color palette: Teal #2BD7D1 → Magenta #FF4DD2
-    const juce::Colour tealAnchor(0x2B, 0xD7, 0xD1);
-    const juce::Colour magentaAnchor(0xFF, 0x4D, 0xD2);
-
-    // Slow sinusoidal crossfade between the two colors
-    // sin(time * 0.02) * 0.5 + 0.5 gives smooth 0..1 oscillation
-    const float paletteMix = std::sin(nebulaTime * 0.02f) * 0.5f + 0.5f;
-
-    // Gentle breathing modulation (±10% of alpha, long decay)
-    const float breathMod = 1.0f + nebulaEnergy * 0.10f;
-
-    // === Layer 1: Base Aura (very large, covers entire canvas) ===
-    {
-        // Very slow drift: ~0.015 screen units/second
-        const float driftX = std::sin(nebulaTime * 0.015f) * 0.12f;
-        const float driftY = std::cos(nebulaTime * 0.012f + 0.7f) * 0.10f;
-
-        const float cx = bw * 0.5f + driftX * bw;
-        const float cy = bh * 0.5f + driftY * bh;
-
-        // Large radius covering entire canvas
-        const float radius = juce::jmax(bw, bh) * 0.9f;
-
-        // Interpolate color based on palette mix (layer 1 uses base teal)
-        const float layerHue = 0.0f;  // Shift toward teal
-        const auto layerColour = tealAnchor.interpolatedWith(magentaAnchor, paletteMix * 0.3f + layerHue);
-
-        // Low alpha: 0.22 base
-        const float alpha = 0.22f * breathMod;
-        const auto coreColour = layerColour.withAlpha(alpha);
-        const auto fadeColour = layerColour.withAlpha(0.0f);
-
-        juce::ColourGradient gradient(coreColour, cx, cy, fadeColour, cx + radius, cy, true);
-        bg.setGradientFill(gradient);
-        bg.fillRect(0.0f, 0.0f, bw, bh);
-    }
-
-    // === Layer 2: Mid Cloud (medium radius, slightly faster drift) ===
-    {
-        // Slow drift with different phase
-        const float driftX = std::sin(nebulaTime * 0.022f + 1.2f) * 0.14f;
-        const float driftY = std::cos(nebulaTime * 0.018f + 2.1f) * 0.13f;
-
-        const float cx = bw * 0.5f + driftX * bw;
-        const float cy = bh * 0.5f + driftY * bh;
-
-        // Medium radius
-        const float radius = juce::jmax(bw, bh) * 0.6f;
-
-        // Interpolate toward middle of palette
-        const auto layerColour = tealAnchor.interpolatedWith(magentaAnchor, paletteMix * 0.6f + 0.2f);
-
-        // Medium alpha: 0.16 base
-        const float alpha = 0.16f * breathMod;
-        const auto coreColour = layerColour.withAlpha(alpha);
-        const auto fadeColour = layerColour.withAlpha(0.0f);
-
-        juce::ColourGradient gradient(coreColour, cx, cy, fadeColour, cx + radius, cy, true);
-        bg.setGradientFill(gradient);
-        bg.fillRect(0.0f, 0.0f, bw, bh);
-    }
-
-    // === Layer 3: Small accent cloud (adds dimension) ===
-    {
-        // Independent slow drift
-        const float driftX = std::cos(nebulaTime * 0.025f + 3.5f) * 0.16f;
-        const float driftY = std::sin(nebulaTime * 0.02f + 1.9f) * 0.15f;
-
-        const float cx = bw * 0.5f + driftX * bw;
-        const float cy = bh * 0.5f + driftY * bh;
-
-        // Smaller radius
-        const float radius = juce::jmax(bw, bh) * 0.45f;
-
-        // Shift toward magenta for this layer
-        const auto layerColour = tealAnchor.interpolatedWith(magentaAnchor, paletteMix * 0.8f + 0.5f);
-
-        // Low alpha: 0.11 base
-        const float alpha = 0.11f * breathMod;
-        const auto coreColour = layerColour.withAlpha(alpha);
-        const auto fadeColour = layerColour.withAlpha(0.0f);
-
-        juce::ColourGradient gradient(coreColour, cx, cy, fadeColour, cx + radius, cy, true);
-        bg.setGradientFill(gradient);
-        bg.fillRect(0.0f, 0.0f, bw, bh);
-    }
-}
-
-void PolyrhythmVizComponent::applyBoxBlur(juce::Image& image, int radius)
-{
-    if (radius < 1 || !image.isValid())
-        return;
-
-    const int w = image.getWidth();
-    const int h = image.getHeight();
-
-    // Create temporary buffer for two-pass blur
-    juce::Image temp(juce::Image::ARGB, w, h, true);
-
-    // Horizontal pass
-    {
-        juce::Image::BitmapData srcData(image, juce::Image::BitmapData::readOnly);
-        juce::Image::BitmapData dstData(temp, juce::Image::BitmapData::writeOnly);
-
-        for (int y = 0; y < h; ++y)
-        {
-            for (int x = 0; x < w; ++x)
-            {
-                int rSum = 0, gSum = 0, bSum = 0, aSum = 0;
-                int count = 0;
-
-                for (int dx = -radius; dx <= radius; ++dx)
-                {
-                    const int sx = juce::jlimit(0, w - 1, x + dx);
-                    const auto pixel = srcData.getPixelColour(sx, y);
-                    rSum += pixel.getRed();
-                    gSum += pixel.getGreen();
-                    bSum += pixel.getBlue();
-                    aSum += pixel.getAlpha();
-                    ++count;
-                }
-
-                dstData.setPixelColour(x, y, juce::Colour(
-                    (uint8_t)(rSum / count),
-                    (uint8_t)(gSum / count),
-                    (uint8_t)(bSum / count),
-                    (uint8_t)(aSum / count)));
-            }
-        }
-    }
-
-    // Vertical pass
-    {
-        juce::Image::BitmapData srcData(temp, juce::Image::BitmapData::readOnly);
-        juce::Image::BitmapData dstData(image, juce::Image::BitmapData::writeOnly);
-
-        for (int y = 0; y < h; ++y)
-        {
-            for (int x = 0; x < w; ++x)
-            {
-                int rSum = 0, gSum = 0, bSum = 0, aSum = 0;
-                int count = 0;
-
-                for (int dy = -radius; dy <= radius; ++dy)
-                {
-                    const int sy = juce::jlimit(0, h - 1, y + dy);
-                    const auto pixel = srcData.getPixelColour(x, sy);
-                    rSum += pixel.getRed();
-                    gSum += pixel.getGreen();
-                    bSum += pixel.getBlue();
-                    aSum += pixel.getAlpha();
-                    ++count;
-                }
-
-                dstData.setPixelColour(x, y, juce::Colour(
-                    (uint8_t)(rSum / count),
-                    (uint8_t)(gSum / count),
-                    (uint8_t)(bSum / count),
-                    (uint8_t)(aSum / count)));
-            }
-        }
-    }
 }
