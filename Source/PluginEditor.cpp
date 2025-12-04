@@ -3567,7 +3567,33 @@ void SlotMachineAudioProcessorEditor::initialiseLicenseState()
                             onlineResult.validatedAt.toMilliseconds());
                     });
                 }
-                // If online validation fails, we still use the cache (offline mode)
+                else if (onlineResult.rawJsonResponse.isNotEmpty())
+                {
+                    // We got a definitive response from the server saying the license is invalid
+                    // This means the license was deactivated remotely - re-lock the app
+                    juce::MessageManager::callAsync([this]()
+                    {
+                        DBG("License no longer valid on server - re-locking app");
+
+                        // Clear the cached license
+                        LemonSqueezyCache::clearLicenseCache();
+
+                        // Clear stored credentials
+                        storedFirstName.clear();
+                        storedLastName.clear();
+                        storedEmail.clear();
+                        storedLicenseKey.clear();
+
+                        // Re-lock the app
+                        setUnlocked(false);
+
+                        // Notify user
+                        juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
+                            "License Deactivated",
+                            "Your license has been deactivated. Please re-enter your license key to continue using the full version.");
+                    });
+                }
+                // If rawJsonResponse is empty, it was a network error - keep using cache (offline mode)
             });
 
             return;
@@ -3674,40 +3700,31 @@ void SlotMachineAudioProcessorEditor::handleUnlockDialogResult(bool accepted,
     // Get or create instance ID for this machine
     juce::String instanceId = InstanceIdentifier::getOrCreateInstanceID();
 
-    // Validate with Lemon Squeezy API (synchronous for now)
-    auto result = LemonSqueezyAPI::validateLicense(trimmedLicense, instanceId);
+    // STEP 1: First validate the license to check name/email WITHOUT using an activation slot
+    // This prevents wasting activation slots when user enters wrong credentials
+    auto validateResult = LemonSqueezyAPI::validateLicense(trimmedLicense, instanceId);
 
-    // For testing: Accept licenses where valid=true and status=inactive
-    // Test licenses remain inactive but should unlock the product
-    // Later we'll change this to require status=active
-    if (result.hasError || !result.valid)
+    // Check for basic license validity first
+    if (validateResult.hasError && validateResult.errorCode != "license_inactive")
     {
         juce::String errorMsg = "The license key could not be validated.";
 
-        if (result.errorCode == "activation_limit_reached")
-        {
-            errorMsg = juce::String("Activation limit reached (") +
-                       juce::String(result.activationUsage) + " of " +
-                       juce::String(result.activationLimit) + " used).\n\n" +
-                       "Please deactivate the license on another machine first.";
-        }
-        else if (result.errorCode == "license_inactive")
-        {
-            errorMsg = "This license key is inactive.\n\nPlease activate it in your Lemon Squeezy dashboard.";
-        }
-        else if (result.errorCode == "license_expired")
+        if (validateResult.errorCode == "license_expired")
         {
             errorMsg = "This license key has expired.";
         }
-        else if (result.hasError && result.errorMessage.isNotEmpty())
+        else if (validateResult.errorCode == "license_disabled")
         {
-            errorMsg = result.errorMessage;
+            errorMsg = "This license key has been disabled.";
+        }
+        else if (validateResult.hasError && validateResult.errorMessage.isNotEmpty())
+        {
+            errorMsg = validateResult.errorMessage;
         }
 
-        // Add debug info for troubleshooting
-        if (result.errorCode.isNotEmpty())
+        if (validateResult.errorCode.isNotEmpty())
         {
-            errorMsg += juce::String("\n\nError code: ") + result.errorCode;
+            errorMsg += juce::String("\n\nError code: ") + validateResult.errorCode;
         }
 
         juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
@@ -3716,19 +3733,17 @@ void SlotMachineAudioProcessorEditor::handleUnlockDialogResult(bool accepted,
         return;
     }
 
-    // Validate that the user-entered information matches the license registration
+    // STEP 2: Validate that the user-entered information matches the license registration
+    // This happens BEFORE activation to avoid wasting activation slots
+
     // Compare email (case-insensitive)
-    if (!trimmedEmail.equalsIgnoreCase(result.licenseeEmail))
+    if (!trimmedEmail.equalsIgnoreCase(validateResult.licenseeEmail))
     {
         juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
             "Unlock Slot Machine",
             "The email address you entered does not match the email registered for this license key.");
         return;
     }
-
-    // Compare name - both first and last names must match exactly
-    // The API returns a full name, so parse it into first and last name components
-    // and validate each separately (case-insensitive)
 
     // Require both first and last names to be provided
     if (trimmedLastName.isEmpty())
@@ -3741,16 +3756,16 @@ void SlotMachineAudioProcessorEditor::handleUnlockDialogResult(bool accepted,
 
     // Parse the license name into first and last components
     juce::String licenseFirstName, licenseLastName;
-    int spacePos = result.licenseeName.indexOfChar(' ');
+    int spacePos = validateResult.licenseeName.indexOfChar(' ');
     if (spacePos > 0)
     {
-        licenseFirstName = result.licenseeName.substring(0, spacePos).trim();
-        licenseLastName = result.licenseeName.substring(spacePos + 1).trim();
+        licenseFirstName = validateResult.licenseeName.substring(0, spacePos).trim();
+        licenseLastName = validateResult.licenseeName.substring(spacePos + 1).trim();
     }
     else
     {
         // License name has no space - treat entire string as first name
-        licenseFirstName = result.licenseeName.trim();
+        licenseFirstName = validateResult.licenseeName.trim();
         licenseLastName = "";
     }
 
@@ -3764,7 +3779,52 @@ void SlotMachineAudioProcessorEditor::handleUnlockDialogResult(bool accepted,
         return;
     }
 
-    // Validation successful - save to cache
+    // Check if activation limit has been reached before attempting to activate
+    if (validateResult.activationUsage >= validateResult.activationLimit && validateResult.activationLimit > 0)
+    {
+        juce::String errorMsg = juce::String("Activation limit reached (") +
+                               juce::String(validateResult.activationUsage) + " of " +
+                               juce::String(validateResult.activationLimit) + " used).\n\n" +
+                               "Please deactivate the license on another machine first.";
+        juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
+            "Unlock Slot Machine",
+            errorMsg);
+        return;
+    }
+
+    // STEP 3: Name and email match - now activate the license
+    // This actually uses an activation slot on Lemon Squeezy
+    auto result = LemonSqueezyAPI::activateLicense(trimmedLicense, instanceId);
+
+    // If activation fails, check for specific errors
+    if (result.hasError || !result.valid)
+    {
+        juce::String errorMsg = "The license key could not be activated.";
+
+        if (result.errorCode == "activation_limit_reached")
+        {
+            errorMsg = juce::String("Activation limit reached (") +
+                       juce::String(result.activationUsage) + " of " +
+                       juce::String(result.activationLimit) + " used).\n\n" +
+                       "Please deactivate the license on another machine first.";
+        }
+        else if (result.hasError && result.errorMessage.isNotEmpty())
+        {
+            errorMsg = result.errorMessage;
+        }
+
+        if (result.errorCode.isNotEmpty())
+        {
+            errorMsg += juce::String("\n\nError code: ") + result.errorCode;
+        }
+
+        juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
+            "Unlock Slot Machine",
+            errorMsg);
+        return;
+    }
+
+    // Activation successful - save to cache
     storedLicenseKey = result.licenseKey.toStdString();
     storedFirstName = result.licenseeName.toStdString();
     storedLastName = "";  // Not used with Lemon Squeezy
@@ -5730,73 +5790,90 @@ void SlotMachineAudioProcessorEditor::buttonClicked(juce::Button* b)
 
         auto deactivateCallback = [this]()
         {
-            // Confirm deactivation
-            bool shouldDeactivate = juce::NativeMessageBox::showOkCancelBox(
+            DBG("Deactivate callback invoked!");
+
+            // Confirm deactivation using async version to avoid modal issues
+            juce::AlertWindow::showOkCancelBox(
                 juce::AlertWindow::WarningIcon,
                 "Deactivate License",
                 "Are you sure you want to deactivate this license on this computer?\n\n"
                 "This will free up an activation slot for use on another computer.",
+                "Deactivate",
+                "Cancel",
                 nullptr,
-                nullptr);
+                juce::ModalCallbackFunction::create([this](int result)
+                {
+                    if (result == 0)  // Cancel was clicked
+                        return;
 
-            if (!shouldDeactivate)
-                return;
+                    DBG("User confirmed deactivation");
 
-            // Get current license info
-            juce::String licenseKey = storedLicenseKey;
-            juce::String instanceId = InstanceIdentifier::getOrCreateInstanceID();
+                    // Get current license info from cache (need the Lemon Squeezy instance_id, not local machine ID)
+                    juce::String licenseKey = storedLicenseKey;
+                    juce::String instanceId;
 
-            // Call API to deactivate
-            bool apiSuccess = LemonSqueezyAPI::deactivateLicense(licenseKey, instanceId);
+                    // Load the stored instance_id from cache - this is the ID returned by Lemon Squeezy
+                    std::string cachedLicenseKey, cachedInstanceId, cachedJson, cachedName, cachedEmail;
+                    int64_t cachedTimestamp = 0;
+                    if (LemonSqueezyCache::loadLicenseCache(cachedLicenseKey, cachedInstanceId, cachedJson,
+                                                            cachedName, cachedEmail, cachedTimestamp))
+                    {
+                        instanceId = juce::String(cachedInstanceId);
+                    }
 
-            // Clear local cache regardless of API result
+                    // Call API to deactivate
+                    bool apiSuccess = LemonSqueezyAPI::deactivateLicense(licenseKey, instanceId);
+                    juce::ignoreUnused(apiSuccess);
+
+                    // Clear local cache regardless of API result
 #if JUCE_WINDOWS
-            if (!clearLicenseFromRegistry())
-            {
-                juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
-                    "Deactivate License",
-                    "Unable to remove the saved license information from the registry.");
-            }
-            LemonSqueezyCache::clearLicenseCache();
+                    if (!clearLicenseFromRegistry())
+                    {
+                        juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
+                            "Deactivate License",
+                            "Unable to remove the saved license information from the registry.");
+                    }
+                    LemonSqueezyCache::clearLicenseCache();
 #else
-            clearLicenseFromRegistry();
-            LemonSqueezyCache::clearLicenseCache();
+                    clearLicenseFromRegistry();
+                    LemonSqueezyCache::clearLicenseCache();
 #endif
 
-            // Clear instance ID
-            InstanceIdentifier::clearInstanceID();
+                    // Clear instance ID
+                    InstanceIdentifier::clearInstanceID();
 
-            // Clear stored credentials
-            storedFirstName.clear();
-            storedLastName.clear();
-            storedEmail.clear();
-            storedLicenseKey.clear();
+                    // Clear stored credentials
+                    storedFirstName.clear();
+                    storedLastName.clear();
+                    storedEmail.clear();
+                    storedLicenseKey.clear();
 
-            // Update UI
-            setUnlocked(false);
+                    // Update UI
+                    setUnlocked(false);
 
-            // Close about dialog
-            if (auto* dialog = aboutDialog.getComponent())
-            {
-                if (auto* window = dynamic_cast<juce::DialogWindow*>(dialog))
-                    window->exitModalState(0);
-            }
+                    // Close about dialog
+                    if (auto* dialog = aboutDialog.getComponent())
+                    {
+                        if (auto* window = dynamic_cast<juce::DialogWindow*>(dialog))
+                            window->exitModalState(0);
+                    }
 
-            // Show result message
-            if (apiSuccess)
-            {
-                juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::InfoIcon,
-                    "Deactivate License",
-                    "License successfully deactivated on this computer.");
-            }
-            else
-            {
-                juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
-                    "Deactivate License",
-                    "License deactivated locally, but there was an error communicating with the server.\n\n"
-                    "The license has been removed from this computer, but you may need to contact support "
-                    "to free up the activation slot.");
-            }
+                    // Show result message
+                    if (apiSuccess)
+                    {
+                        juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::InfoIcon,
+                            "Deactivate License",
+                            "License successfully deactivated on this computer.");
+                    }
+                    else
+                    {
+                        juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
+                            "Deactivate License",
+                            "License deactivated locally, but there was an error communicating with the server.\n\n"
+                            "The license has been removed from this computer, but you may need to contact support "
+                            "to free up the activation slot.");
+                    }
+                }));
         };
 
         auto checkForUpdatesCallback = [this]()
