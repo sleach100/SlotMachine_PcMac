@@ -14,105 +14,6 @@ namespace
         // In a more secure implementation, you would XOR encode this at compile time
         return juce::String(API_KEY_PLAINTEXT);
     }
-
-    // Debug logging helper - writes license validation debug info to a file
-    // Temporarily enabled for all builds to diagnose license issues
-    void writeDebugLog(const juce::String& operation,
-                       const juce::String& licenseKey,
-                       const juce::String& instanceId,
-                       const juce::String& requestBody,
-                       const juce::String& apiResponse,
-                       const LicenseValidationResult& result)
-    {
-        // Try multiple locations to ensure we can write the file
-        juce::StringArray fileLocations;
-        juce::File debugFile;
-
-        // Try these locations in order
-        juce::File desktopFile = juce::File::getSpecialLocation(juce::File::userDesktopDirectory)
-                                     .getChildFile("debugLicense.txt");
-        juce::File documentsFile = juce::File::getSpecialLocation(juce::File::userDocumentsDirectory)
-                                       .getChildFile("debugLicense.txt");
-        juce::File exeFile = juce::File::getSpecialLocation(juce::File::currentExecutableFile)
-                                 .getParentDirectory()
-                                 .getChildFile("debugLicense.txt");
-
-        fileLocations.add("Desktop: " + desktopFile.getFullPathName());
-        fileLocations.add("Documents: " + documentsFile.getFullPathName());
-        fileLocations.add("Exe Dir: " + exeFile.getFullPathName());
-
-        juce::String debugOutput;
-        debugOutput += "===============================================\n";
-        debugOutput += "License Validation Debug Log\n";
-        debugOutput += "===============================================\n";
-        debugOutput += "Timestamp: " + juce::Time::getCurrentTime().toString(true, true, true, true) + "\n";
-        debugOutput += "Operation: " + operation + "\n";
-        debugOutput += "\n--- INPUT ---\n";
-        debugOutput += "License Key: " + licenseKey + "\n";
-        debugOutput += "Instance ID: " + instanceId + "\n";
-        debugOutput += "\n--- EXPECTED VALUES ---\n";
-        debugOutput += "Expected Store ID: " + juce::String(LemonSqueezyAPI::EXPECTED_STORE_ID) + "\n";
-        debugOutput += "Expected Product ID: " + juce::String(LemonSqueezyAPI::EXPECTED_PRODUCT_ID) + "\n";
-        debugOutput += "\n--- API RESPONSE (RAW) ---\n";
-        debugOutput += apiResponse + "\n";
-        debugOutput += "\n--- PARSED RESULT ---\n";
-        debugOutput += "Valid: " + juce::String(result.valid ? "true" : "false") + "\n";
-        debugOutput += "Has Error: " + juce::String(result.hasError ? "true" : "false") + "\n";
-        debugOutput += "Error Message: " + result.errorMessage + "\n";
-        debugOutput += "Error Code: " + result.errorCode + "\n";
-        debugOutput += "License Status: " + result.licenseStatus + "\n";
-        debugOutput += "Test Mode: " + juce::String(result.testMode ? "true" : "false") + "\n";
-        debugOutput += "Store ID (from API): " + juce::String(result.storeId) + "\n";
-        debugOutput += "Product ID (from API): " + juce::String(result.productId) + "\n";
-        debugOutput += "Licensee Name: " + result.licenseeName + "\n";
-        debugOutput += "Licensee Email: " + result.licenseeEmail + "\n";
-        debugOutput += "Instance ID (parsed): " + result.instanceId + "\n";
-        debugOutput += "Activation Limit: " + juce::String(result.activationLimit) + "\n";
-        debugOutput += "Activation Usage: " + juce::String(result.activationUsage) + "\n";
-        debugOutput += "\n--- VALIDATION CHECKS ---\n";
-        debugOutput += "Store ID Match: " + juce::String(result.storeId == LemonSqueezyAPI::EXPECTED_STORE_ID ? "PASS" : "FAIL") + "\n";
-        debugOutput += "Product ID Match: " + juce::String(result.productId == LemonSqueezyAPI::EXPECTED_PRODUCT_ID ? "PASS" : "FAIL") + "\n";
-        debugOutput += "Status is Active: " + juce::String(result.licenseStatus == "active" ? "PASS" : "FAIL") + "\n";
-        debugOutput += "===============================================\n\n";
-
-        // Try writing to all locations
-        bool anySuccess = false;
-        juce::String successLocation;
-
-        if (desktopFile.getParentDirectory().isDirectory())
-        {
-            if (desktopFile.appendText(debugOutput))
-            {
-                anySuccess = true;
-                successLocation = desktopFile.getFullPathName();
-            }
-        }
-
-        if (documentsFile.getParentDirectory().isDirectory())
-        {
-            if (documentsFile.appendText(debugOutput))
-            {
-                anySuccess = true;
-                if (successLocation.isEmpty())
-                    successLocation = documentsFile.getFullPathName();
-            }
-        }
-
-        if (exeFile.getParentDirectory().isDirectory())
-        {
-            if (exeFile.appendText(debugOutput))
-            {
-                anySuccess = true;
-                if (successLocation.isEmpty())
-                    successLocation = exeFile.getFullPathName();
-            }
-        }
-
-        DBG("Debug log write " + juce::String(anySuccess ? "succeeded" : "FAILED"));
-        DBG("Tried locations: " + fileLocations.joinIntoString(", "));
-        if (anySuccess)
-            DBG("Written to: " + successLocation);
-    }
 }
 
 juce::String LemonSqueezyAPI::getAPIKey()
@@ -202,9 +103,6 @@ LicenseValidationResult LemonSqueezyAPI::validateLicense(const juce::String& lic
         parsedResult.instanceId = instanceId;
         DBG("Preserved input instanceId since response had no instance object");
     }
-
-    // Write debug log file (temporarily enabled for all builds)
-    writeDebugLog("validateLicense", licenseKey, instanceId, requestBody, response, parsedResult);
 
     return parsedResult;
 }
@@ -565,9 +463,6 @@ LicenseValidationResult LemonSqueezyAPI::activateLicense(const juce::String& lic
     // Parse the response - activation returns the same structure as validation
     LicenseValidationResult parsedResult = parseValidationResponse(response);
 
-    // Write debug log file (temporarily enabled for all builds)
-    writeDebugLog("activateLicense", licenseKey, instanceId, requestBody, response, parsedResult);
-
     return parsedResult;
 }
 
@@ -585,7 +480,6 @@ bool LemonSqueezyAPI::deactivateLicense(const juce::String& licenseKey,
     jsonObject->setProperty("license_key", licenseKey);
     if (instanceId.isNotEmpty())
     {
-        // Deactivate endpoint expects "instance_id", not "instance_name"
         jsonObject->setProperty("instance_id", instanceId);
     }
     juce::String requestBody = juce::JSON::toString(juce::var(jsonObject.get()));
@@ -611,36 +505,9 @@ bool LemonSqueezyAPI::deactivateLicense(const juce::String& licenseKey,
         0                           // httpStatusCode
     );
 
-    // Helper to write deactivation debug log to separate file
-    auto writeDeactivateDebugLog = [&](const juce::String& response, bool success, const juce::String& errorMsg)
-    {
-        juce::File debugFile = juce::File::getSpecialLocation(juce::File::userDesktopDirectory)
-                                   .getChildFile("debugDeactivate.txt");
-
-        juce::String debugOutput;
-        debugOutput += "===============================================\n";
-        debugOutput += "License DEACTIVATION Debug Log\n";
-        debugOutput += "===============================================\n";
-        debugOutput += "Timestamp: " + juce::Time::getCurrentTime().toString(true, true, true, true) + "\n";
-        debugOutput += "Operation: deactivateLicense\n";
-        debugOutput += "\n--- INPUT ---\n";
-        debugOutput += "License Key: " + licenseKey + "\n";
-        debugOutput += "Instance ID: " + instanceId + "\n";
-        debugOutput += "Request Body: " + requestBody + "\n";
-        debugOutput += "\n--- API RESPONSE (RAW) ---\n";
-        debugOutput += response + "\n";
-        debugOutput += "\n--- RESULT ---\n";
-        debugOutput += "Success: " + juce::String(success ? "true" : "false") + "\n";
-        debugOutput += "Error: " + errorMsg + "\n";
-        debugOutput += "===============================================\n\n";
-
-        debugFile.appendText(debugOutput);
-    };
-
     if (stream == nullptr)
     {
         DBG("Deactivation failed: Could not connect to API");
-        writeDeactivateDebugLog("(no response - connection failed)", false, "Could not connect to API");
         return false;
     }
 
@@ -650,11 +517,9 @@ bool LemonSqueezyAPI::deactivateLicense(const juce::String& licenseKey,
     if (response.isEmpty())
     {
         DBG("Deactivation failed: Empty response");
-        writeDeactivateDebugLog("(empty response)", false, "Empty response from API");
         return false;
     }
 
-    // Debug: Log the API response
     DBG("Lemon Squeezy Deactivation Response: " + response);
 
     // Parse the response
@@ -662,7 +527,6 @@ bool LemonSqueezyAPI::deactivateLicense(const juce::String& licenseKey,
     if (!parsedJson.isObject())
     {
         DBG("Deactivation failed: Invalid JSON response");
-        writeDeactivateDebugLog(response, false, "Invalid JSON response");
         return false;
     }
 
@@ -670,17 +534,14 @@ bool LemonSqueezyAPI::deactivateLicense(const juce::String& licenseKey,
     if (root == nullptr)
     {
         DBG("Deactivation failed: Could not parse response");
-        writeDeactivateDebugLog(response, false, "Could not parse response");
         return false;
     }
 
     // Check if deactivation was successful
-    // The API should return the updated instance with deactivated=true
     if (root->hasProperty("deactivated"))
     {
         bool success = root->getProperty("deactivated");
         DBG("Deactivation result: " + juce::String(success ? "success" : "failed"));
-        writeDeactivateDebugLog(response, success, success ? "" : "deactivated=false");
         return success;
     }
 
@@ -689,12 +550,10 @@ bool LemonSqueezyAPI::deactivateLicense(const juce::String& licenseKey,
     if (!errorVar.isVoid() && errorVar != juce::var() && errorVar.toString().isNotEmpty())
     {
         DBG("Deactivation failed with error: " + errorVar.toString());
-        writeDeactivateDebugLog(response, false, errorVar.toString());
         return false;
     }
 
     // No deactivated field and no error - consider it successful
     DBG("Deactivation result (no deactivated field, no error): success");
-    writeDeactivateDebugLog(response, true, "");
     return true;
 }
