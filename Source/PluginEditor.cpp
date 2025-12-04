@@ -3779,6 +3779,19 @@ void SlotMachineAudioProcessorEditor::handleUnlockDialogResult(bool accepted,
         return;
     }
 
+    // Check if activation limit has been reached before attempting to activate
+    if (validateResult.activationUsage >= validateResult.activationLimit && validateResult.activationLimit > 0)
+    {
+        juce::String errorMsg = juce::String("Activation limit reached (") +
+                               juce::String(validateResult.activationUsage) + " of " +
+                               juce::String(validateResult.activationLimit) + " used).\n\n" +
+                               "Please deactivate the license on another machine first.";
+        juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
+            "Unlock Slot Machine",
+            errorMsg);
+        return;
+    }
+
     // STEP 3: Name and email match - now activate the license
     // This actually uses an activation slot on Lemon Squeezy
     auto result = LemonSqueezyAPI::activateLicense(trimmedLicense, instanceId);
