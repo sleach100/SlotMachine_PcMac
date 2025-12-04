@@ -3567,7 +3567,33 @@ void SlotMachineAudioProcessorEditor::initialiseLicenseState()
                             onlineResult.validatedAt.toMilliseconds());
                     });
                 }
-                // If online validation fails, we still use the cache (offline mode)
+                else if (onlineResult.rawJsonResponse.isNotEmpty())
+                {
+                    // We got a definitive response from the server saying the license is invalid
+                    // This means the license was deactivated remotely - re-lock the app
+                    juce::MessageManager::callAsync([this]()
+                    {
+                        DBG("License no longer valid on server - re-locking app");
+
+                        // Clear the cached license
+                        LemonSqueezyCache::clearLicenseCache();
+
+                        // Clear stored credentials
+                        storedFirstName.clear();
+                        storedLastName.clear();
+                        storedEmail.clear();
+                        storedLicenseKey.clear();
+
+                        // Re-lock the app
+                        setUnlocked(false);
+
+                        // Notify user
+                        juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
+                            "License Deactivated",
+                            "Your license has been deactivated. Please re-enter your license key to continue using the full version.");
+                    });
+                }
+                // If rawJsonResponse is empty, it was a network error - keep using cache (offline mode)
             });
 
             return;
