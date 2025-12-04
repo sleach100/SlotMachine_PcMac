@@ -66,6 +66,7 @@ namespace
         debugOutput += "Product ID (from API): " + juce::String(result.productId) + "\n";
         debugOutput += "Licensee Name: " + result.licenseeName + "\n";
         debugOutput += "Licensee Email: " + result.licenseeEmail + "\n";
+        debugOutput += "Instance ID (parsed): " + result.instanceId + "\n";
         debugOutput += "Activation Limit: " + juce::String(result.activationLimit) + "\n";
         debugOutput += "Activation Usage: " + juce::String(result.activationUsage) + "\n";
         debugOutput += "\n--- VALIDATION CHECKS ---\n";
@@ -458,6 +459,7 @@ LicenseValidationResult LemonSqueezyAPI::parseValidationResponse(const juce::Str
     if (root->hasProperty("instance"))
     {
         juce::var instanceData = root->getProperty("instance");
+        DBG("Found instance data in response");
         if (instanceData.isObject())
         {
             juce::DynamicObject* instanceObj = instanceData.getDynamicObject();
@@ -465,9 +467,16 @@ LicenseValidationResult LemonSqueezyAPI::parseValidationResponse(const juce::Str
             {
                 // Store the Lemon Squeezy-generated instance ID (not the name we sent)
                 // This ID is required for deactivation
-                result.instanceId = instanceObj->getProperty("id").toString();
+                juce::String extractedId = instanceObj->getProperty("id").toString();
+                juce::String extractedName = instanceObj->getProperty("name").toString();
+                DBG("Instance object - id: " + extractedId + ", name: " + extractedName);
+                result.instanceId = extractedId;
             }
         }
+    }
+    else
+    {
+        DBG("No 'instance' property found in API response");
     }
 
     return result;
