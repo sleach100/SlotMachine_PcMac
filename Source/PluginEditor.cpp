@@ -5746,10 +5746,11 @@ void SlotMachineAudioProcessorEditor::buttonClicked(juce::Button* b)
             // Write debug file to confirm callback is being called
             {
                 juce::File debugFile = juce::File::getSpecialLocation(juce::File::userDesktopDirectory)
-                                           .getChildFile("debugLicense.txt");
+                                           .getChildFile("debugDeactivate.txt");
                 debugFile.appendText("===============================================\n"
                                     "Deactivate button clicked!\n"
                                     "Timestamp: " + juce::Time::getCurrentTime().toString(true, true, true, true) + "\n"
+                                    "Stored License Key: " + juce::String(storedLicenseKey) + "\n"
                                     "===============================================\n\n");
             }
 
@@ -5764,8 +5765,16 @@ void SlotMachineAudioProcessorEditor::buttonClicked(juce::Button* b)
                 nullptr,
                 juce::ModalCallbackFunction::create([this](int result)
                 {
+                    // Write to debug file
+                    juce::File debugFile = juce::File::getSpecialLocation(juce::File::userDesktopDirectory)
+                                               .getChildFile("debugDeactivate.txt");
+
                     if (result == 0)  // Cancel was clicked
+                    {
+                        debugFile.appendText("User clicked Cancel - deactivation aborted\n"
+                                            "Timestamp: " + juce::Time::getCurrentTime().toString(true, true, true, true) + "\n\n");
                         return;
+                    }
 
                     DBG("User confirmed deactivation");
 
@@ -5773,8 +5782,22 @@ void SlotMachineAudioProcessorEditor::buttonClicked(juce::Button* b)
                     juce::String licenseKey = storedLicenseKey;
                     juce::String instanceId = InstanceIdentifier::getOrCreateInstanceID();
 
+                    debugFile.appendText("===============================================\n"
+                                        "User confirmed deactivation\n"
+                                        "Timestamp: " + juce::Time::getCurrentTime().toString(true, true, true, true) + "\n"
+                                        "License Key: " + licenseKey + "\n"
+                                        "Instance ID: " + instanceId + "\n"
+                                        "About to call LemonSqueezyAPI::deactivateLicense()...\n"
+                                        "===============================================\n\n");
+
                     // Call API to deactivate
                     bool apiSuccess = LemonSqueezyAPI::deactivateLicense(licenseKey, instanceId);
+
+                    debugFile.appendText("===============================================\n"
+                                        "API call completed\n"
+                                        "Timestamp: " + juce::Time::getCurrentTime().toString(true, true, true, true) + "\n"
+                                        "API Success: " + juce::String(apiSuccess ? "true" : "false") + "\n"
+                                        "===============================================\n\n");
 
                     // Clear local cache regardless of API result
 #if JUCE_WINDOWS

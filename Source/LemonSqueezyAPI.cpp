@@ -580,11 +580,11 @@ bool LemonSqueezyAPI::deactivateLicense(const juce::String& licenseKey,
         0                           // httpStatusCode
     );
 
-    // Helper to write deactivation debug log
+    // Helper to write deactivation debug log to separate file
     auto writeDeactivateDebugLog = [&](const juce::String& response, bool success, const juce::String& errorMsg)
     {
         juce::File debugFile = juce::File::getSpecialLocation(juce::File::userDesktopDirectory)
-                                   .getChildFile("debugLicense.txt");
+                                   .getChildFile("debugDeactivate.txt");
 
         juce::String debugOutput;
         debugOutput += "===============================================\n";
