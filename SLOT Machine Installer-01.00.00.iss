@@ -41,6 +41,14 @@ RestartApplications=no
 UsePreviousLanguage=no
 CloseApplicationsFilter=SlotMachine.exe;FL64.exe;Ableton*.exe;Cubase*.exe;Studio One*.exe;REAPER.exe;Bitwig*.exe;VST3PluginTestHost.exe;pluginval*.exe;WavesLocalServer.exe
 
+; --- Show License Agreement-User must accept to install
+LicenseFile="C:\Users\Stever Leach\source\repos\Slot-Machine-V2\LonePearLogic-License_&_Terms_Agreement.rtf"
+
+; Welcome / wizard branding images
+DisableWelcomePage=no
+WizardImageFile=C:\Users\Stever Leach\source\repos\Slot-Machine-V2\Resources\Images\SlotMachineBox5.png
+WizardSmallImageFile="C:\Users\Stever Leach\source\repos\Slot-Machine-V2\Resources\Images\LonePearLogic.png"
+
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
@@ -71,11 +79,11 @@ Source: "{#MySourceRoot}\SlotMachineUpdater.exe"; DestDir: "{app}"; \
 
 ; --- Version file used by the app ---
 Source: "C:\Users\Stever Leach\source\repos\Slot-Machine-V2\Version.txt"; DestDir: "{app}"; \
-  Flags: ignoreversion restartreplace
+  Flags: ignoreversion 
   
 ; --- Release Notes ---
 Source: "C:\Users\Stever Leach\source\repos\Slot-Machine-V2\ReleaseNotes.txt"; DestDir: "{app}"; \
-  Flags: ignoreversion restartreplace
+  Flags: ignoreversion 
 
 ; --- Optional tutorial/media ---
 Source: "{#MySourceRoot}\tutorialslotmachine.mp4"; DestDir: "{app}"; \
@@ -86,9 +94,15 @@ Source: "{#MySourceRoot}\tutorialslotmachine.mp4"; DestDir: "{app}"; \
 Source: "{#MyVST3File}"; DestDir: "{cf64}\VST3"; DestName: "SlotMachine.vst3"; \
   Flags: ignoreversion restartreplace 64bit; Tasks: installvst3
 
+; --- License Agreement ***  
+Source: "C:\Users\Stever Leach\source\repos\Slot-Machine-V2\LonePearLogic-License_&_Terms_Agreement.rtf"; DestDir: "{app}"; Flags: ignoreversion
+
+
 [Icons]
 Name: "{group}\S.L.O.T. Machine"; Filename: "{app}\SlotMachine.exe"
 Name: "{commondesktop}\S.L.O.T. Machine"; Filename: "{app}\SlotMachine.exe"; Tasks: desktopicon
+
+
 
 [Run]
 ; Shown only with UI, user can uncheck; skipped in silent because of 'postinstall'
