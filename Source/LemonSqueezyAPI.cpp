@@ -237,7 +237,10 @@ LicenseValidationResult LemonSqueezyAPI::parseValidationResponse(const juce::Str
     }
 
     // Check if license is valid
-    result.valid = root->getProperty("valid");
+    // Validation responses use "valid", activation responses use "activated"
+    bool isValidResponse = root->getProperty("valid");
+    bool isActivatedResponse = root->getProperty("activated");
+    result.valid = isValidResponse || isActivatedResponse;
 
     if (!result.valid)
     {
@@ -311,7 +314,8 @@ LicenseValidationResult LemonSqueezyAPI::parseValidationResponse(const juce::Str
     }
     else
     {
-        DBG("License validation succeeded (valid=true)");
+        DBG("License response succeeded (valid=" + juce::String(isValidResponse ? "true" : "false") +
+            ", activated=" + juce::String(isActivatedResponse ? "true" : "false") + ")");
     }
 
     // Extract license information
