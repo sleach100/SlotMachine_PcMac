@@ -557,7 +557,15 @@ bool LemonSqueezyAPI::deactivateLicense(const juce::String& licenseKey,
     // Build the API request
     juce::URL url(juce::String(API_BASE_URL) + "/licenses/deactivate");
 
-    juce::String requestBody = buildValidationRequestBody(licenseKey, instanceId);
+    // Build request body for deactivation - uses "instance_id" not "instance_name"
+    juce::DynamicObject::Ptr jsonObject = new juce::DynamicObject();
+    jsonObject->setProperty("license_key", licenseKey);
+    if (instanceId.isNotEmpty())
+    {
+        // Deactivate endpoint expects "instance_id", not "instance_name"
+        jsonObject->setProperty("instance_id", instanceId);
+    }
+    juce::String requestBody = juce::JSON::toString(juce::var(jsonObject.get()));
 
     // Set up HTTP headers including Authorization
     juce::String apiKey = getAPIKey();
@@ -568,7 +576,7 @@ bool LemonSqueezyAPI::deactivateLicense(const juce::String& licenseKey,
     // Add POST data to URL (older JUCE API)
     juce::URL postUrl = url.withPOSTData(requestBody);
 
-    // Make the HTTP request (same endpoint handles both activation and deactivation)
+    // Make the HTTP request
     std::unique_ptr<juce::InputStream> stream = postUrl.createInputStream(
         false,                      // usePostCommand = false (already set by withPOSTData)
         nullptr,                    // progressCallback
