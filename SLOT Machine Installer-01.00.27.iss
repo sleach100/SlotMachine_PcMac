@@ -113,7 +113,7 @@ Flags: postinstall nowait runasoriginaluser skipifsilent
 Filename: "{app}\SlotMachine.exe"; \
 Parameters: "/updatecompleted {#MyAppVersion}"; \
 Flags: nowait runasoriginaluser skipifnotsilent
-Filename: "{app}\ReleaseNotes.txt"; Description: "View Release Notes"; Tasks: viewrelease; Flags: postinstall runasoriginaluser nowait skipifsilent
+Filename: "{app}\ReleaseNotes.txt"; Description: "View Release Notes"; Tasks: viewrelease; Flags: postinstall shellexec runasoriginaluser nowait skipifsilent
 
 
 [Registry]

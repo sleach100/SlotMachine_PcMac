@@ -104,10 +104,16 @@ Name: "{commondesktop}\S.L.O.T. Machine"; Filename: "{app}\SlotMachine.exe"; Tas
 
 [Run]
 ; Shown only with UI, user can uncheck; skipped in silent because of 'postinstall'
-Filename: "{app}\SlotMachine.exe"; Description: "Launch S.L.O.T. Machine"; Flags: postinstall nowait runasoriginaluser skipifsilent
+Filename: "{app}\SlotMachine.exe"; \
+Description: "Launch S.L.O.T. Machine"; \
+Parameters: "/updatecompleted {#MyAppVersion}"; \
+Flags: postinstall nowait runasoriginaluser skipifsilent
 
 ; This one runs only when silent (no UI)
-Filename: "{app}\SlotMachine.exe"; Flags: nowait runasoriginaluser skipifnotsilent
+Filename: "{app}\SlotMachine.exe"; \
+Parameters: "/updatecompleted {#MyAppVersion}"; \
+Flags: nowait runasoriginaluser skipifnotsilent
+Filename: "{app}\ReleaseNotes.txt"; Description: "View Release Notes"; Tasks: viewrelease; Flags: postinstall shellexec runasoriginaluser nowait skipifsilent
 
 
 [Registry]

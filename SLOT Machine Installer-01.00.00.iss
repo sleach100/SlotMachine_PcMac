@@ -110,7 +110,7 @@ Filename: "{app}\SlotMachine.exe"; \
 Description: "Launch S.L.O.T. Machine"; \
 Parameters: "/updatecompleted {#MyAppVersion}"; \
 Flags: postinstall nowait runasoriginaluser skipifsilent
-Filename: "{app}\ReleaseNotes.txt"; Description: "View Release Notes"; Tasks: viewrelease; Flags: postinstall runasoriginaluser nowait skipifsilent
+Filename: "{app}\ReleaseNotes.txt"; Description: "View Release Notes"; Tasks: viewrelease; Flags: postinstall shellexec runasoriginaluser nowait skipifsilent
 
 
 
