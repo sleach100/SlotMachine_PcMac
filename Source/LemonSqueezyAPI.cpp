@@ -25,38 +25,31 @@ namespace
                        const LicenseValidationResult& result)
     {
         // Try multiple locations to ensure we can write the file
+        juce::StringArray fileLocations;
         juce::File debugFile;
 
-        // First try: Desktop
-        debugFile = juce::File::getSpecialLocation(juce::File::userDesktopDirectory)
-                        .getChildFile("debugLicense.txt");
+        // Try these locations in order
+        juce::File desktopFile = juce::File::getSpecialLocation(juce::File::userDesktopDirectory)
+                                     .getChildFile("debugLicense.txt");
+        juce::File documentsFile = juce::File::getSpecialLocation(juce::File::userDocumentsDirectory)
+                                       .getChildFile("debugLicense.txt");
+        juce::File exeFile = juce::File::getSpecialLocation(juce::File::currentExecutableFile)
+                                 .getParentDirectory()
+                                 .getChildFile("debugLicense.txt");
 
-        // If desktop not writable, try user documents
-        if (!debugFile.getParentDirectory().isDirectory())
-        {
-            debugFile = juce::File::getSpecialLocation(juce::File::userDocumentsDirectory)
-                            .getChildFile("debugLicense.txt");
-        }
-
-        // If still not available, try next to the executable
-        if (!debugFile.getParentDirectory().isDirectory())
-        {
-            debugFile = juce::File::getSpecialLocation(juce::File::currentExecutableFile)
-                            .getParentDirectory()
-                            .getChildFile("debugLicense.txt");
-        }
+        fileLocations.add("Desktop: " + desktopFile.getFullPathName());
+        fileLocations.add("Documents: " + documentsFile.getFullPathName());
+        fileLocations.add("Exe Dir: " + exeFile.getFullPathName());
 
         juce::String debugOutput;
         debugOutput += "===============================================\n";
         debugOutput += "License Validation Debug Log\n";
         debugOutput += "===============================================\n";
-        debugOutput += "Debug File Location: " + debugFile.getFullPathName() + "\n";
         debugOutput += "Timestamp: " + juce::Time::getCurrentTime().toString(true, true, true, true) + "\n";
         debugOutput += "Operation: " + operation + "\n";
         debugOutput += "\n--- INPUT ---\n";
         debugOutput += "License Key: " + licenseKey + "\n";
         debugOutput += "Instance ID: " + instanceId + "\n";
-        debugOutput += "Request Body: " + requestBody + "\n";
         debugOutput += "\n--- EXPECTED VALUES ---\n";
         debugOutput += "Expected Store ID: " + juce::String(LemonSqueezyAPI::EXPECTED_STORE_ID) + "\n";
         debugOutput += "Expected Product ID: " + juce::String(LemonSqueezyAPI::EXPECTED_PRODUCT_ID) + "\n";
@@ -81,10 +74,43 @@ namespace
         debugOutput += "Status is Active: " + juce::String(result.licenseStatus == "active" ? "PASS" : "FAIL") + "\n";
         debugOutput += "===============================================\n\n";
 
-        // Append to existing file or create new one
-        bool success = debugFile.appendText(debugOutput);
+        // Try writing to all locations
+        bool anySuccess = false;
+        juce::String successLocation;
 
-        DBG("Debug log write " + juce::String(success ? "succeeded" : "FAILED") + ": " + debugFile.getFullPathName());
+        if (desktopFile.getParentDirectory().isDirectory())
+        {
+            if (desktopFile.appendText(debugOutput))
+            {
+                anySuccess = true;
+                successLocation = desktopFile.getFullPathName();
+            }
+        }
+
+        if (documentsFile.getParentDirectory().isDirectory())
+        {
+            if (documentsFile.appendText(debugOutput))
+            {
+                anySuccess = true;
+                if (successLocation.isEmpty())
+                    successLocation = documentsFile.getFullPathName();
+            }
+        }
+
+        if (exeFile.getParentDirectory().isDirectory())
+        {
+            if (exeFile.appendText(debugOutput))
+            {
+                anySuccess = true;
+                if (successLocation.isEmpty())
+                    successLocation = exeFile.getFullPathName();
+            }
+        }
+
+        DBG("Debug log write " + juce::String(anySuccess ? "succeeded" : "FAILED"));
+        DBG("Tried locations: " + fileLocations.joinIntoString(", "));
+        if (anySuccess)
+            DBG("Written to: " + successLocation);
     }
 }
 
