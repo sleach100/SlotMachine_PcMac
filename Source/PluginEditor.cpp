@@ -5778,15 +5778,24 @@ void SlotMachineAudioProcessorEditor::buttonClicked(juce::Button* b)
 
                     DBG("User confirmed deactivation");
 
-                    // Get current license info
+                    // Get current license info from cache (need the Lemon Squeezy instance_id, not local machine ID)
                     juce::String licenseKey = storedLicenseKey;
-                    juce::String instanceId = InstanceIdentifier::getOrCreateInstanceID();
+                    juce::String instanceId;
+
+                    // Load the stored instance_id from cache - this is the ID returned by Lemon Squeezy
+                    std::string cachedLicenseKey, cachedInstanceId, cachedJson, cachedName, cachedEmail;
+                    int64_t cachedTimestamp = 0;
+                    if (LemonSqueezyCache::loadLicenseCache(cachedLicenseKey, cachedInstanceId, cachedJson,
+                                                            cachedName, cachedEmail, cachedTimestamp))
+                    {
+                        instanceId = juce::String(cachedInstanceId);
+                    }
 
                     debugFile.appendText("===============================================\n"
                                         "User confirmed deactivation\n"
                                         "Timestamp: " + juce::Time::getCurrentTime().toString(true, true, true, true) + "\n"
                                         "License Key: " + licenseKey + "\n"
-                                        "Instance ID: " + instanceId + "\n"
+                                        "Instance ID (from cache): " + instanceId + "\n"
                                         "About to call LemonSqueezyAPI::deactivateLicense()...\n"
                                         "===============================================\n\n");
 

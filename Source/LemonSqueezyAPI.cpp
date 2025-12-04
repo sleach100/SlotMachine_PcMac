@@ -463,7 +463,9 @@ LicenseValidationResult LemonSqueezyAPI::parseValidationResponse(const juce::Str
             juce::DynamicObject* instanceObj = instanceData.getDynamicObject();
             if (instanceObj != nullptr)
             {
-                result.instanceId = instanceObj->getProperty("name").toString();
+                // Store the Lemon Squeezy-generated instance ID (not the name we sent)
+                // This ID is required for deactivation
+                result.instanceId = instanceObj->getProperty("id").toString();
             }
         }
     }
