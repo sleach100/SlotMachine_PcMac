@@ -15,8 +15,8 @@ namespace
         return juce::String(API_KEY_PLAINTEXT);
     }
 
-#if JUCE_DEBUG
     // Debug logging helper - writes license validation debug info to a file
+    // Temporarily enabled for all builds to diagnose license issues
     void writeDebugLog(const juce::String& operation,
                        const juce::String& licenseKey,
                        const juce::String& instanceId,
@@ -24,13 +24,33 @@ namespace
                        const juce::String& apiResponse,
                        const LicenseValidationResult& result)
     {
-        juce::File debugFile = juce::File::getSpecialLocation(juce::File::userDesktopDirectory)
-                                   .getChildFile("debugLicense.txt");
+        // Try multiple locations to ensure we can write the file
+        juce::File debugFile;
+
+        // First try: Desktop
+        debugFile = juce::File::getSpecialLocation(juce::File::userDesktopDirectory)
+                        .getChildFile("debugLicense.txt");
+
+        // If desktop not writable, try user documents
+        if (!debugFile.getParentDirectory().isDirectory())
+        {
+            debugFile = juce::File::getSpecialLocation(juce::File::userDocumentsDirectory)
+                            .getChildFile("debugLicense.txt");
+        }
+
+        // If still not available, try next to the executable
+        if (!debugFile.getParentDirectory().isDirectory())
+        {
+            debugFile = juce::File::getSpecialLocation(juce::File::currentExecutableFile)
+                            .getParentDirectory()
+                            .getChildFile("debugLicense.txt");
+        }
 
         juce::String debugOutput;
         debugOutput += "===============================================\n";
         debugOutput += "License Validation Debug Log\n";
         debugOutput += "===============================================\n";
+        debugOutput += "Debug File Location: " + debugFile.getFullPathName() + "\n";
         debugOutput += "Timestamp: " + juce::Time::getCurrentTime().toString(true, true, true, true) + "\n";
         debugOutput += "Operation: " + operation + "\n";
         debugOutput += "\n--- INPUT ---\n";
@@ -62,11 +82,10 @@ namespace
         debugOutput += "===============================================\n\n";
 
         // Append to existing file or create new one
-        debugFile.appendText(debugOutput);
+        bool success = debugFile.appendText(debugOutput);
 
-        DBG("Debug log written to: " + debugFile.getFullPathName());
+        DBG("Debug log write " + juce::String(success ? "succeeded" : "FAILED") + ": " + debugFile.getFullPathName());
     }
-#endif
 }
 
 juce::String LemonSqueezyAPI::getAPIKey()
@@ -149,10 +168,8 @@ LicenseValidationResult LemonSqueezyAPI::validateLicense(const juce::String& lic
     // Parse the response
     LicenseValidationResult parsedResult = parseValidationResponse(response);
 
-#if JUCE_DEBUG
-    // Write debug log file
+    // Write debug log file (temporarily enabled for all builds)
     writeDebugLog("validateLicense", licenseKey, instanceId, requestBody, response, parsedResult);
-#endif
 
     return parsedResult;
 }
@@ -499,10 +516,8 @@ LicenseValidationResult LemonSqueezyAPI::activateLicense(const juce::String& lic
     // Parse the response - activation returns the same structure as validation
     LicenseValidationResult parsedResult = parseValidationResponse(response);
 
-#if JUCE_DEBUG
-    // Write debug log file
+    // Write debug log file (temporarily enabled for all builds)
     writeDebugLog("activateLicense", licenseKey, instanceId, requestBody, response, parsedResult);
-#endif
 
     return parsedResult;
 }
