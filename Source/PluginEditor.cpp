@@ -3674,8 +3674,21 @@ void SlotMachineAudioProcessorEditor::handleUnlockDialogResult(bool accepted,
     // Get or create instance ID for this machine
     juce::String instanceId = InstanceIdentifier::getOrCreateInstanceID();
 
-    // Validate with Lemon Squeezy API (synchronous for now)
-    auto result = LemonSqueezyAPI::validateLicense(trimmedLicense, instanceId);
+    // First, try to activate the license (this handles both new activations and re-validations)
+    // Lemon Squeezy licenses start as "inactive" and need to be activated via the API
+    auto result = LemonSqueezyAPI::activateLicense(trimmedLicense, instanceId);
+
+    // If activation fails due to "already activated" or similar, try validation instead
+    // This handles the case where the license is already active on this machine
+    if (result.hasError && result.errorCode != "license_inactive")
+    {
+        // Try validation as fallback (for already-activated licenses)
+        auto validateResult = LemonSqueezyAPI::validateLicense(trimmedLicense, instanceId);
+        if (!validateResult.hasError && validateResult.valid)
+        {
+            result = validateResult;
+        }
+    }
 
     // Validation requires: valid=true, status=active, correct store_id and product_id
     if (result.hasError || !result.valid)
