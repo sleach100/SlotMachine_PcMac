@@ -5741,73 +5741,90 @@ void SlotMachineAudioProcessorEditor::buttonClicked(juce::Button* b)
 
         auto deactivateCallback = [this]()
         {
-            // Confirm deactivation
-            bool shouldDeactivate = juce::NativeMessageBox::showOkCancelBox(
+            DBG("Deactivate callback invoked!");
+
+            // Write debug file to confirm callback is being called
+            {
+                juce::File debugFile = juce::File::getSpecialLocation(juce::File::userDesktopDirectory)
+                                           .getChildFile("debugLicense.txt");
+                debugFile.appendText("===============================================\n"
+                                    "Deactivate button clicked!\n"
+                                    "Timestamp: " + juce::Time::getCurrentTime().toString(true, true, true, true) + "\n"
+                                    "===============================================\n\n");
+            }
+
+            // Confirm deactivation using async version to avoid modal issues
+            juce::AlertWindow::showOkCancelBox(
                 juce::AlertWindow::WarningIcon,
                 "Deactivate License",
                 "Are you sure you want to deactivate this license on this computer?\n\n"
                 "This will free up an activation slot for use on another computer.",
+                "Deactivate",
+                "Cancel",
                 nullptr,
-                nullptr);
+                juce::ModalCallbackFunction::create([this](int result)
+                {
+                    if (result == 0)  // Cancel was clicked
+                        return;
 
-            if (!shouldDeactivate)
-                return;
+                    DBG("User confirmed deactivation");
 
-            // Get current license info
-            juce::String licenseKey = storedLicenseKey;
-            juce::String instanceId = InstanceIdentifier::getOrCreateInstanceID();
+                    // Get current license info
+                    juce::String licenseKey = storedLicenseKey;
+                    juce::String instanceId = InstanceIdentifier::getOrCreateInstanceID();
 
-            // Call API to deactivate
-            bool apiSuccess = LemonSqueezyAPI::deactivateLicense(licenseKey, instanceId);
+                    // Call API to deactivate
+                    bool apiSuccess = LemonSqueezyAPI::deactivateLicense(licenseKey, instanceId);
 
-            // Clear local cache regardless of API result
+                    // Clear local cache regardless of API result
 #if JUCE_WINDOWS
-            if (!clearLicenseFromRegistry())
-            {
-                juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
-                    "Deactivate License",
-                    "Unable to remove the saved license information from the registry.");
-            }
-            LemonSqueezyCache::clearLicenseCache();
+                    if (!clearLicenseFromRegistry())
+                    {
+                        juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
+                            "Deactivate License",
+                            "Unable to remove the saved license information from the registry.");
+                    }
+                    LemonSqueezyCache::clearLicenseCache();
 #else
-            clearLicenseFromRegistry();
-            LemonSqueezyCache::clearLicenseCache();
+                    clearLicenseFromRegistry();
+                    LemonSqueezyCache::clearLicenseCache();
 #endif
 
-            // Clear instance ID
-            InstanceIdentifier::clearInstanceID();
+                    // Clear instance ID
+                    InstanceIdentifier::clearInstanceID();
 
-            // Clear stored credentials
-            storedFirstName.clear();
-            storedLastName.clear();
-            storedEmail.clear();
-            storedLicenseKey.clear();
+                    // Clear stored credentials
+                    storedFirstName.clear();
+                    storedLastName.clear();
+                    storedEmail.clear();
+                    storedLicenseKey.clear();
 
-            // Update UI
-            setUnlocked(false);
+                    // Update UI
+                    setUnlocked(false);
 
-            // Close about dialog
-            if (auto* dialog = aboutDialog.getComponent())
-            {
-                if (auto* window = dynamic_cast<juce::DialogWindow*>(dialog))
-                    window->exitModalState(0);
-            }
+                    // Close about dialog
+                    if (auto* dialog = aboutDialog.getComponent())
+                    {
+                        if (auto* window = dynamic_cast<juce::DialogWindow*>(dialog))
+                            window->exitModalState(0);
+                    }
 
-            // Show result message
-            if (apiSuccess)
-            {
-                juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::InfoIcon,
-                    "Deactivate License",
-                    "License successfully deactivated on this computer.");
-            }
-            else
-            {
-                juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
-                    "Deactivate License",
-                    "License deactivated locally, but there was an error communicating with the server.\n\n"
-                    "The license has been removed from this computer, but you may need to contact support "
-                    "to free up the activation slot.");
-            }
+                    // Show result message
+                    if (apiSuccess)
+                    {
+                        juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::InfoIcon,
+                            "Deactivate License",
+                            "License successfully deactivated on this computer.");
+                    }
+                    else
+                    {
+                        juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
+                            "Deactivate License",
+                            "License deactivated locally, but there was an error communicating with the server.\n\n"
+                            "The license has been removed from this computer, but you may need to contact support "
+                            "to free up the activation slot.");
+                    }
+                }));
         };
 
         auto checkForUpdatesCallback = [this]()
