@@ -580,9 +580,36 @@ bool LemonSqueezyAPI::deactivateLicense(const juce::String& licenseKey,
         0                           // httpStatusCode
     );
 
+    // Helper to write deactivation debug log
+    auto writeDeactivateDebugLog = [&](const juce::String& response, bool success, const juce::String& errorMsg)
+    {
+        juce::File debugFile = juce::File::getSpecialLocation(juce::File::userDesktopDirectory)
+                                   .getChildFile("debugLicense.txt");
+
+        juce::String debugOutput;
+        debugOutput += "===============================================\n";
+        debugOutput += "License DEACTIVATION Debug Log\n";
+        debugOutput += "===============================================\n";
+        debugOutput += "Timestamp: " + juce::Time::getCurrentTime().toString(true, true, true, true) + "\n";
+        debugOutput += "Operation: deactivateLicense\n";
+        debugOutput += "\n--- INPUT ---\n";
+        debugOutput += "License Key: " + licenseKey + "\n";
+        debugOutput += "Instance ID: " + instanceId + "\n";
+        debugOutput += "Request Body: " + requestBody + "\n";
+        debugOutput += "\n--- API RESPONSE (RAW) ---\n";
+        debugOutput += response + "\n";
+        debugOutput += "\n--- RESULT ---\n";
+        debugOutput += "Success: " + juce::String(success ? "true" : "false") + "\n";
+        debugOutput += "Error: " + errorMsg + "\n";
+        debugOutput += "===============================================\n\n";
+
+        debugFile.appendText(debugOutput);
+    };
+
     if (stream == nullptr)
     {
         DBG("Deactivation failed: Could not connect to API");
+        writeDeactivateDebugLog("(no response - connection failed)", false, "Could not connect to API");
         return false;
     }
 
@@ -592,6 +619,7 @@ bool LemonSqueezyAPI::deactivateLicense(const juce::String& licenseKey,
     if (response.isEmpty())
     {
         DBG("Deactivation failed: Empty response");
+        writeDeactivateDebugLog("(empty response)", false, "Empty response from API");
         return false;
     }
 
@@ -603,6 +631,7 @@ bool LemonSqueezyAPI::deactivateLicense(const juce::String& licenseKey,
     if (!parsedJson.isObject())
     {
         DBG("Deactivation failed: Invalid JSON response");
+        writeDeactivateDebugLog(response, false, "Invalid JSON response");
         return false;
     }
 
@@ -610,6 +639,7 @@ bool LemonSqueezyAPI::deactivateLicense(const juce::String& licenseKey,
     if (root == nullptr)
     {
         DBG("Deactivation failed: Could not parse response");
+        writeDeactivateDebugLog(response, false, "Could not parse response");
         return false;
     }
 
@@ -619,13 +649,21 @@ bool LemonSqueezyAPI::deactivateLicense(const juce::String& licenseKey,
     {
         bool success = root->getProperty("deactivated");
         DBG("Deactivation result: " + juce::String(success ? "success" : "failed"));
+        writeDeactivateDebugLog(response, success, success ? "" : "deactivated=false");
         return success;
     }
 
-    // Also consider it successful if there's no error
-    // Note: error property may exist but be null, which is not an error
+    // Check for error in response
     juce::var errorVar = root->getProperty("error");
-    bool success = errorVar.isVoid() || errorVar == juce::var() || errorVar.toString().isEmpty();
-    DBG("Deactivation result (no deactivated field): " + juce::String(success ? "success" : "failed"));
-    return success;
+    if (!errorVar.isVoid() && errorVar != juce::var() && errorVar.toString().isNotEmpty())
+    {
+        DBG("Deactivation failed with error: " + errorVar.toString());
+        writeDeactivateDebugLog(response, false, errorVar.toString());
+        return false;
+    }
+
+    // No deactivated field and no error - consider it successful
+    DBG("Deactivation result (no deactivated field, no error): success");
+    writeDeactivateDebugLog(response, true, "");
+    return true;
 }
