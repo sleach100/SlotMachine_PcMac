@@ -195,6 +195,14 @@ LicenseValidationResult LemonSqueezyAPI::validateLicense(const juce::String& lic
     // Parse the response
     LicenseValidationResult parsedResult = parseValidationResponse(response);
 
+    // If the response didn't contain an instance object (validation responses have instance:null),
+    // preserve the input instanceId so we don't lose it when caching
+    if (parsedResult.instanceId.isEmpty() && instanceId.isNotEmpty())
+    {
+        parsedResult.instanceId = instanceId;
+        DBG("Preserved input instanceId since response had no instance object");
+    }
+
     // Write debug log file (temporarily enabled for all builds)
     writeDebugLog("validateLicense", licenseKey, instanceId, requestBody, response, parsedResult);
 
