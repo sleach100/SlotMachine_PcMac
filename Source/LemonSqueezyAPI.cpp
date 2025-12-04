@@ -160,106 +160,35 @@ LicenseValidationResult LemonSqueezyAPI::parseValidationResponse(const juce::Str
                     DBG("License status: " + status + " (valid=false)");
 
                     // Check if this is a test mode license
-                    bool isTestMode = false;
                     if (licenseObj->hasProperty("test_mode"))
                     {
-                        isTestMode = licenseObj->getProperty("test_mode");
-                        result.testMode = isTestMode;
-                        DBG("Test mode license detected in invalid response: " + juce::String(isTestMode ? "yes" : "no"));
+                        result.testMode = licenseObj->getProperty("test_mode");
+                        DBG("Test mode license detected in invalid response: " + juce::String(result.testMode ? "yes" : "no"));
                     }
 
-                    // For test mode licenses with status "inactive", extract the license data
-                    // even though the API returns valid=false
-                    if (isTestMode && status == "inactive")
+                    // Handle status-specific error messages
+                    if (status == "expired")
                     {
-                        DBG("Test mode inactive license - extracting license data despite valid=false");
-
-                        // Extract license key and status
-                        result.licenseKey = licenseObj->getProperty("key").toString();
-                        result.activationLimit = licenseObj->getProperty("activation_limit");
-                        result.activationUsage = licenseObj->getProperty("activation_usage");
-
-                        // Extract customer info
-                        if (licenseObj->hasProperty("customer"))
-                        {
-                            juce::var customerData = licenseObj->getProperty("customer");
-                            if (customerData.isObject())
-                            {
-                                juce::DynamicObject* customerObj = customerData.getDynamicObject();
-                                if (customerObj != nullptr)
-                                {
-                                    result.licenseeEmail = customerObj->getProperty("email").toString();
-                                    result.licenseeName = customerObj->getProperty("name").toString();
-                                }
-                            }
-                        }
-
-                        // If customer info not found in license_key.customer, check meta field
-                        if (result.licenseeEmail.isEmpty() || result.licenseeName.isEmpty())
-                        {
-                            DBG("Customer info not found in license_key.customer, checking meta field");
-                            if (root->hasProperty("meta"))
-                            {
-                                juce::var metaData = root->getProperty("meta");
-                                if (metaData.isObject())
-                                {
-                                    juce::DynamicObject* metaObj = metaData.getDynamicObject();
-                                    if (metaObj != nullptr)
-                                    {
-                                        if (metaObj->hasProperty("customer_email"))
-                                            result.licenseeEmail = metaObj->getProperty("customer_email").toString();
-                                        if (metaObj->hasProperty("customer_name"))
-                                            result.licenseeName = metaObj->getProperty("customer_name").toString();
-
-                                        DBG("Extracted from meta - Name: " + result.licenseeName + ", Email: " + result.licenseeEmail);
-                                    }
-                                }
-                            }
-                        }
-
-                        // If we successfully extracted customer info, treat as valid
-                        if (result.licenseeName.isNotEmpty() && result.licenseeEmail.isNotEmpty())
-                        {
-                            DBG("Test mode license has valid customer data - treating as valid");
-                            result.valid = true;
-                            result.hasError = false;
-                            result.errorMessage = "";
-                            result.errorCode = "";
-
-                            // Continue parsing to extract instance info below
-                            // Don't return early
-                        }
-                        else
-                        {
-                            DBG("Test mode license missing customer data - treating as invalid");
-                            result.errorMessage = "Test mode license is missing customer information.";
-                            result.errorCode = "license_incomplete";
-                            return result;
-                        }
+                        result.errorMessage = "License key has expired.";
+                        result.errorCode = "license_expired";
+                    }
+                    else if (status == "disabled")
+                    {
+                        result.errorMessage = "License key has been disabled.";
+                        result.errorCode = "license_disabled";
+                    }
+                    else if (status == "inactive")
+                    {
+                        result.errorMessage = "License key is inactive. Please activate it in your Lemon Squeezy account.";
+                        result.errorCode = "license_inactive";
                     }
                     else
                     {
-                        // Not a test mode inactive license - handle normally
-                        // Note: Test mode licenses may show as "inactive" but still validate successfully
-                        // Only reject if the status is explicitly problematic
-                        if (status == "expired")
-                        {
-                            result.errorMessage = "License key has expired.";
-                            result.errorCode = "license_expired";
-                        }
-                        else if (status == "disabled")
-                        {
-                            result.errorMessage = "License key has been disabled.";
-                            result.errorCode = "license_disabled";
-                        }
-                        else
-                        {
-                            result.errorMessage = "License validation failed (status: " + status + ").";
-                            result.errorCode = "license_" + status;
-                        }
-
-                        return result;
+                        result.errorMessage = "License validation failed (status: " + status + ").";
+                        result.errorCode = "license_" + status;
                     }
+
+                    return result;
                 }
                 else
                 {
@@ -350,6 +279,78 @@ LicenseValidationResult LemonSqueezyAPI::parseValidationResponse(const juce::Str
         }
     }
 
+    // Extract store_id and product_id from meta for validation
+    if (root->hasProperty("meta"))
+    {
+        juce::var metaData = root->getProperty("meta");
+        if (metaData.isObject())
+        {
+            juce::DynamicObject* metaObj = metaData.getDynamicObject();
+            if (metaObj != nullptr)
+            {
+                if (metaObj->hasProperty("store_id"))
+                    result.storeId = metaObj->getProperty("store_id");
+                if (metaObj->hasProperty("product_id"))
+                    result.productId = metaObj->getProperty("product_id");
+
+                DBG("Store ID: " + juce::String(result.storeId) + ", Product ID: " + juce::String(result.productId));
+            }
+        }
+    }
+
+    // Validate Store ID matches expected value
+    if (result.storeId != EXPECTED_STORE_ID)
+    {
+        DBG("Store ID mismatch! Expected: " + juce::String(EXPECTED_STORE_ID) + ", Got: " + juce::String(result.storeId));
+        result.valid = false;
+        result.hasError = true;
+        result.errorMessage = "This license key is not valid for this product.";
+        result.errorCode = "invalid_store";
+        return result;
+    }
+
+    // Validate Product ID matches expected value
+    if (result.productId != EXPECTED_PRODUCT_ID)
+    {
+        DBG("Product ID mismatch! Expected: " + juce::String(EXPECTED_PRODUCT_ID) + ", Got: " + juce::String(result.productId));
+        result.valid = false;
+        result.hasError = true;
+        result.errorMessage = "This license key is not valid for this product.";
+        result.errorCode = "invalid_product";
+        return result;
+    }
+
+    // Validate license status is "active" (not just valid)
+    if (result.licenseStatus != "active")
+    {
+        DBG("License status is not active: " + result.licenseStatus);
+        result.valid = false;
+        result.hasError = true;
+
+        if (result.licenseStatus == "inactive")
+        {
+            result.errorMessage = "License key is inactive. Please activate it in your Lemon Squeezy account.";
+            result.errorCode = "license_inactive";
+        }
+        else if (result.licenseStatus == "expired")
+        {
+            result.errorMessage = "License key has expired.";
+            result.errorCode = "license_expired";
+        }
+        else if (result.licenseStatus == "disabled")
+        {
+            result.errorMessage = "License key has been disabled.";
+            result.errorCode = "license_disabled";
+        }
+        else
+        {
+            result.errorMessage = "License key status is invalid: " + result.licenseStatus;
+            result.errorCode = "license_" + result.licenseStatus;
+        }
+
+        return result;
+    }
+
     // Extract instance information
     if (root->hasProperty("instance"))
     {
@@ -360,26 +361,6 @@ LicenseValidationResult LemonSqueezyAPI::parseValidationResponse(const juce::Str
             if (instanceObj != nullptr)
             {
                 result.instanceId = instanceObj->getProperty("name").toString();
-            }
-        }
-    }
-
-    // Check for activation limit errors
-    if (result.activationLimit > 0 && result.activationUsage >= result.activationLimit)
-    {
-        // This might happen if the validation succeeded but we're at the limit
-        // Usually Lemon Squeezy will return valid=false in this case, but check anyway
-        if (root->hasProperty("meta"))
-        {
-            juce::var metaData = root->getProperty("meta");
-            if (metaData.isObject())
-            {
-                juce::DynamicObject* metaObj = metaData.getDynamicObject();
-                if (metaObj != nullptr && metaObj->hasProperty("store_id"))
-                {
-                    // Validation succeeded, we're just at the limit but this instance is already activated
-                    // This is OK
-                }
             }
         }
     }

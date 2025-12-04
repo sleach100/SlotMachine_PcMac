@@ -3677,9 +3677,7 @@ void SlotMachineAudioProcessorEditor::handleUnlockDialogResult(bool accepted,
     // Validate with Lemon Squeezy API (synchronous for now)
     auto result = LemonSqueezyAPI::validateLicense(trimmedLicense, instanceId);
 
-    // For testing: Accept licenses where valid=true and status=inactive
-    // Test licenses remain inactive but should unlock the product
-    // Later we'll change this to require status=active
+    // Validation requires: valid=true, status=active, correct store_id and product_id
     if (result.hasError || !result.valid)
     {
         juce::String errorMsg = "The license key could not be validated.";

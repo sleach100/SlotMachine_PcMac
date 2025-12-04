@@ -19,6 +19,10 @@ struct LicenseValidationResult
     juce::String licenseStatus;       // Status: "active", "inactive", etc.
     bool testMode = false;            // Whether this is a test mode license
 
+    // Store and Product information (for validation)
+    int storeId = 0;                  // Lemon Squeezy Store ID
+    int productId = 0;                // Lemon Squeezy Product ID
+
     // Activation tracking
     int activationLimit = 0;          // Maximum allowed activations
     int activationUsage = 0;          // Current number of activations
@@ -83,6 +87,10 @@ private:
     // API configuration
     static constexpr const char* API_BASE_URL = "https://api.lemonsqueezy.com/v1";
     static constexpr int TIMEOUT_MS = 10000; // 10 second timeout
+
+    // Store and Product IDs for validation (production)
+    static constexpr int EXPECTED_STORE_ID = 246399;
+    static constexpr int EXPECTED_PRODUCT_ID = 715560;
 
     // Obfuscated API key (decoded at runtime)
     static juce::String getAPIKey();
