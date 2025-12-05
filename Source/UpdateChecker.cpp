@@ -17,6 +17,7 @@
 static const juce::Identifier kUpdateOptionsType("UPDATE_OPTIONS");
 static const juce::Identifier kInstalledVersionProperty("installedVersion");
 static const juce::Identifier kLastDeclinedDateProperty("lastDeclinedUpdateDate");
+static const juce::Identifier kDeferredUntilDateProperty("deferredUntilDate");
 
 //==============================================================================
 // VersionInfo implementation
@@ -131,6 +132,9 @@ void UpdateChecker::saveUpdateOptions(const juce::ValueTree& updateOptions)
     if (updateOptions.hasProperty(kLastDeclinedDateProperty))
         existingOptions.setProperty(kLastDeclinedDateProperty,
                                      updateOptions.getProperty(kLastDeclinedDateProperty), nullptr);
+    if (updateOptions.hasProperty(kDeferredUntilDateProperty))
+        existingOptions.setProperty(kDeferredUntilDateProperty,
+                                     updateOptions.getProperty(kDeferredUntilDateProperty), nullptr);
 
     // Save back to file
     if (auto xml = existingOptions.createXml())
@@ -243,6 +247,125 @@ bool UpdateChecker::wasUpdateDeclinedRecently()
     return daysSinceDeclined < DECLINE_REMINDER_DAYS;
 }
 
+void UpdateChecker::recordUpdateDeferred(int daysToDefer)
+{
+    auto options = loadUpdateOptions();
+
+    if (daysToDefer <= 0)
+    {
+        // "Remind me next launch" - remove the deferred date so it shows next time
+        auto optionsFile = getOptionsFile();
+        juce::ValueTree existingOptions;
+
+        if (optionsFile.existsAsFile())
+        {
+            std::unique_ptr<juce::XmlElement> xml(juce::XmlDocument::parse(optionsFile));
+            if (xml)
+                existingOptions = juce::ValueTree::fromXml(*xml);
+        }
+
+        if (existingOptions.isValid() && existingOptions.hasProperty(kDeferredUntilDateProperty))
+        {
+            existingOptions.removeProperty(kDeferredUntilDateProperty, nullptr);
+            if (auto xml = existingOptions.createXml())
+                xml->writeTo(optionsFile);
+            DBG("UpdateChecker: Removed deferredUntilDate from options.xml");
+        }
+
+        DBG("UpdateChecker: Update reminder set for next launch");
+        return;
+    }
+
+    // Calculate the datetime when user can be asked again
+    juce::Time now = juce::Time::getCurrentTime();
+    juce::Time deferUntil = now + juce::RelativeTime::days(daysToDefer);
+
+    // Store as full ISO datetime (YYYY-MM-DD HH:MM:SS) for accurate comparison
+    juce::String dateTimeStr = deferUntil.formatted("%Y-%m-%d %H:%M:%S");
+
+    options.setProperty(kDeferredUntilDateProperty, dateTimeStr, nullptr);
+    saveUpdateOptions(options);
+
+    DBG("UpdateChecker: Update deferred until " + dateTimeStr + " (" + juce::String(daysToDefer) + " days)");
+}
+
+bool UpdateChecker::isUpdateDeferred()
+{
+    auto options = loadUpdateOptions();
+
+    if (!options.hasProperty(kDeferredUntilDateProperty))
+        return false;
+
+    juce::String dateTimeStr = options.getProperty(kDeferredUntilDateProperty).toString();
+    if (dateTimeStr.isEmpty())
+        return false;
+
+    // Parse datetime string (YYYY-MM-DD HH:MM:SS or legacy YYYY-MM-DD)
+    juce::StringArray dateTimeParts;
+    dateTimeParts.addTokens(dateTimeStr, " ", "");
+
+    juce::StringArray dateParts;
+    dateParts.addTokens(dateTimeParts[0], "-", "");
+    if (dateParts.size() != 3)
+        return false;
+
+    int year = dateParts[0].getIntValue();
+    int month = dateParts[1].getIntValue();
+    int day = dateParts[2].getIntValue();
+
+    // Parse time if present, otherwise default to end of day for legacy date-only format
+    int hour = 23, minute = 59, second = 59;
+    if (dateTimeParts.size() >= 2)
+    {
+        juce::StringArray timeParts;
+        timeParts.addTokens(dateTimeParts[1], ":", "");
+        if (timeParts.size() >= 3)
+        {
+            hour = timeParts[0].getIntValue();
+            minute = timeParts[1].getIntValue();
+            second = timeParts[2].getIntValue();
+        }
+    }
+
+    juce::Time deferUntilDate(year, month - 1, day, hour, minute, second, 0, false);
+    juce::Time now = juce::Time::getCurrentTime();
+
+    // Check if we're still before the deferred datetime
+    bool isDeferred = now < deferUntilDate;
+
+    if (isDeferred)
+    {
+        DBG("UpdateChecker: Update deferred until " + dateTimeStr + ", not showing yet");
+    }
+    else
+    {
+        DBG("UpdateChecker: Deferred period has passed (was until " + dateTimeStr + ")");
+    }
+
+    return isDeferred;
+}
+
+void UpdateChecker::clearDeferredUpdate()
+{
+    auto optionsFile = getOptionsFile();
+    juce::ValueTree existingOptions;
+
+    if (optionsFile.existsAsFile())
+    {
+        std::unique_ptr<juce::XmlElement> xml(juce::XmlDocument::parse(optionsFile));
+        if (xml)
+            existingOptions = juce::ValueTree::fromXml(*xml);
+    }
+
+    if (existingOptions.isValid() && existingOptions.hasProperty(kDeferredUntilDateProperty))
+    {
+        existingOptions.removeProperty(kDeferredUntilDateProperty, nullptr);
+        if (auto xml = existingOptions.createXml())
+            xml->writeTo(optionsFile);
+        DBG("UpdateChecker: Cleared deferred update date");
+    }
+}
+
 //==============================================================================
 // Network operations
 //==============================================================================
@@ -320,14 +443,15 @@ void UpdateChecker::checkForUpdatesAsync(CheckCallback callback, bool forceCheck
     // Run network check on background thread
     juce::Thread::launch([callback, forceCheck]()
     {
-        // Check if user recently declined (only if not forcing)
+        // Check if user recently declined or has deferred (only if not forcing)
         bool declinedRecently = forceCheck ? false : wasUpdateDeclinedRecently();
+        bool updateDeferred = forceCheck ? false : isUpdateDeferred();
 
         // Fetch latest version from server
         auto [fetchResult, latestVersion] = fetchLatestVersion();
 
         // Determine final result on message thread
-        juce::MessageManager::callAsync([callback, fetchResult, latestVersion, declinedRecently]()
+        juce::MessageManager::callAsync([callback, fetchResult, latestVersion, declinedRecently, updateDeferred]()
         {
             if (fetchResult == CheckResult::NetworkError ||
                 fetchResult == CheckResult::ParseError)
@@ -344,9 +468,10 @@ void UpdateChecker::checkForUpdatesAsync(CheckCallback callback, bool forceCheck
             // Compare versions
             if (latestVersion.isNewerThan(installedVersion))
             {
-                if (declinedRecently)
+                if (declinedRecently || updateDeferred)
                 {
-                    DBG("UpdateChecker: Update available but user declined recently");
+                    DBG("UpdateChecker: Update available but user " +
+                        juce::String(updateDeferred ? "deferred" : "declined recently"));
                     callback(CheckResult::DeclinedRecently, latestVersion);
                 }
                 else
@@ -368,6 +493,53 @@ void UpdateChecker::checkForUpdatesAsync(CheckCallback callback, bool forceCheck
 // UI
 //==============================================================================
 
+// Custom dialog component that includes a reminder picker
+class UpdateDialogContent : public juce::Component
+{
+public:
+    UpdateDialogContent()
+    {
+        reminderLabel.setText("Remind me:", juce::dontSendNotification);
+        reminderLabel.setJustificationType(juce::Justification::centredRight);
+        addAndMakeVisible(reminderLabel);
+
+        reminderCombo.addItem("Next launch", 1);
+        reminderCombo.addItem("1 day", 2);
+        reminderCombo.addItem("3 days", 3);
+        reminderCombo.addItem("7 days", 4);
+        reminderCombo.addItem("30 days", 5);
+        reminderCombo.setSelectedId(4);  // Default to 7 days
+        addAndMakeVisible(reminderCombo);
+
+        setSize(280, 30);
+    }
+
+    void resized() override
+    {
+        auto bounds = getLocalBounds();
+        reminderLabel.setBounds(bounds.removeFromLeft(80));
+        bounds.removeFromLeft(5);
+        reminderCombo.setBounds(bounds);
+    }
+
+    int getDeferralDays() const
+    {
+        switch (reminderCombo.getSelectedId())
+        {
+            case 1: return 0;   // Next launch
+            case 2: return 1;   // 1 day
+            case 3: return 3;   // 3 days
+            case 4: return 7;   // 7 days
+            case 5: return 30;  // 30 days
+            default: return 7;
+        }
+    }
+
+private:
+    juce::Label reminderLabel;
+    juce::ComboBox reminderCombo;
+};
+
 void UpdateChecker::showUpdateDialog(juce::Component* parent,
                                       const VersionInfo& latestVersion,
                                       std::function<void()> onAccept,
@@ -380,32 +552,44 @@ void UpdateChecker::showUpdateDialog(juce::Component* parent,
                            "New version: " + latestVersion.toString() + "\n\n"
                            "Would you like to install the update now?";
 
-    auto options = juce::MessageBoxOptions()
-        .withIconType(juce::MessageBoxIconType::QuestionIcon)
-        .withTitle("Update Available")
-        .withMessage(message)
-        .withButton("Install Update")
-        .withButton("Not Now");
+    // Create a custom AlertWindow with a reminder picker
+    auto* alertWindow = new juce::AlertWindow("Update Available",
+                                               message,
+                                               juce::MessageBoxIconType::QuestionIcon,
+                                               parent);
 
-    if (parent != nullptr)
-        options = options.withAssociatedComponent(parent);
+    // Add the custom reminder picker component
+    auto* reminderContent = new UpdateDialogContent();
+    alertWindow->addCustomComponent(reminderContent);
 
-    juce::AlertWindow::showAsync(options,
-        juce::ModalCallbackFunction::create([onAccept, onDecline](int result)
+    // Add buttons
+    alertWindow->addButton("Install Update", 1, juce::KeyPress(juce::KeyPress::returnKey));
+    alertWindow->addButton("Not Now", 0, juce::KeyPress(juce::KeyPress::escapeKey));
+
+    // Show the dialog asynchronously
+    alertWindow->enterModalState(true, juce::ModalCallbackFunction::create(
+        [alertWindow, reminderContent, onAccept, onDecline](int result)
         {
             if (result == 1)
             {
                 // User clicked "Install Update"
+                clearDeferredUpdate();
                 if (onAccept)
                     onAccept();
             }
             else
             {
                 // User clicked "Not Now" or closed dialog
+                int deferralDays = reminderContent->getDeferralDays();
+                recordUpdateDeferred(deferralDays);
                 if (onDecline)
                     onDecline();
             }
-        }));
+
+            // Clean up - note: addCustomComponent does NOT take ownership
+            delete reminderContent;
+            delete alertWindow;
+        }), true);
 }
 
 //==============================================================================

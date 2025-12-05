@@ -3598,11 +3598,10 @@ void SlotMachineAudioProcessorEditor::checkForUpdatesOnStartup()
                             DBG("User accepted update");
                             UpdateChecker::launchUpdaterAndTerminate();
                         },
-                        // On Decline
+                        // On Decline - deferral is now handled inside showUpdateDialog
                         []()
                         {
                             DBG("User declined update");
-                            UpdateChecker::recordUpdateDeclined();
                         });
                 }
                 break;
@@ -6073,9 +6072,9 @@ void SlotMachineAudioProcessorEditor::buttonClicked(juce::Button* b)
                                 {
                                     UpdateChecker::launchUpdaterAndTerminate();
                                 },
+                                // On Decline - deferral is now handled inside showUpdateDialog
                                 []()
                                 {
-                                    UpdateChecker::recordUpdateDeclined();
                                 });
                         }
                         break;
