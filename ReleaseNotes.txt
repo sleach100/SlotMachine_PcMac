@@ -43,7 +43,7 @@ Utility Features
 
 Compatibility
   Windows 10/11 (64-bit)
-  Supports VST3-compatible DAWs
+  Supports VST3-compatible DAWs (UNSUPPORTED BETA)
   Installation Notes
   Installer includes Standalone app + Updater + optional VST3
 
@@ -51,4 +51,4 @@ Run as Administrator for first install
 
 Support / Feedback
   Questions or feedback?
-  Email: support@lonepearlogic.com
+  Email: lonepearlogic@gmail.com
