@@ -260,15 +260,17 @@ void UpdateChecker::recordUpdateDeferred(int daysToDefer)
         return;
     }
 
-    // Calculate the date when user can be asked again
+    // Calculate the datetime when user can be asked again
     juce::Time now = juce::Time::getCurrentTime();
     juce::Time deferUntil = now + juce::RelativeTime::days(daysToDefer);
-    juce::String dateStr = deferUntil.formatted("%Y-%m-%d");
 
-    options.setProperty(kDeferredUntilDateProperty, dateStr, nullptr);
+    // Store as full ISO datetime (YYYY-MM-DD HH:MM:SS) for accurate comparison
+    juce::String dateTimeStr = deferUntil.formatted("%Y-%m-%d %H:%M:%S");
+
+    options.setProperty(kDeferredUntilDateProperty, dateTimeStr, nullptr);
     saveUpdateOptions(options);
 
-    DBG("UpdateChecker: Update deferred until " + dateStr + " (" + juce::String(daysToDefer) + " days)");
+    DBG("UpdateChecker: Update deferred until " + dateTimeStr + " (" + juce::String(daysToDefer) + " days)");
 }
 
 bool UpdateChecker::isUpdateDeferred()
@@ -278,33 +280,50 @@ bool UpdateChecker::isUpdateDeferred()
     if (!options.hasProperty(kDeferredUntilDateProperty))
         return false;
 
-    juce::String dateStr = options.getProperty(kDeferredUntilDateProperty).toString();
-    if (dateStr.isEmpty())
+    juce::String dateTimeStr = options.getProperty(kDeferredUntilDateProperty).toString();
+    if (dateTimeStr.isEmpty())
         return false;
 
-    // Parse date string (YYYY-MM-DD)
-    juce::StringArray parts;
-    parts.addTokens(dateStr, "-", "");
-    if (parts.size() != 3)
+    // Parse datetime string (YYYY-MM-DD HH:MM:SS or legacy YYYY-MM-DD)
+    juce::StringArray dateTimeParts;
+    dateTimeParts.addTokens(dateTimeStr, " ", "");
+
+    juce::StringArray dateParts;
+    dateParts.addTokens(dateTimeParts[0], "-", "");
+    if (dateParts.size() != 3)
         return false;
 
-    int year = parts[0].getIntValue();
-    int month = parts[1].getIntValue();
-    int day = parts[2].getIntValue();
+    int year = dateParts[0].getIntValue();
+    int month = dateParts[1].getIntValue();
+    int day = dateParts[2].getIntValue();
 
-    juce::Time deferUntilDate(year, month - 1, day, 0, 0, 0, 0, false);
+    // Parse time if present, otherwise default to end of day for legacy date-only format
+    int hour = 23, minute = 59, second = 59;
+    if (dateTimeParts.size() >= 2)
+    {
+        juce::StringArray timeParts;
+        timeParts.addTokens(dateTimeParts[1], ":", "");
+        if (timeParts.size() >= 3)
+        {
+            hour = timeParts[0].getIntValue();
+            minute = timeParts[1].getIntValue();
+            second = timeParts[2].getIntValue();
+        }
+    }
+
+    juce::Time deferUntilDate(year, month - 1, day, hour, minute, second, 0, false);
     juce::Time now = juce::Time::getCurrentTime();
 
-    // Check if we're still before the deferred date
+    // Check if we're still before the deferred datetime
     bool isDeferred = now < deferUntilDate;
 
     if (isDeferred)
     {
-        DBG("UpdateChecker: Update deferred until " + dateStr + ", not showing yet");
+        DBG("UpdateChecker: Update deferred until " + dateTimeStr + ", not showing yet");
     }
     else
     {
-        DBG("UpdateChecker: Deferred period has passed (was until " + dateStr + ")");
+        DBG("UpdateChecker: Deferred period has passed (was until " + dateTimeStr + ")");
     }
 
     return isDeferred;
