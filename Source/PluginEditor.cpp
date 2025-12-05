@@ -886,6 +886,151 @@ namespace
         bool shouldShowDeactivateButton;
         bool runningAsVST3;
     };
+
+    // ===== FeatureLockedDialog =====
+    class FeatureLockedDialog : public juce::Component,
+                                 private juce::Button::Listener
+    {
+    public:
+        FeatureLockedDialog()
+        {
+            // Load the logo image
+            logo = juce::ImageCache::getFromMemory(BinaryData::LonePearLogic_png,
+                                                   BinaryData::LonePearLogic_pngSize);
+
+            // Warning icon area - we'll draw this in paint()
+
+            // Title
+            titleLabel.setText("Feature Locked", juce::dontSendNotification);
+            titleLabel.setFont(createBoldFont(20.0f));
+            titleLabel.setJustificationType(juce::Justification::centredLeft);
+            titleLabel.setColour(juce::Label::textColourId, juce::Colour(0xFFB04040)); // Reddish color to match warning
+            addAndMakeVisible(titleLabel);
+
+            // Message
+            messageLabel.setText("This function is not available in trial mode.\nPlease consider purchasing a key to unlock.",
+                                 juce::dontSendNotification);
+            messageLabel.setFont(createRegularFont(15.0f));
+            messageLabel.setJustificationType(juce::Justification::centredLeft);
+            messageLabel.setColour(juce::Label::textColourId, juce::Colours::whitesmoke);
+            addAndMakeVisible(messageLabel);
+
+            // Purchase text
+            purchaseLabel.setText("To purchase or learn more, visit:", juce::dontSendNotification);
+            purchaseLabel.setFont(createRegularFont(14.0f));
+            purchaseLabel.setJustificationType(juce::Justification::centred);
+            purchaseLabel.setColour(juce::Label::textColourId, juce::Colours::whitesmoke);
+            addAndMakeVisible(purchaseLabel);
+
+            // Logo component - will be displayed in a frame
+            logoComponent.setImage(logo,
+                                   juce::RectanglePlacement::centred | juce::RectanglePlacement::onlyReduceInSize);
+            addAndMakeVisible(logoComponent);
+
+            // Website link - large and prominent
+            websiteLink.setButtonText("www.lonepearlogic.com");
+            websiteLink.setURL(juce::URL("https://www.lonepearlogic.com"));
+            websiteLink.setFont(createBoldFont(22.0f), false);
+            websiteLink.setColour(juce::HyperlinkButton::textColourId, juce::Colours::lightblue);
+            addAndMakeVisible(websiteLink);
+
+            // OK button
+            okButton.setButtonText("OK");
+            okButton.addListener(this);
+            addAndMakeVisible(okButton);
+        }
+
+        void paint(juce::Graphics& g) override
+        {
+            g.fillAll(getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId));
+
+            // Draw warning triangle icon
+            auto warningBounds = juce::Rectangle<float>(20.0f, 20.0f, 50.0f, 50.0f);
+
+            // Draw triangle
+            juce::Path triangle;
+            triangle.addTriangle(warningBounds.getCentreX(), warningBounds.getY(),
+                                warningBounds.getX(), warningBounds.getBottom(),
+                                warningBounds.getRight(), warningBounds.getBottom());
+
+            g.setColour(juce::Colour(0xFFB04040)); // Reddish warning color
+            g.fillPath(triangle);
+
+            // Draw exclamation mark
+            g.setColour(juce::Colours::black);
+            g.setFont(createBoldFont(28.0f));
+            g.drawText("!", warningBounds.translated(0, 6), juce::Justification::centred);
+
+            // Draw frame around the logo
+            auto logoBoundsFrame = logoFrameBounds.toFloat().expanded(3.0f);
+            g.setColour(juce::Colours::grey);
+            g.drawRoundedRectangle(logoBoundsFrame, 4.0f, 2.0f);
+
+            // Inner shadow/border for nice frame effect
+            g.setColour(juce::Colours::darkgrey);
+            g.drawRoundedRectangle(logoFrameBounds.toFloat().expanded(1.0f), 3.0f, 1.0f);
+        }
+
+        void resized() override
+        {
+            auto bounds = getLocalBounds().reduced(20);
+
+            // Title area (next to warning icon)
+            auto titleArea = bounds.removeFromTop(50);
+            titleArea.removeFromLeft(60); // Space for warning icon
+            titleLabel.setBounds(titleArea);
+
+            bounds.removeFromTop(5);
+
+            // Message
+            messageLabel.setBounds(bounds.removeFromTop(45));
+
+            bounds.removeFromTop(15);
+
+            // Purchase text
+            purchaseLabel.setBounds(bounds.removeFromTop(25));
+
+            bounds.removeFromTop(10);
+
+            // Logo and URL row
+            auto linkRow = bounds.removeFromTop(80);
+
+            // Logo in frame on the left
+            const int logoSize = 70;
+            logoFrameBounds = linkRow.removeFromLeft(logoSize + 10).withSizeKeepingCentre(logoSize, logoSize);
+            logoComponent.setBounds(logoFrameBounds.reduced(4));
+
+            linkRow.removeFromLeft(15); // Spacing
+
+            // Website link - centered vertically in remaining space
+            websiteLink.setBounds(linkRow.withSizeKeepingCentre(linkRow.getWidth(), 35));
+
+            bounds.removeFromTop(20);
+
+            // OK button
+            auto buttonArea = bounds.removeFromTop(35);
+            okButton.setBounds(buttonArea.withSizeKeepingCentre(100, 32));
+        }
+
+        void buttonClicked(juce::Button* button) override
+        {
+            if (button == &okButton)
+            {
+                if (auto* window = findParentComponentOfClass<juce::DialogWindow>())
+                    window->closeButtonPressed();
+            }
+        }
+
+    private:
+        juce::Image logo;
+        juce::ImageComponent logoComponent;
+        juce::Label titleLabel;
+        juce::Label messageLabel;
+        juce::Label purchaseLabel;
+        juce::HyperlinkButton websiteLink;
+        juce::TextButton okButton;
+        juce::Rectangle<int> logoFrameBounds;
+    };
 }
 
 // ===== PatternTabs =====
@@ -3853,9 +3998,19 @@ void SlotMachineAudioProcessorEditor::handleUnlockDialogResult(bool accepted,
 
 void SlotMachineAudioProcessorEditor::showTrialModeDialog()
 {
-    juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
-        "Feature Locked",
-        "This function is not available in trial mode.  Please consider purchasing a key to unlock.");
+    auto content = std::make_unique<FeatureLockedDialog>();
+    content->setSize(420, 320);
+
+    juce::DialogWindow::LaunchOptions options;
+    options.dialogTitle = "Feature Locked";
+    options.dialogBackgroundColour = getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId);
+    options.content.setOwned(content.release());
+    options.componentToCentreAround = this;
+    options.escapeKeyTriggersCloseButton = true;
+    options.useNativeTitleBar = true;
+    options.resizable = false;
+
+    options.launchAsync();
 }
 
 void SlotMachineAudioProcessorEditor::updateLockIconPositions()
