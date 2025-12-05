@@ -106,6 +106,25 @@ public:
     static bool wasUpdateDeclinedRecently();
 
     /**
+     * Record that the user deferred the update reminder.
+     * Calculates and saves the date when user can be asked again.
+     * @param daysToDefer Number of days to wait before asking again (0 = next launch)
+     */
+    static void recordUpdateDeferred(int daysToDefer);
+
+    /**
+     * Check if user has deferred the update and the deferral period hasn't passed.
+     * @return true if user should not be prompted for update yet
+     */
+    static bool isUpdateDeferred();
+
+    /**
+     * Clear the deferred update date.
+     * Called when user accepts an update.
+     */
+    static void clearDeferredUpdate();
+
+    /**
      * Get the path to the options.xml file.
      */
     static juce::File getOptionsFile();
