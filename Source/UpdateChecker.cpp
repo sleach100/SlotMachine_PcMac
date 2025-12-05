@@ -253,9 +253,25 @@ void UpdateChecker::recordUpdateDeferred(int daysToDefer)
 
     if (daysToDefer <= 0)
     {
-        // "Remind me next launch" - clear the deferred date so it shows next time
-        options.removeProperty(kDeferredUntilDateProperty, nullptr);
-        saveUpdateOptions(options);
+        // "Remind me next launch" - remove the deferred date so it shows next time
+        auto optionsFile = getOptionsFile();
+        juce::ValueTree existingOptions;
+
+        if (optionsFile.existsAsFile())
+        {
+            std::unique_ptr<juce::XmlElement> xml(juce::XmlDocument::parse(optionsFile));
+            if (xml)
+                existingOptions = juce::ValueTree::fromXml(*xml);
+        }
+
+        if (existingOptions.isValid() && existingOptions.hasProperty(kDeferredUntilDateProperty))
+        {
+            existingOptions.removeProperty(kDeferredUntilDateProperty, nullptr);
+            if (auto xml = existingOptions.createXml())
+                xml->writeTo(optionsFile);
+            DBG("UpdateChecker: Removed deferredUntilDate from options.xml");
+        }
+
         DBG("UpdateChecker: Update reminder set for next launch");
         return;
     }
@@ -331,12 +347,21 @@ bool UpdateChecker::isUpdateDeferred()
 
 void UpdateChecker::clearDeferredUpdate()
 {
-    auto options = loadUpdateOptions();
+    auto optionsFile = getOptionsFile();
+    juce::ValueTree existingOptions;
 
-    if (options.hasProperty(kDeferredUntilDateProperty))
+    if (optionsFile.existsAsFile())
     {
-        options.removeProperty(kDeferredUntilDateProperty, nullptr);
-        saveUpdateOptions(options);
+        std::unique_ptr<juce::XmlElement> xml(juce::XmlDocument::parse(optionsFile));
+        if (xml)
+            existingOptions = juce::ValueTree::fromXml(*xml);
+    }
+
+    if (existingOptions.isValid() && existingOptions.hasProperty(kDeferredUntilDateProperty))
+    {
+        existingOptions.removeProperty(kDeferredUntilDateProperty, nullptr);
+        if (auto xml = existingOptions.createXml())
+            xml->writeTo(optionsFile);
         DBG("UpdateChecker: Cleared deferred update date");
     }
 }
