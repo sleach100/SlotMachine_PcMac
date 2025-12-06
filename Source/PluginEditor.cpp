@@ -3698,6 +3698,30 @@ void SlotMachineAudioProcessorEditor::checkForUpdateCompletedMessage()
     // Check if we have at least 2 arguments and first is /updatecompleted
     if (args.size() >= 2 && args[0].equalsIgnoreCase("/updatecompleted"))
     {
+        // Check if this is a first install (no PreviouslyInstalled flag in options.xml)
+        auto f = optionsFile();
+        juce::ValueTree vt;
+        if (f.existsAsFile())
+        {
+            std::unique_ptr<juce::XmlElement> xml(juce::XmlDocument::parse(f));
+            if (xml)
+                vt = juce::ValueTree::fromXml(*xml);
+        }
+
+        if (!vt.isValid() || vt.getType() != juce::Identifier("OPTIONS"))
+            vt = juce::ValueTree("OPTIONS");
+
+        // If PreviouslyInstalled doesn't exist, this is a first install - skip the dialog
+        if (!vt.hasProperty("PreviouslyInstalled"))
+        {
+            vt.setProperty("PreviouslyInstalled", true, nullptr);
+            if (auto xml = vt.createXml())
+                xml->writeTo(f);
+
+            DBG("First install detected - skipping update completed message");
+            return;
+        }
+
         juce::String newVersion = args[1];
 
         // Create a nicely formatted message
