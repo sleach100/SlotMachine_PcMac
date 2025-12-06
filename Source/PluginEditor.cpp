@@ -133,17 +133,19 @@ namespace
     public:
         class ToggleLabel;
 
-        using ConfirmHandler = std::function<void(int, bool)>;
+        using ConfirmHandler = std::function<void(int, bool, bool)>;  // cycles, playthrough, useFixedNoteLength
         using CancelHandler = std::function<void()>;
 
         ExportCyclesDialog(int defaultCycles,
             bool includePlaythroughOptions,
             bool playthroughInitiallySelected,
+            bool includeMidiNoteLengthOptions,
             ConfirmHandler onConfirmFn,
             CancelHandler onCancelFn)
             : onConfirm(std::move(onConfirmFn))
             , onCancel(std::move(onCancelFn))
             , includePlaythrough(includePlaythroughOptions)
+            , includeMidiNoteLength(includeMidiNoteLengthOptions)
         {
             instruction.setText("How many cycles would you like to export?", juce::dontSendNotification);
             instruction.setJustificationType(juce::Justification::centredLeft);
@@ -188,6 +190,38 @@ namespace
                 addAndMakeVisible(exportPlaythroughLabel);
             }
 
+            if (includeMidiNoteLength)
+            {
+                midiNoteLengthSectionLabel.setText("MIDI Note Length", juce::dontSendNotification);
+                midiNoteLengthSectionLabel.setFont(createRegularFont(15.0f));
+                midiNoteLengthSectionLabel.setJustificationType(juce::Justification::centredLeft);
+                addAndMakeVisible(midiNoteLengthSectionLabel);
+
+                matchSampleLengthButton.setButtonText({});
+                matchSampleLengthButton.getProperties().set("accessibilityName", "Match Sample Length");
+                matchSampleLengthButton.setRadioGroupId(2);  // Different radio group from playthrough options
+                matchSampleLengthButton.setToggleState(true, juce::dontSendNotification);  // Default selected
+                addAndMakeVisible(matchSampleLengthButton);
+
+                matchSampleLengthLabel.setText("Match Sample Length", juce::dontSendNotification);
+                matchSampleLengthLabel.setFont(createRegularFont(15.0f));
+                matchSampleLengthLabel.setJustificationType(juce::Justification::centredLeft);
+                matchSampleLengthLabel.setTarget(&matchSampleLengthButton);
+                addAndMakeVisible(matchSampleLengthLabel);
+
+                fixedGridLengthButton.setButtonText({});
+                fixedGridLengthButton.getProperties().set("accessibilityName", "Fixed Grid Length (32nd note ticks)");
+                fixedGridLengthButton.setRadioGroupId(2);
+                fixedGridLengthButton.setToggleState(false, juce::dontSendNotification);
+                addAndMakeVisible(fixedGridLengthButton);
+
+                fixedGridLengthLabel.setText("Fixed Grid Length (32nd note ticks)", juce::dontSendNotification);
+                fixedGridLengthLabel.setFont(createRegularFont(15.0f));
+                fixedGridLengthLabel.setJustificationType(juce::Justification::centredLeft);
+                fixedGridLengthLabel.setTarget(&fixedGridLengthButton);
+                addAndMakeVisible(fixedGridLengthLabel);
+            }
+
             errorLabel.setJustificationType(juce::Justification::centredLeft);
             errorLabel.setColour(juce::Label::textColourId, juce::Colours::orange);
             addAndMakeVisible(errorLabel);
@@ -224,30 +258,31 @@ namespace
             inputRow.removeFromLeft(12);
             cyclesEditor.setBounds(inputRow.removeFromLeft(120));
 
+            const int toggleSize = 20;
+            const int spacing = 8;
+            const int rowHeight = 24;
+
+            auto layoutToggleRow = [toggleSize](juce::Rectangle<int> area, juce::ToggleButton& toggle, ToggleLabel& label)
+            {
+                    auto toggleBounds = juce::Rectangle<int>(area.getX(),
+                        area.getCentreY() - (toggleSize / 2),
+                        toggleSize + 4, // give a little breathing room
+                        toggleSize + 2); // helps with anti-alias edges
+                    toggleBounds.translate(-2, 0); // shift left slightly to avoid right-edge clip
+                    toggle.setBounds(toggleBounds);
+                    toggle.setPaintingIsUnclipped(true); // allow full draw
+
+                    auto labelBounds = area;
+                    constexpr int labelIndent = 14;
+                    labelBounds.setX(toggleBounds.getRight() + labelIndent);
+                    label.setBounds(labelBounds);
+
+            };
+
             if (includePlaythrough)
             {
                 bounds.removeFromTop(12);
-                const int toggleSize = 20;
-                const int spacing = 8;
-                const int rowHeight = 24;
                 auto optionBounds = bounds.removeFromTop(rowHeight * 2 + spacing);
-
-                auto layoutToggleRow = [toggleSize](juce::Rectangle<int> area, juce::ToggleButton& toggle, ToggleLabel& label)
-                {
-                        auto toggleBounds = juce::Rectangle<int>(area.getX(),
-                            area.getCentreY() - (toggleSize / 2),
-                            toggleSize + 4, // give a little breathing room
-                            toggleSize + 2); // helps with anti-alias edges
-                        toggleBounds.translate(-2, 0); // shift left slightly to avoid right-edge clip
-                        toggle.setBounds(toggleBounds);
-                        toggle.setPaintingIsUnclipped(true); // allow full draw
-
-                        auto labelBounds = area;
-                        constexpr int labelIndent = 14;
-                        labelBounds.setX(toggleBounds.getRight() + labelIndent);
-                        label.setBounds(labelBounds);
-
-                };
 
                 auto currentBounds = optionBounds.removeFromTop(rowHeight);
                 layoutToggleRow(currentBounds, exportCurrentTabButton, exportCurrentTabLabel);
@@ -255,6 +290,22 @@ namespace
                 optionBounds.removeFromTop(spacing);
                 auto playthroughBounds = optionBounds.removeFromTop(rowHeight);
                 layoutToggleRow(playthroughBounds, exportPlaythroughButton, exportPlaythroughLabel);
+            }
+
+            if (includeMidiNoteLength)
+            {
+                bounds.removeFromTop(12);
+                midiNoteLengthSectionLabel.setBounds(bounds.removeFromTop(rowHeight));
+
+                bounds.removeFromTop(4);
+                auto noteLengthBounds = bounds.removeFromTop(rowHeight * 2 + spacing);
+
+                auto matchSampleBounds = noteLengthBounds.removeFromTop(rowHeight);
+                layoutToggleRow(matchSampleBounds, matchSampleLengthButton, matchSampleLengthLabel);
+
+                noteLengthBounds.removeFromTop(spacing);
+                auto fixedGridBounds = noteLengthBounds.removeFromTop(rowHeight);
+                layoutToggleRow(fixedGridBounds, fixedGridLengthButton, fixedGridLengthLabel);
             }
 
             bounds.removeFromTop(6);
@@ -326,10 +377,11 @@ namespace
             if (confirmCopy != nullptr)
             {
                 const bool exportPlaythroughSelected = includePlaythrough && exportPlaythroughButton.getToggleState();
+                const bool useFixedNoteLength = includeMidiNoteLength && fixedGridLengthButton.getToggleState();
 
-                juce::MessageManager::callAsync([confirmCopy, cycles, exportPlaythroughSelected]() mutable
+                juce::MessageManager::callAsync([confirmCopy, cycles, exportPlaythroughSelected, useFixedNoteLength]() mutable
                 {
-                    confirmCopy(cycles, exportPlaythroughSelected);
+                    confirmCopy(cycles, exportPlaythroughSelected, useFixedNoteLength);
                 });
             }
         }
@@ -385,6 +437,11 @@ namespace
         ToggleLabel exportCurrentTabLabel;
         juce::ToggleButton exportPlaythroughButton;
         ToggleLabel exportPlaythroughLabel;
+        juce::Label midiNoteLengthSectionLabel;
+        juce::ToggleButton matchSampleLengthButton;
+        ToggleLabel matchSampleLengthLabel;
+        juce::ToggleButton fixedGridLengthButton;
+        ToggleLabel fixedGridLengthLabel;
         juce::Label errorLabel;
         juce::TextButton okButton;
         juce::TextButton cancelButton;
@@ -393,6 +450,7 @@ namespace
         CancelHandler onCancel;
         bool hasResolved = false;
         bool includePlaythrough = false;
+        bool includeMidiNoteLength = false;
     };
 
     class LoopPlaythroughDialog : public juce::Component,
@@ -6184,12 +6242,13 @@ void SlotMachineAudioProcessorEditor::buttonClicked(juce::Button* b)
     if (b == &btnExportAudio)
     {
         promptForExportCycles("Export Audio", 1,
-            [this](int cycles, bool exportPlaythrough)
+            [this](int cycles, bool exportPlaythrough, bool /*useFixedNoteLength*/)
             {
                 beginAudioExportWithCycles(cycles, exportPlaythrough);
             },
             true,
-            lastAudioExportPlaythrough);
+            lastAudioExportPlaythrough,
+            false);  // No MIDI note length options for audio export
         return;
     }
 
@@ -6197,12 +6256,13 @@ void SlotMachineAudioProcessorEditor::buttonClicked(juce::Button* b)
     if (b == &btnExportMidi)
     {
         promptForExportCycles("Export MIDI", 1,
-            [this](int cycles, bool exportPlaythrough)
+            [this](int cycles, bool exportPlaythrough, bool useFixedNoteLength)
             {
-                beginMidiExportWithCycles(cycles, exportPlaythrough);
+                beginMidiExportWithCycles(cycles, exportPlaythrough, useFixedNoteLength);
             },
             true,
-            lastMidiExportPlaythrough);
+            lastMidiExportPlaythrough,
+            true);  // Show MIDI note length options
         return;
     }
 
@@ -6320,9 +6380,10 @@ void SlotMachineAudioProcessorEditor::showOptionsDialog()
 
 void SlotMachineAudioProcessorEditor::promptForExportCycles(const juce::String& dialogTitle,
     int defaultCycles,
-    std::function<void(int, bool)> onConfirm,
+    std::function<void(int, bool, bool)> onConfirm,
     bool includePlaythroughOptions,
-    bool initialPlaythroughSelection)
+    bool initialPlaythroughSelection,
+    bool includeMidiNoteLengthOptions)
 {
     if (auto* existing = exportCyclesPromptWindow.getComponent())
     {
@@ -6338,14 +6399,15 @@ void SlotMachineAudioProcessorEditor::promptForExportCycles(const juce::String& 
         defaultCycles,
         includePlaythroughOptions,
         initialPlaythroughSelection,
-        [editorSafe, handler = std::move(onConfirm)](int cycles, bool exportPlaythrough) mutable
+        includeMidiNoteLengthOptions,
+        [editorSafe, handler = std::move(onConfirm)](int cycles, bool exportPlaythrough, bool useFixedNoteLength) mutable
         {
             if (editorSafe != nullptr)
             {
                 editorSafe->exportCyclesPromptWindow = nullptr;
 
                 if (handler)
-                    handler(cycles, exportPlaythrough);
+                    handler(cycles, exportPlaythrough, useFixedNoteLength);
             }
         },
         [editorSafe]()
@@ -6354,8 +6416,13 @@ void SlotMachineAudioProcessorEditor::promptForExportCycles(const juce::String& 
                 editorSafe->exportCyclesPromptWindow = nullptr;
         });
 
-    const int dialogHeight = includePlaythroughOptions ? 240 : 180;
-    dialogContent->setSize(360, dialogHeight);
+    // Calculate dialog height based on options shown
+    int dialogHeight = 180;  // Base height
+    if (includePlaythroughOptions)
+        dialogHeight += 60;  // Playthrough options
+    if (includeMidiNoteLengthOptions)
+        dialogHeight += 96;  // MIDI note length section (label + 2 radio options)
+    dialogContent->setSize(400, dialogHeight);
 
     juce::DialogWindow::LaunchOptions options;
     options.dialogTitle = dialogTitle;
@@ -6471,7 +6538,7 @@ void SlotMachineAudioProcessorEditor::beginAudioExportWithCycles(int cyclesReque
         });
 }
 
-void SlotMachineAudioProcessorEditor::beginMidiExportWithCycles(int cyclesRequested, bool exportPlaythrough)
+void SlotMachineAudioProcessorEditor::beginMidiExportWithCycles(int cyclesRequested, bool exportPlaythrough, bool useFixedNoteLength)
 {
     if (cyclesRequested <= 0)
     {
@@ -6503,7 +6570,7 @@ void SlotMachineAudioProcessorEditor::beginMidiExportWithCycles(int cyclesReques
 
     fileDialogActive = true;
     chooser->launchAsync(juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles,
-        [this, chooser, cyclesRequested, exportPlaythrough](const juce::FileChooser& fc) mutable
+        [this, chooser, cyclesRequested, exportPlaythrough, useFixedNoteLength](const juce::FileChooser& fc) mutable
         {
             juce::ignoreUnused(chooser);
             fileDialogActive = false;
@@ -6516,12 +6583,12 @@ void SlotMachineAudioProcessorEditor::beginMidiExportWithCycles(int cyclesReques
                 file = file.withFileExtension(".mid");
 
             // Lambda to perform the actual export
-            auto performExport = [this, file, cyclesRequested, exportPlaythrough]()
+            auto performExport = [this, file, cyclesRequested, exportPlaythrough, useFixedNoteLength]()
             {
                 juce::String error;
                 const bool ok = exportPlaythrough
-                    ? processor.exportMidiPlaythroughCycles(file, cyclesRequested, error)
-                    : processor.exportMidiCycles(file, cyclesRequested, error);
+                    ? processor.exportMidiPlaythroughCycles(file, cyclesRequested, useFixedNoteLength, error)
+                    : processor.exportMidiCycles(file, cyclesRequested, useFixedNoteLength, error);
 
                 if (ok)
                 {

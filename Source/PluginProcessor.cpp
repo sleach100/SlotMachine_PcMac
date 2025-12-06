@@ -850,6 +850,7 @@ bool renderPatternMidi(SlotMachineAudioProcessor& processor,
     int cyclesToExport,
     double bpm,
     int ppq,
+    bool useFixedNoteLength,
     RenderedPatternMidi& out,
     juce::String& errorMessage)
 {
@@ -981,15 +982,25 @@ bool renderPatternMidi(SlotMachineAudioProcessor& processor,
         offline.mask = slotData.countMask;
         offline.midiChannel = juce::jlimit(1, 16, slotData.midiChannel);
 
-        int noteSamples = offline.voice->sample.getNumSamples();
-        if (offline.voice->envMaxSamples > 0)
-            noteSamples = juce::jmin(noteSamples, offline.voice->envMaxSamples);
-        noteSamples = juce::jmax(1, noteSamples);
+        double noteLengthBeats;
+        if (useFixedNoteLength)
+        {
+            // Fixed 32nd note length: 1/8 of a quarter note = 0.125 beats
+            noteLengthBeats = 0.125;
+        }
+        else
+        {
+            // Match sample length (original behavior)
+            int noteSamples = offline.voice->sample.getNumSamples();
+            if (offline.voice->envMaxSamples > 0)
+                noteSamples = juce::jmin(noteSamples, offline.voice->envMaxSamples);
+            noteSamples = juce::jmax(1, noteSamples);
 
-        const double noteSeconds = (double)noteSamples / engineSampleRate;
-        double noteLengthBeats = noteSeconds / secondsPerBeat;
-        if (noteLengthBeats <= 0.0)
-            noteLengthBeats = 1.0 / (double)ppq;
+            const double noteSeconds = (double)noteSamples / engineSampleRate;
+            noteLengthBeats = noteSeconds / secondsPerBeat;
+            if (noteLengthBeats <= 0.0)
+                noteLengthBeats = 1.0 / (double)ppq;
+        }
         offline.noteLengthBeats = noteLengthBeats;
 
         if (timingMode == 0)
@@ -2697,7 +2708,7 @@ bool SlotMachineAudioProcessor::exportAudioPlaythroughCycles(const juce::File& d
     return writeAudioFile(destination, combinedBuffer, totalSamples, engineSampleRate, targetSampleRate, errorMessage);
 }
 
-bool SlotMachineAudioProcessor::exportMidiCycles(const juce::File& destination, int cyclesToExport, juce::String& errorMessage)
+bool SlotMachineAudioProcessor::exportMidiCycles(const juce::File& destination, int cyclesToExport, bool useFixedNoteLength, juce::String& errorMessage)
 {
     errorMessage.clear();
 
@@ -2707,7 +2718,7 @@ bool SlotMachineAudioProcessor::exportMidiCycles(const juce::File& destination, 
     const double bpm = patternData.bpm;
 
     RenderedPatternMidi rendered;
-    if (!::renderPatternMidi(*this, patternData, cyclesToExport, bpm, ppq, rendered, errorMessage))
+    if (!::renderPatternMidi(*this, patternData, cyclesToExport, bpm, ppq, useFixedNoteLength, rendered, errorMessage))
         return false;
 
     if (rendered.totalTicks <= 0 || rendered.sequence.getNumEvents() == 0)
@@ -2748,7 +2759,7 @@ bool SlotMachineAudioProcessor::exportMidiCycles(const juce::File& destination, 
     return true;
 }
 
-bool SlotMachineAudioProcessor::exportMidiPlaythroughCycles(const juce::File& destination, int playthroughCycles, juce::String& errorMessage)
+bool SlotMachineAudioProcessor::exportMidiPlaythroughCycles(const juce::File& destination, int playthroughCycles, bool useFixedNoteLength, juce::String& errorMessage)
 {
     errorMessage.clear();
 
@@ -2923,15 +2934,25 @@ bool SlotMachineAudioProcessor::exportMidiPlaythroughCycles(const juce::File& de
                 info.midiChannel = juce::jlimit(1, 16, slotData.midiChannel);
 
                 // Calculate note length
-                int noteSamples = voice->sample.getNumSamples();
-                if (voice->envMaxSamples > 0)
-                    noteSamples = juce::jmin(noteSamples, voice->envMaxSamples);
-                noteSamples = juce::jmax(1, noteSamples);
+                double noteLengthBeats;
+                if (useFixedNoteLength)
+                {
+                    // Fixed 32nd note length: 1/8 of a quarter note = 0.125 beats
+                    noteLengthBeats = 0.125;
+                }
+                else
+                {
+                    // Match sample length (original behavior)
+                    int noteSamples = voice->sample.getNumSamples();
+                    if (voice->envMaxSamples > 0)
+                        noteSamples = juce::jmin(noteSamples, voice->envMaxSamples);
+                    noteSamples = juce::jmax(1, noteSamples);
 
-                const double noteSeconds = (double)noteSamples / engineSampleRate;
-                double noteLengthBeats = noteSeconds / secondsPerBeat;
-                if (noteLengthBeats <= 0.0)
-                    noteLengthBeats = 1.0 / (double)ppq;
+                    const double noteSeconds = (double)noteSamples / engineSampleRate;
+                    noteLengthBeats = noteSeconds / secondsPerBeat;
+                    if (noteLengthBeats <= 0.0)
+                        noteLengthBeats = 1.0 / (double)ppq;
+                }
                 info.noteLengthBeats = noteLengthBeats;
 
                 // Calculate timing parameters

@@ -120,8 +120,8 @@ public:
     double getMasterPhase() const;
     bool exportAudioCycles(const juce::File& file, int cyclesToExport, juce::String& errorMessage);
     bool exportAudioPlaythroughCycles(const juce::File& file, int playthroughCycles, juce::String& errorMessage);
-    bool exportMidiCycles(const juce::File& file, int cyclesToExport, juce::String& errorMessage);
-    bool exportMidiPlaythroughCycles(const juce::File& file, int playthroughCycles, juce::String& errorMessage);
+    bool exportMidiCycles(const juce::File& file, int cyclesToExport, bool useFixedNoteLength, juce::String& errorMessage);
+    bool exportMidiPlaythroughCycles(const juce::File& file, int playthroughCycles, bool useFixedNoteLength, juce::String& errorMessage);
 
     // Count beat masks
     uint64_t getSlotCountMask(int index) const;
@@ -157,6 +157,7 @@ private:
         int cyclesToExport,
         double bpm,
         int ppq,
+        bool useFixedNoteLength,
         struct RenderedPatternMidi& out,
         juce::String& errorMessage);
 

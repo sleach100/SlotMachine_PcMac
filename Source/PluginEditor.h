@@ -391,11 +391,12 @@ private:
     void showOptionsDialog();
     void promptForExportCycles(const juce::String& dialogTitle,
         int defaultCycles,
-        std::function<void(int, bool)> onConfirm,
+        std::function<void(int, bool, bool)> onConfirm,
         bool includePlaythroughOptions,
-        bool initialPlaythroughSelection);
+        bool initialPlaythroughSelection,
+        bool includeMidiNoteLengthOptions);
     void beginAudioExportWithCycles(int cyclesRequested, bool exportPlaythrough);
-    void beginMidiExportWithCycles(int cyclesRequested, bool exportPlaythrough);
+    void beginMidiExportWithCycles(int cyclesRequested, bool exportPlaythrough, bool useFixedNoteLength);
     void openVisualizerWindow();
     void closeVisualizerWindow();
     void handleVisualizerWindowCloseRequest();
