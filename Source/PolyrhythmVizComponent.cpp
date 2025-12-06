@@ -1,6 +1,8 @@
 #include "PolyrhythmVizComponent.h"
 
+#include <algorithm>
 #include <cmath>
+#include <limits>
 
 namespace
 {
@@ -258,44 +260,69 @@ void PolyrhythmVizComponent::paint(juce::Graphics& g)
                 activeSlots.push_back(i);
         }
 
-        // Draw arcs from each fired vertex to random points on other polygons
+        // Draw arcs connecting random vertices between adjacent rings only
         for (int srcIdx : firedSlots)
         {
             const auto& srcSlot = slotVisuals[(size_t)srcIdx];
-            // Apply rotation to source vertex position
-            const auto srcPoint = rotatePointForSlot(srcSlot, srcSlot.vertices[(size_t)srcSlot.flashVertex]);
+            const int srcNumVerts = (int)srcSlot.vertices.size();
+            if (srcNumVerts < 2)
+                continue;
 
-            // Create 1-3 arcs per fired vertex based on intensity
+            // Find adjacent active slots by position in the activeSlots list
+            std::vector<int> adjacentSlots;
+            auto it = std::find(activeSlots.begin(), activeSlots.end(), srcIdx);
+            if (it != activeSlots.end())
+            {
+                // Add the previous active slot (inner ring)
+                if (it != activeSlots.begin())
+                    adjacentSlots.push_back(*(it - 1));
+                // Add the next active slot (outer ring)
+                if (it + 1 != activeSlots.end())
+                    adjacentSlots.push_back(*(it + 1));
+            }
+
+            if (adjacentSlots.empty())
+                continue;
+
+            // Create 1-3 arcs per fired slot based on intensity
             const int numArcs = 1 + (int)(srcSlot.arcIntensity * 2.0f);
 
-            for (int arcNum = 0; arcNum < numArcs && activeSlots.size() > 1; ++arcNum)
+            for (int arcNum = 0; arcNum < numArcs; ++arcNum)
             {
-                // Use deterministic "randomness" based on position and arc number for consistent look per frame
-                const float seed1 = std::fmod(srcPoint.x * 0.17f + srcPoint.y * 0.23f + (float)arcNum * 0.31f + (float)masterPhase * 0.1f, 1.0f);
-                const float seed2 = std::fmod(srcPoint.y * 0.13f + srcPoint.x * 0.19f + (float)arcNum * 0.37f + (float)masterPhase * 0.15f, 1.0f);
+                // Use arcIntensity and masterPhase for variation - these change with each firing
+                const float arcInt = srcSlot.arcIntensity;
+                const float seed1 = std::fmod((float)srcIdx * 0.17f + (float)arcNum * 0.31f + arcInt * 7.3f + (float)masterPhase * 13.7f, 1.0f);
+                const float seed2 = std::fmod((float)srcIdx * 0.13f + (float)arcNum * 0.37f + arcInt * 11.9f + (float)masterPhase * 17.3f, 1.0f);
+                const float seed3 = std::fmod((float)srcIdx * 0.23f + (float)arcNum * 0.41f + arcInt * 5.7f + (float)masterPhase * 19.1f, 1.0f);
 
-                // Pick a different target slot (not the source)
-                int targetIdx = activeSlots[(size_t)(seed1 * (float)activeSlots.size()) % activeSlots.size()];
-                if (targetIdx == srcIdx)
-                    targetIdx = activeSlots[(size_t)((seed1 + 0.5f) * (float)activeSlots.size()) % activeSlots.size()];
-                if (targetIdx == srcIdx)
-                    continue;
+                // Pick a random vertex from the source ring
+                const int srcVertIdx = (int)(seed3 * (float)srcNumVerts) % srcNumVerts;
+                const auto srcPoint = rotatePointForSlot(srcSlot, srcSlot.vertices[(size_t)srcVertIdx]);
+
+                // Pick an adjacent slot
+                const int targetIdx = adjacentSlots[(size_t)(seed1 * (float)adjacentSlots.size()) % adjacentSlots.size()];
 
                 const auto& targetSlot = slotVisuals[(size_t)targetIdx];
                 const int numVerts = (int)targetSlot.vertices.size();
                 if (numVerts < 2)
                     continue;
 
-                // Pick a random point along the polygon edge
-                const float edgePos = seed2 * (float)numVerts;
-                const int v0 = (int)edgePos % numVerts;
-                const int v1 = (v0 + 1) % numVerts;
-                const float t = edgePos - std::floor(edgePos);
+                // Find the closest vertex on the target ring to the source point
+                int closestVertIdx = 0;
+                float closestDist = std::numeric_limits<float>::max();
+                for (int v = 0; v < numVerts; ++v)
+                {
+                    const auto vPoint = rotatePointForSlot(targetSlot, targetSlot.vertices[(size_t)v]);
+                    const float d = srcPoint.getDistanceFrom(vPoint);
+                    if (d < closestDist)
+                    {
+                        closestDist = d;
+                        closestVertIdx = v;
+                    }
+                }
 
-                // Apply rotation to target vertex positions
-                const auto p0 = rotatePointForSlot(targetSlot, targetSlot.vertices[(size_t)v0]);
-                const auto p1 = rotatePointForSlot(targetSlot, targetSlot.vertices[(size_t)v1]);
-                const auto targetPoint = p0 + (p1 - p0) * t;
+                // Apply rotation to target vertex position
+                const auto targetPoint = rotatePointForSlot(targetSlot, targetSlot.vertices[(size_t)closestVertIdx]);
 
                 // Calculate distance for color tinting
                 const auto diff = targetPoint - srcPoint;
