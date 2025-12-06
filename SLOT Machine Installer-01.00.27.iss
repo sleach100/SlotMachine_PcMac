@@ -7,6 +7,7 @@
 ;  NOTE:  YOU MUST CHANGE THE CONTENTS OF "Version.txt" to match the app version you are deploying ***************** ************   SUPER IMPORTANT   *********** ************* ************** ********** **************
 #define MyAppVersion  "01.00.27"   ; becomes SlotMachineSetup-01.00.26.exe
 #define MySourceRoot  "C:\Users\Stever Leach\source\repos\Slot-Machine-V2\Builds\VisualStudio2022\x64\Release\Standalone Plugin"
+#define MyUpdaterRoot  "C:\Beater\Slot Machine\SlotMachineUpdater\NewProject\Builds\VisualStudio2022\x64\Release\App"
 ; If your build outputs single-file VST3 inside the bundle folder, point to the actual file:
 #define MyVST3File    "C:\Users\Stever Leach\source\repos\Slot-Machine-V2\Builds\VisualStudio2022\x64\Release\VST3\SlotMachine.vst3\Contents\x86_64-win\SlotMachine.vst3"
 
@@ -74,7 +75,7 @@ Source: "{#MySourceRoot}\SlotMachine.exe"; DestDir: "{app}"; \
   Flags: ignoreversion restartreplace
 
 ; --- Updater ---
-Source: "{#MySourceRoot}\SlotMachineUpdater.exe"; DestDir: "{app}"; \
+Source: "{#MyUpdaterRoot}\SlotMachineUpdater.exe"; DestDir: "{app}"; \
   Flags: ignoreversion restartreplace
 
 ; --- Version file used by the app ---
