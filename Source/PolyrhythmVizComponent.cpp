@@ -258,21 +258,27 @@ void PolyrhythmVizComponent::paint(juce::Graphics& g)
                 activeSlots.push_back(i);
         }
 
-        // Draw arcs from each fired vertex to random points on other polygons
+        // Draw arcs connecting random vertices across different rings
         for (int srcIdx : firedSlots)
         {
             const auto& srcSlot = slotVisuals[(size_t)srcIdx];
-            // Apply rotation to source vertex position
-            const auto srcPoint = rotatePointForSlot(srcSlot, srcSlot.vertices[(size_t)srcSlot.flashVertex]);
+            const int srcNumVerts = (int)srcSlot.vertices.size();
+            if (srcNumVerts < 2)
+                continue;
 
-            // Create 1-3 arcs per fired vertex based on intensity
+            // Create 1-3 arcs per fired slot based on intensity
             const int numArcs = 1 + (int)(srcSlot.arcIntensity * 2.0f);
 
             for (int arcNum = 0; arcNum < numArcs && activeSlots.size() > 1; ++arcNum)
             {
-                // Use deterministic "randomness" based on position and arc number for consistent look per frame
-                const float seed1 = std::fmod(srcPoint.x * 0.17f + srcPoint.y * 0.23f + (float)arcNum * 0.31f + (float)masterPhase * 0.1f, 1.0f);
-                const float seed2 = std::fmod(srcPoint.y * 0.13f + srcPoint.x * 0.19f + (float)arcNum * 0.37f + (float)masterPhase * 0.15f, 1.0f);
+                // Use deterministic "randomness" based on slot index and arc number for consistent look per frame
+                const float seed1 = std::fmod((float)srcIdx * 0.17f + (float)arcNum * 0.31f + (float)masterPhase * 0.1f, 1.0f);
+                const float seed2 = std::fmod((float)srcIdx * 0.13f + (float)arcNum * 0.37f + (float)masterPhase * 0.15f, 1.0f);
+                const float seed3 = std::fmod((float)srcIdx * 0.23f + (float)arcNum * 0.41f + (float)masterPhase * 0.12f, 1.0f);
+
+                // Pick a random vertex from the source ring
+                const int srcVertIdx = (int)(seed3 * (float)srcNumVerts) % srcNumVerts;
+                const auto srcPoint = rotatePointForSlot(srcSlot, srcSlot.vertices[(size_t)srcVertIdx]);
 
                 // Pick a different target slot (not the source)
                 int targetIdx = activeSlots[(size_t)(seed1 * (float)activeSlots.size()) % activeSlots.size()];
@@ -286,16 +292,11 @@ void PolyrhythmVizComponent::paint(juce::Graphics& g)
                 if (numVerts < 2)
                     continue;
 
-                // Pick a random point along the polygon edge
-                const float edgePos = seed2 * (float)numVerts;
-                const int v0 = (int)edgePos % numVerts;
-                const int v1 = (v0 + 1) % numVerts;
-                const float t = edgePos - std::floor(edgePos);
+                // Pick a random vertex from the target ring
+                const int targetVertIdx = (int)(seed2 * (float)numVerts) % numVerts;
 
-                // Apply rotation to target vertex positions
-                const auto p0 = rotatePointForSlot(targetSlot, targetSlot.vertices[(size_t)v0]);
-                const auto p1 = rotatePointForSlot(targetSlot, targetSlot.vertices[(size_t)v1]);
-                const auto targetPoint = p0 + (p1 - p0) * t;
+                // Apply rotation to target vertex position
+                const auto targetPoint = rotatePointForSlot(targetSlot, targetSlot.vertices[(size_t)targetVertIdx]);
 
                 // Calculate distance for color tinting
                 const auto diff = targetPoint - srcPoint;
