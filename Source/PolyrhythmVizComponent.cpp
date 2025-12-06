@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <limits>
 
 namespace
 {
@@ -306,11 +307,22 @@ void PolyrhythmVizComponent::paint(juce::Graphics& g)
                 if (numVerts < 2)
                     continue;
 
-                // Pick a random vertex from the target ring
-                const int targetVertIdx = (int)(seed2 * (float)numVerts) % numVerts;
+                // Find the closest vertex on the target ring to the source point
+                int closestVertIdx = 0;
+                float closestDist = std::numeric_limits<float>::max();
+                for (int v = 0; v < numVerts; ++v)
+                {
+                    const auto vPoint = rotatePointForSlot(targetSlot, targetSlot.vertices[(size_t)v]);
+                    const float d = srcPoint.getDistanceFrom(vPoint);
+                    if (d < closestDist)
+                    {
+                        closestDist = d;
+                        closestVertIdx = v;
+                    }
+                }
 
                 // Apply rotation to target vertex position
-                const auto targetPoint = rotatePointForSlot(targetSlot, targetSlot.vertices[(size_t)targetVertIdx]);
+                const auto targetPoint = rotatePointForSlot(targetSlot, targetSlot.vertices[(size_t)closestVertIdx]);
 
                 // Calculate distance for color tinting
                 const auto diff = targetPoint - srcPoint;
