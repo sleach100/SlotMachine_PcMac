@@ -31,5 +31,3 @@ BEGIN
 END
 
 #endif
-
-IDI_ICON1 ICON "SlotMachine.ico"

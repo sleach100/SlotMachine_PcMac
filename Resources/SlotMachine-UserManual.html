@@ -20,6 +20,10 @@
 <h3 style="color:#3399FF;">Overview</h3>
 <p>From simple grooves to mind-bending polyrhythms — S.L.O.T Machine lets you build beats in seconds, not sessions. Each slot runs on its own rhythmic pulse, letting you layer independent time signatures effortlessly. Once your groove is locked in, export straight to your DAW and drop it right into your workflow.  S.L.O.T Machine isn’t just a drum toy - it’s a rhythm engine.</p>
 <p>S.L.O.T Machine has two timing modes.  Count mode and Rate mode.  Most musicians will want to use Count mode, as it is more intuitive, works the way musicians think, and has a graphical visualizer, but Rate mode gives you more fine control in some situations.</p>
+
+<hr>
+
+
 <h3 style="color:#3399FF;">Count Mode</h3>
 <p>Count Mode is designed for precise, beat-based control of rhythmic patterns.Each slot in the sequencer is divided into a specific number of beats — for example, 4, 7, or 13 — and the sample in that slot will trigger once per beat, cycling through its full loop before starting again.</p>
 <h4>How It Works</h4>
@@ -37,6 +41,9 @@
   <li>Create clean, repeating polyrhythms (e.g. 3 vs 4 vs 5).</li>
   <li>Manually shape rhythmic phrasing using per-beat masking.</li>
 </ul>
+
+<hr>
+
 <h3 style="color:#3399FF;">Rate Mode</h3>
 <p>Rate Mode offers ratio-based rhythmic control — perfect for free-form or evolving polyrhythms.Instead of counting beats, each slot plays according to a Rate multiplier relative to the master tempo.</p>
 <h4>How It Works</h4>
@@ -53,6 +60,9 @@
   <li>Create ratios like 3:2, 7:5, or golden-ratio-style rhythmic loops.</li>
   <li>Design more fluid or “off-grid” grooves that still sync to the master tempo.</li>
 </ul>
+
+<hr>
+
 <h3 style="color:#3399FF;">Quick Reference — Count Mode vs. Rate Mode</h3>
 <table class=MsoNormalTable border=0 cellspacing=0 cellpadding=0
  style='border-collapse:collapse'>
@@ -232,6 +242,10 @@
   <tr><td style="border:1pt solid black;"><b>Click to trigger</b></td><td style="border:1pt solid black;">Click in the slot to manually trigger.  Great for auditioning sounds.</td></tr>
 </table>
 <h3 style="color: #3399ff;">&nbsp;</h3>
+
+<hr>
+
+
 <h3 style="color:#3399FF;">Pattern Management</h3>
 <ul>
   <li>Multiple pattern tabs let you create and organize different grooves.</li>
@@ -241,13 +255,17 @@
   <li>Switching patterns while playing will finish the current pattern, then begin playing the newly selected tab.  Perfect for manual switching of patterns during live playback.</li>
 </ul>
 <ul style="margin-left:1em;">
-<h3 style="color:#3399FF;">Play Through</h3>
+<h3>Play Through</h3>
 </ul>
 <ul style="margin-left:4em;">
 <li><span style="color: #000000;">Selecting Play Through from the Tab menu will will begin playing the first Tabs pattern, repeating the selected Repeat value, and then continue playing the next Tabs pattern until all Tabs have been played.&nbsp; Pressing the Stop button at any time will end Play Through.&nbsp; This feature allows you to create full length songs by combining multiple patterns.</span></li>
 <li><span style="color: #000000;">Each tab contains a Repeat value (Repeat = X).&nbsp; Repeat defaults to 0.&nbsp; During Play Through, the Tabs pattern will repeat X number of times before proceding to the next Tab.</span></li>
 <li><span style="color: #000000;">Loop Play Through = True/False.&nbsp; If set to True, the Play Through loop until the user presses the Stop button.</span></li>
 </ul>
+
+<hr>
+
+
 <h3 style="color:#3399FF;">Exporting</h3>
 <h4>Audio Export</h4>
 <ul>
@@ -259,10 +277,123 @@
 <h4>MIDI Export</h4>
 <ul>
   <li>Choose between exporting the currently selected Tab or Tab Play Through.</li>
+ <li>MIDI Note Length</li>
+<ul>
+ <li>Match Sample Length (keeps note length the same as the samply played)</li>
+ <li>Fixed Grid Length (Each note is only a 32nd note long - Ticks instead of full notes)</li>
+</ul>
   <li>Generates a Type 1 MIDI file with up to 16 channels — one per slot.</li>
   <li>Each slot outputs a single note (C5, MIDI note 60) per active beat.</li>
   <li>Great for transferring grooves to DAWs like FL Studio, Ableton, or Logic.</li>
 </ul>
+
+<hr>
+
+<h3 style="color:#3399FF;">Visualizer Overview</h3>
+<p>S.L.O.T. Machine includes a built-in real-time visualizer designed to bring your rhythms to life.  Every sequence you build generates motion, color, and structure—turning your patterns into a living piece of art.  The visualizer is not just eye candy—it helps you understand groove, polyrhythm structure, and musical energy at a glance through movement and geometry.  Whether you're creating hypnotic polyrhythms or tight percussive patterns, the visualizer enhances the creative experience by giving your music a vibrant, dynamic presence on screen. You can enable, disable, and layer multiple effects to create your own custom look.</p>
+
+<h4>Accessing Visualizer Effects</h4>
+<p>To open the Visualizer Effects menu:</p>
+<ul>
+  <li>Right-click anywhere on the visualizer panel.</li>
+  <li>You'll see a list of visual modes you can toggle on or off.</li>
+  <li>Effects can be layered (except mutually-exclusive bead types).</li>
+</ul>
+
+<h4>Visualizer Effects</h4>
+
+<table style="border:1pt solid black; border-collapse:collapse;">
+  <tr>
+    <th style="border:1pt solid black;">Effect</th>
+    <th style="border:1pt solid black;">Description</th>
+  </tr>
+  <tr>
+    <td style="border:1pt solid black;"><b>Align to Right Side</b></td>
+    <td style="border:1pt solid black;">Moves the visualizer to the upper, right, outside edge of the application window.</td>
+  </tr>
+  <tr>
+    <td style="border:1pt solid black;" colspan="2"><b>Bead Modes</b><br>(Only one bead mode can be active at a time)</td>
+  </tr>
+  <tr>
+    <td style="border:1pt solid black;"><b>1. Beads: Edge Walk</b></td>
+    <td style="border:1pt solid black;">Beads travel along the polygon edges, following the ring structure tightly.<br>
+    This creates clean, geometric paths and reveals timing divisions clearly.<br>
+    <i>Feel: Precise, structured, rhythmic.</i></td>
+  </tr>
+  <tr>
+    <td style="border:1pt solid black;"><b>2. Beads: Orbit</b></td>
+    <td style="border:1pt solid black;">Beads orbit smoothly around each ring rather than sticking to edges.<br>
+    Great for a fluid, circular motion that shows subdivision and phase.<br>
+    <i>Feel: Smooth, hypnotic, flowing.</i></td>
+  </tr>
+  <tr>
+    <td style="border:1pt solid black;"><b>3. Beads: Mixed</b></td>
+    <td style="border:1pt solid black;">Combines edge-walking on some rings and orbital motion on others.<br>
+    This produces a lively hybrid effect with varied motion across layers.<br>
+    <i>Feel: Playful, dynamic, complex.</i></td>
+  </tr>
+  <tr>
+    <td style="border:1pt solid black;" colspan="2"><b>Additional Effects</b></td>
+  </tr>
+  <tr>
+    <td style="border:1pt solid black;"><b>4. Master Pulse</b></td>
+    <td style="border:1pt solid black;">A subtle global pulse that expands and contracts in sync with the master BPM.<br>
+    Helps visualize the overall tempo and "heartbeat" of the pattern.<br>
+    <i>Feel: Breathes with the music.</i></td>
+  </tr>
+  <tr>
+    <td style="border:1pt solid black;"><b>5. Breathe</b></td>
+    <td style="border:1pt solid black;">Soft radial expansion and contraction on individual rings.<br>
+    Each ring "inhales" and "exhales" gently—perfect for slow or ambient grooves.<br>
+    <i>Feel: Organic, calming, meditative.</i></td>
+  </tr>
+  <tr>
+    <td style="border:1pt solid black;"><b>6. Neural Chaos</b></td>
+    <td style="border:1pt solid black;">Chaotic neuron-like connections form between nearby vertices.<br>
+    Connections flicker rapidly, re-selecting targets every frame.<br>
+    <i>Feel: Electric, frantic, intelligent. Like a little rhythmic brain firing signals.</i></td>
+  </tr>
+  <tr>
+    <td style="border:1pt solid black;"><b>7. Starlight Twinkle</b></td>
+    <td style="border:1pt solid black;">Scattered star-like particles sparkle on beat subdivisions.<br>
+    They flash gently, adding tiny bursts of visual texture.<br>
+    <i>Feel: Dreamy, glittery, delicate.</i></td>
+  </tr>
+  <tr>
+    <td style="border:1pt solid black;"><b>8. Alternating Rotation</b></td>
+    <td style="border:1pt solid black;">Rings rotate in alternating directions and speeds.<br>
+    Creates spiraling, hypnotic motion—especially striking with complex polyrhythms.<br>
+    <i>Feel: Spiral energy, mechanical elegance.</i></td>
+  </tr>
+  <tr>
+    <td style="border:1pt solid black;"><b>9. Colorwave</b></td>
+    <td style="border:1pt solid black;">Smooth color gradients sweep across all rings.<br>
+    Colors shift with time, creating a gentle wash of motion.<br>
+    <i>Feel: Ambient, soft, atmospheric.</i></td>
+  </tr>
+  <tr>
+    <td style="border:1pt solid black;"><b>10. Nebula Drift</b></td>
+    <td style="border:1pt solid black;">Cloud-like gaseous wisps swirl behind the rings.<br>
+    Opacity, flow, and color gently shift with the music.<br>
+    <i>Feel: Deep-space, cinematic, dreamy.</i></td>
+  </tr>
+  <tr>
+    <td style="border:1pt solid black;"><b>11. Neon Sweep</b></td>
+    <td style="border:1pt solid black;">Sharp neon lines or arcs sweep across the scene.<br>
+    Fast, bright, and high-contrast—perfect for energetic rhythms.<br>
+    <i>Feel: Futuristic, electric, bold.</i></td>
+  </tr>
+</table>
+
+<h4>Effect Layering</h4>
+<ul>
+  <li>You can enable any number of effects simultaneously.</li>
+  <li>The Beads group is mutually exclusive (choose one).</li>
+  <li>All other effects stack beautifully—letting users design their own visual personality.</li>
+</ul>
+<h3 style="color: #3399ff;">&nbsp;</h3>
+
+<hr>
 
 <h4>Visual Options</h4>
 <ul>
@@ -271,11 +402,15 @@
   <li>Toggle display of master and slot progress bars.</li>
 </ul>
 
+<hr>
+
 <h4>Tips</h4>
 <ul>
   <li>You can manually trigger samples by clicking in the slot even when playback is stopped — handy for sound-checking.</li>
   <li>Mono samples are automatically duplicated to stereo.</li>
 </ul>
+
+<hr>
 
 <h4>Technical Summary</h4>
 <ul>

@@ -154,7 +154,6 @@
     <ClCompile Include="..\..\Source\PolyrhythmVizComponent.cpp"/>
     <ClCompile Include="..\..\Source\StandaloneInit.cpp"/>
     <ClCompile Include="..\..\Source\WindowsPowerMonitor.cpp"/>
-    <ClCompile Include="..\..\Source\UpdateChecker.cpp"/>
     <ClCompile Include="..\..\Source\license.cpp">
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
@@ -2858,7 +2857,6 @@
     <ClInclude Include="..\..\Source\CountBeatMaskGrid.h"/>
     <ClInclude Include="..\..\Source\PolyrhythmVizComponent.h"/>
     <ClInclude Include="..\..\Source\WindowsPowerMonitor.h"/>
-    <ClInclude Include="..\..\Source\UpdateChecker.h"/>
     <ClInclude Include="..\..\Source\base32.h"/>
     <ClInclude Include="..\..\Source\crypto_small.h"/>
     <ClInclude Include="..\..\Source\license.h"/>

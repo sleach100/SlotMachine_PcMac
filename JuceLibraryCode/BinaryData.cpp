@@ -46585,7 +46585,7 @@ const char* getNamedResource (const char* resourceNameUTF8, int& numBytes)
         case 0x4f3bc308:  numBytes = 331159; return LonePearLogic_png;
         case 0x67ba4ae0:  numBytes = 9443; return MuteOFF_png;
         case 0xb9825b42:  numBytes = 9965; return MuteON_png;
-        case 0x0983c030:  numBytes = 675304; return SlotMachineUserManual_html;
+        case 0x0983c030:  numBytes = 680742; return SlotMachineUserManual_html;
         case 0xa971799f:  numBytes = 4286; return SlotMachine_ico;
         case 0xad221d05:  numBytes = 50997; return SM5_png;
         case 0x98061d5a:  numBytes = 9443; return SoloOFF_png;
