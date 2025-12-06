@@ -1,5 +1,6 @@
 #include "PolyrhythmVizComponent.h"
 
+#include <algorithm>
 #include <cmath>
 
 namespace
@@ -266,14 +267,18 @@ void PolyrhythmVizComponent::paint(juce::Graphics& g)
             if (srcNumVerts < 2)
                 continue;
 
-            // Find adjacent active slots (srcIdx - 1 and srcIdx + 1)
+            // Find adjacent active slots by position in the activeSlots list
             std::vector<int> adjacentSlots;
-            if (srcIdx > 0 && slotVisuals[(size_t)(srcIdx - 1)].active &&
-                !slotVisuals[(size_t)(srcIdx - 1)].vertices.empty())
-                adjacentSlots.push_back(srcIdx - 1);
-            if (srcIdx < kNumSlots - 1 && slotVisuals[(size_t)(srcIdx + 1)].active &&
-                !slotVisuals[(size_t)(srcIdx + 1)].vertices.empty())
-                adjacentSlots.push_back(srcIdx + 1);
+            auto it = std::find(activeSlots.begin(), activeSlots.end(), srcIdx);
+            if (it != activeSlots.end())
+            {
+                // Add the previous active slot (inner ring)
+                if (it != activeSlots.begin())
+                    adjacentSlots.push_back(*(it - 1));
+                // Add the next active slot (outer ring)
+                if (it + 1 != activeSlots.end())
+                    adjacentSlots.push_back(*(it + 1));
+            }
 
             if (adjacentSlots.empty())
                 continue;
