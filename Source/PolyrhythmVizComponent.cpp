@@ -272,10 +272,10 @@ void PolyrhythmVizComponent::paint(juce::Graphics& g)
             for (int arcNum = 0; arcNum < numArcs && activeSlots.size() > 1; ++arcNum)
             {
                 // Use arcIntensity and masterPhase for variation - these change with each firing
-                const float intensity = srcSlot.arcIntensity;
-                const float seed1 = std::fmod((float)srcIdx * 0.17f + (float)arcNum * 0.31f + intensity * 7.3f + (float)masterPhase * 13.7f, 1.0f);
-                const float seed2 = std::fmod((float)srcIdx * 0.13f + (float)arcNum * 0.37f + intensity * 11.9f + (float)masterPhase * 17.3f, 1.0f);
-                const float seed3 = std::fmod((float)srcIdx * 0.23f + (float)arcNum * 0.41f + intensity * 5.7f + (float)masterPhase * 19.1f, 1.0f);
+                const float arcInt = srcSlot.arcIntensity;
+                const float seed1 = std::fmod((float)srcIdx * 0.17f + (float)arcNum * 0.31f + arcInt * 7.3f + (float)masterPhase * 13.7f, 1.0f);
+                const float seed2 = std::fmod((float)srcIdx * 0.13f + (float)arcNum * 0.37f + arcInt * 11.9f + (float)masterPhase * 17.3f, 1.0f);
+                const float seed3 = std::fmod((float)srcIdx * 0.23f + (float)arcNum * 0.41f + arcInt * 5.7f + (float)masterPhase * 19.1f, 1.0f);
 
                 // Pick a random vertex from the source ring
                 const int srcVertIdx = (int)(seed3 * (float)srcNumVerts) % srcNumVerts;
