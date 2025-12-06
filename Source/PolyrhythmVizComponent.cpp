@@ -258,7 +258,7 @@ void PolyrhythmVizComponent::paint(juce::Graphics& g)
                 activeSlots.push_back(i);
         }
 
-        // Draw arcs connecting random vertices across different rings
+        // Draw arcs connecting random vertices between adjacent rings only
         for (int srcIdx : firedSlots)
         {
             const auto& srcSlot = slotVisuals[(size_t)srcIdx];
@@ -266,10 +266,22 @@ void PolyrhythmVizComponent::paint(juce::Graphics& g)
             if (srcNumVerts < 2)
                 continue;
 
+            // Find adjacent active slots (srcIdx - 1 and srcIdx + 1)
+            std::vector<int> adjacentSlots;
+            if (srcIdx > 0 && slotVisuals[(size_t)(srcIdx - 1)].active &&
+                !slotVisuals[(size_t)(srcIdx - 1)].vertices.empty())
+                adjacentSlots.push_back(srcIdx - 1);
+            if (srcIdx < kNumSlots - 1 && slotVisuals[(size_t)(srcIdx + 1)].active &&
+                !slotVisuals[(size_t)(srcIdx + 1)].vertices.empty())
+                adjacentSlots.push_back(srcIdx + 1);
+
+            if (adjacentSlots.empty())
+                continue;
+
             // Create 1-3 arcs per fired slot based on intensity
             const int numArcs = 1 + (int)(srcSlot.arcIntensity * 2.0f);
 
-            for (int arcNum = 0; arcNum < numArcs && activeSlots.size() > 1; ++arcNum)
+            for (int arcNum = 0; arcNum < numArcs; ++arcNum)
             {
                 // Use arcIntensity and masterPhase for variation - these change with each firing
                 const float arcInt = srcSlot.arcIntensity;
@@ -281,12 +293,8 @@ void PolyrhythmVizComponent::paint(juce::Graphics& g)
                 const int srcVertIdx = (int)(seed3 * (float)srcNumVerts) % srcNumVerts;
                 const auto srcPoint = rotatePointForSlot(srcSlot, srcSlot.vertices[(size_t)srcVertIdx]);
 
-                // Pick a different target slot (not the source)
-                int targetIdx = activeSlots[(size_t)(seed1 * (float)activeSlots.size()) % activeSlots.size()];
-                if (targetIdx == srcIdx)
-                    targetIdx = activeSlots[(size_t)((seed1 + 0.5f) * (float)activeSlots.size()) % activeSlots.size()];
-                if (targetIdx == srcIdx)
-                    continue;
+                // Pick an adjacent slot
+                const int targetIdx = adjacentSlots[(size_t)(seed1 * (float)adjacentSlots.size()) % adjacentSlots.size()];
 
                 const auto& targetSlot = slotVisuals[(size_t)targetIdx];
                 const int numVerts = (int)targetSlot.vertices.size();
