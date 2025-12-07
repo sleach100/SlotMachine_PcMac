@@ -72,6 +72,9 @@
       <FILE id="gFpeJr" name="TOM-Mid.wav" compile="0" resource="1" file="Resources/Open Source Wav Files/TOM-Mid.wav"/>
     </GROUP>
     <GROUP id="{61926566-C5DF-8EE6-5986-B7E788C417A8}" name="Source">
+      <FILE id="mp6kyU" name="UpdateChecker.cpp" compile="1" resource="0"
+            file="Source/UpdateChecker.cpp"/>
+      <FILE id="ReXKpo" name="UpdateChecker.h" compile="0" resource="0" file="Source/UpdateChecker.h"/>
       <FILE id="zLKFgk" name="SpeakerIcon.png" compile="0" resource="1" file="Resources/Images/SpeakerIcon.png"/>
       <FILE id="zN1pzk" name="PluginProcessor.cpp" compile="1" resource="0"
             file="Source/PluginProcessor.cpp"/>
@@ -111,10 +114,14 @@
       <FILE id="PM0002" name="WindowsPowerMonitor.h" compile="0" resource="0"
             file="Source/WindowsPowerMonitor.h"/>
     </GROUP>
-    <FILE id="RTt46d" name="base32.h" compile="0" resource="0" file="Source/base32.h" xcodeResource="0"/>
-    <FILE id="TQ3uw4" name="crypto_small.h" compile="0" resource="0" file="Source/crypto_small.h" xcodeResource="0"/>
-    <FILE id="mjuz99" name="license.cpp" compile="0" resource="0" file="Source/license.cpp" xcodeResource="0"/>
-    <FILE id="yl6Hgw" name="license.h" compile="0" resource="0" file="Source/license.h" xcodeResource="0"/>
+    <FILE id="RTt46d" name="base32.h" compile="0" resource="0" file="Source/base32.h"
+          xcodeResource="0"/>
+    <FILE id="TQ3uw4" name="crypto_small.h" compile="0" resource="0" file="Source/crypto_small.h"
+          xcodeResource="0"/>
+    <FILE id="mjuz99" name="license.cpp" compile="0" resource="0" file="Source/license.cpp"
+          xcodeResource="0"/>
+    <FILE id="yl6Hgw" name="license.h" compile="0" resource="0" file="Source/license.h"
+          xcodeResource="0"/>
     <FILE id="ClHMkc" name="LockIcon2.png" compile="0" resource="1" file="Resources/Images/LockIcon2.png"/>
     <FILE id="Jej5zP" name="LonePearLogic.png" compile="0" resource="1"
           file="Resources/Images/LonePearLogic.png"/>

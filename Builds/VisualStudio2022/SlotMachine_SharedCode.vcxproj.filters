@@ -673,6 +673,9 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\Source\UpdateChecker.cpp">
+      <Filter>SlotMachine\Source</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\Source\PluginProcessor.cpp">
       <Filter>SlotMachine\Source</Filter>
     </ClCompile>
@@ -3573,6 +3576,9 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\Source\UpdateChecker.h">
+      <Filter>SlotMachine\Source</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\Source\PluginProcessor.h">
       <Filter>SlotMachine\Source</Filter>
     </ClInclude>
