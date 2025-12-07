@@ -126,6 +126,28 @@ namespace
             }));
     }
 
+    void showInfoWithCallback(juce::Component* parent,
+        const juce::String& title,
+        const juce::String& message,
+        std::function<void()> onDismiss)
+    {
+        auto options = juce::MessageBoxOptions()
+            .withIconType(juce::MessageBoxIconType::InfoIcon)
+            .withTitle(title)
+            .withMessage(message)
+            .withButton("OK");
+
+        if (parent != nullptr)
+            options = options.withAssociatedComponent(parent);
+
+        juce::AlertWindow::showAsync(options,
+            juce::ModalCallbackFunction::create([fn = std::move(onDismiss)](int)
+            {
+                if (fn)
+                    fn();
+            }));
+    }
+
     class ExportCyclesDialog : public juce::Component,
                                private juce::Button::Listener,
                                private juce::TextEditor::Listener
@@ -4135,7 +4157,6 @@ void SlotMachineAudioProcessorEditor::updateLockIconPositions()
         icon.toFront(false);
     };
 
-    updateIcon(btnLoad, lockIconLoad);
     updateIcon(btnExportAudio, lockIconExportAudio);
     updateIcon(btnExportMidi, lockIconExportMidi);
 }
@@ -5939,15 +5960,54 @@ void SlotMachineAudioProcessorEditor::buttonClicked(juce::Button* b)
         return;
     }
 
-    if (!isUnlocked && (b == &btnLoad || b == &btnExportAudio || b == &btnExportMidi))
+    if (!isUnlocked && (b == &btnExportAudio || b == &btnExportMidi))
     {
         showTrialModeDialog();
         return;
     }
 
+    // Check if any slots have samples loaded before allowing export
+    if (b == &btnExportAudio || b == &btnExportMidi)
+    {
+        bool anySamplesLoaded = false;
+        for (int i = 0; i < kNumSlots; ++i)
+        {
+            if (slots[(size_t)i] && slots[(size_t)i]->hasFile)
+            {
+                anySamplesLoaded = true;
+                break;
+            }
+        }
+
+        if (!anySamplesLoaded)
+        {
+            juce::AlertWindow::showMessageBoxAsync(
+                juce::AlertWindow::WarningIcon,
+                "Export",
+                "No samples are loaded. Please load at least one sample before exporting.");
+            return;
+        }
+    }
+
     // >>> Load sequence: Stop -> Load (initialization happens after confirming the preset)
     if (b == &btnLoad)
     {
+        if (!isUnlocked)
+        {
+            auto safeThis = juce::Component::SafePointer<SlotMachineAudioProcessorEditor>(this);
+            showInfoWithCallback(this,
+                "S.L.O.T. Machine",
+                "Working on something cool?\nActivate S.L.O.T. Machine to unlock Exporting of Audio and MIDI.",
+                [safeThis]()
+                {
+                    if (auto* editor = safeThis.getComponent())
+                    {
+                        editor->setMasterRun(false);
+                        editor->doLoadPreset();
+                    }
+                });
+            return;
+        }
         setMasterRun(false);
         doLoadPreset();
         return;
