@@ -5966,6 +5966,29 @@ void SlotMachineAudioProcessorEditor::buttonClicked(juce::Button* b)
         return;
     }
 
+    // Check if any slots have samples loaded before allowing export
+    if (b == &btnExportAudio || b == &btnExportMidi)
+    {
+        bool anySamplesLoaded = false;
+        for (int i = 0; i < kNumSlots; ++i)
+        {
+            if (slots[(size_t)i] && slots[(size_t)i]->hasFile)
+            {
+                anySamplesLoaded = true;
+                break;
+            }
+        }
+
+        if (!anySamplesLoaded)
+        {
+            juce::AlertWindow::showMessageBoxAsync(
+                juce::AlertWindow::WarningIcon,
+                "Export",
+                "No samples are loaded. Please load at least one sample before exporting.");
+            return;
+        }
+    }
+
     // >>> Load sequence: Stop -> Load (initialization happens after confirming the preset)
     if (b == &btnLoad)
     {
