@@ -6965,7 +6965,7 @@ void SlotMachineAudioProcessorEditor::updateSliderKnobColours(juce::Colour pulse
 void SlotMachineAudioProcessorEditor::doSavePreset()
 {
     saveCurrentPattern();
-    auto chooser = std::make_shared<juce::FileChooser>("Save preset", juce::File(), "*.xml");
+    auto chooser = std::make_shared<juce::FileChooser>("Save preset", lastLoadedPresetFile, "*.xml");
     fileDialogActive = true;
     chooser->launchAsync(juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles,
         [this, chooser](const juce::FileChooser& fc) mutable
@@ -6984,7 +6984,11 @@ void SlotMachineAudioProcessorEditor::doSavePreset()
             {
                 auto state = processor.copyStateWithVersion();
                 if (auto xml = state.createXml())
+                {
                     xml->writeTo(f);
+                    // Remember saved file path for next save dialog (per-session only)
+                    lastLoadedPresetFile = f;
+                }
             };
 
             // Check if file exists and ask user if they want to overwrite
@@ -7087,6 +7091,9 @@ void SlotMachineAudioProcessorEditor::doLoadPreset()
                 refreshSlotFileLabels(none);
                 showPatternWarning(none);
             }
+
+            // Remember loaded file path for save dialog (per-session only)
+            lastLoadedPresetFile = f;
 
             // Persist options immediately too (Standalone)
             saveOptionsToDisk(apvts);

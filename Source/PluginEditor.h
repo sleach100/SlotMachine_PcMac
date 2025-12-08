@@ -495,6 +495,7 @@ private:
     juce::ValueTree pendingPatternTree;
     bool fileDialogActive = false;
     bool suppressNextFileBtnClick = false;
+    juce::File lastLoadedPresetFile;  // Remembers file path for save dialog (per-session only)
     juce::Component::SafePointer<juce::DialogWindow> exportCyclesPromptWindow;
     juce::Component::SafePointer<juce::DialogWindow> loopPlaythroughDialog;
     juce::Component::SafePointer<juce::DialogWindow> aboutDialog;
