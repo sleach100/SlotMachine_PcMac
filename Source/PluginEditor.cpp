@@ -545,13 +545,8 @@ namespace
             optionLabel.setBounds(labelBounds);
 
             bounds.removeFromTop(8);
-            auto optionsRow = bounds.removeFromTop(28);
-            const int spacing = 16;
-            const int availableForButtons = juce::jmax(0, optionsRow.getWidth() - spacing);
-            const int buttonWidth = juce::jmax(80, availableForButtons / 2);
-            loopOn.setBounds(optionsRow.removeFromLeft(buttonWidth));
-            optionsRow.removeFromLeft(spacing);
-            loopOff.setBounds(optionsRow.removeFromLeft(buttonWidth));
+            loopOn.setBounds(bounds.removeFromTop(28));
+            loopOff.setBounds(bounds.removeFromTop(28));
         }
 
     private:
