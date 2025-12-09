@@ -6021,7 +6021,16 @@ void SlotMachineAudioProcessorEditor::buttonClicked(juce::Button* b)
             [safeThis]()
             {
                 if (auto* editor = safeThis.getComponent())
+                {
                     editor->doResetAll();
+
+                    // Refresh patternsTree from processor to ensure it's not stale
+                    editor->patternsTree = editor->processor.getPatternsTree();
+
+                    // Only reset Loop Playthrough if there is only 1 tab open
+                    if (editor->patternsTree.getNumChildren() <= 1)
+                        editor->setLoopPlaythroughEnabled(false);
+                }
             });
 
         return;
@@ -6039,6 +6048,7 @@ void SlotMachineAudioProcessorEditor::buttonClicked(juce::Button* b)
                 {
                     editor->resetPatternsToSingleDefault();
                     editor->doResetAll();
+                    editor->setLoopPlaythroughEnabled(false);
                 }
             });
 
