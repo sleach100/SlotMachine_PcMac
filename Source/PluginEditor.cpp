@@ -541,12 +541,13 @@ namespace
             instruction.setBounds(messageBounds);
 
             bounds.removeFromTop(8);
-            auto labelBounds = bounds.removeFromTop(24);
-            optionLabel.setBounds(labelBounds);
+            auto optionsArea = bounds.removeFromTop(80);
+            auto leftArea = optionsArea.removeFromLeft(optionsArea.getWidth() / 2);
+            optionLabel.setBounds(leftArea.removeFromTop(24));
 
-            bounds.removeFromTop(8);
-            loopOn.setBounds(bounds.removeFromTop(28));
-            loopOff.setBounds(bounds.removeFromTop(28));
+            auto radioArea = optionsArea;
+            loopOn.setBounds(radioArea.removeFromTop(28));
+            loopOff.setBounds(radioArea.removeFromTop(28));
         }
 
     private:
