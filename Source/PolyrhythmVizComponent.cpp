@@ -197,6 +197,9 @@ juce::Image PolyrhythmVizComponent::renderNebulaImage(const NebulaSettings& sett
     juce::Image image(juce::Image::ARGB, settings.width, settings.height, true);
     juce::Image::BitmapData data(image, juce::Image::BitmapData::writeOnly);
 
+    static constexpr float kNebulaFloor = 0.1f;
+    static constexpr float kContrastPower = 3.0f;
+
     const float invWidth = 1.0f / (float)settings.width;
     const float invHeight = 1.0f / (float)settings.height;
     const auto centre = juce::Point<float>((float)settings.width * 0.5f, (float)settings.height * 0.5f);
@@ -215,6 +218,9 @@ juce::Image PolyrhythmVizComponent::renderNebulaImage(const NebulaSettings& sett
             // Gentle warp to avoid grid patterns
             const float warp = fbm((nx + 11.3f) * 1.2f, (ny - 7.1f) * 1.2f, (uint32_t)(settings.seed + 17));
             noise = juce::jlimit(0.0f, 1.0f, juce::jmap(warp, 0.25f, 0.75f, noise * 0.8f, noise * 1.2f));
+
+            noise = juce::jmap(noise, 0.0f, 1.0f, kNebulaFloor, 1.0f);
+            noise = std::pow(noise, kContrastPower);
 
             // Soft vignette baked into the texture to keep edges gentle
             const auto p = juce::Point<float>((float)x, (float)y);
