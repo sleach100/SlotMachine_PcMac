@@ -1164,11 +1164,15 @@ void PolyrhythmVizComponent::drawElectricArc(int slotIndex)
         float alpha = srcSlot.arcIntensity * 0.15f;
         juce::Colour arcColour = srcSlot.colour.withHue(srcSlot.colour.getHue()).withSaturation(0.5f).withBrightness(1.0f);
         g.setColour(arcColour.withAlpha(alpha));
-        g.strokePath(jaggedPath, juce::PathStrokeType(maxGlowWidth, juce::PathStrokeType::miter, juce::PathStrokeType::butt));
+        g.strokePath(jaggedPath, juce::PathStrokeType(maxGlowWidth,
+                                                      juce::PathStrokeType::JointStyle::mitered,
+                                                      juce::PathStrokeType::EndCapStyle::butt));
 
         alpha = srcSlot.arcIntensity * 0.9f;
         g.setColour(juce::Colours::white.withAlpha(alpha));
-        g.strokePath(jaggedPath, juce::PathStrokeType(2.0f, juce::PathStrokeType::miter, juce::PathStrokeType::butt));
+        g.strokePath(jaggedPath, juce::PathStrokeType(2.0f,
+                                                      juce::PathStrokeType::JointStyle::mitered,
+                                                      juce::PathStrokeType::EndCapStyle::butt));
     }
 }
 
