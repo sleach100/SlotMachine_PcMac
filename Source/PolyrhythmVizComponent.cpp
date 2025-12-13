@@ -150,15 +150,15 @@ void PolyrhythmVizComponent::requestNebulaRender(const NebulaSettings& settings)
 
 void PolyrhythmVizComponent::startNebulaRender(const NebulaSettings& settings)
 {
-    auto weakThis = juce::WeakReference<PolyrhythmVizComponent>(this, weakRefMaster);
+    juce::Component::SafePointer<PolyrhythmVizComponent> safeThis(this);
 
-    std::thread([weakThis, settings]() mutable
+    std::thread([safeThis, settings]() mutable
     {
         auto image = renderNebulaImage(settings);
 
-        juce::MessageManager::callAsync([weakThis, settings, image = std::move(image)]() mutable
+        juce::MessageManager::callAsync([safeThis, settings, image = std::move(image)]() mutable
         {
-            if (auto* owner = weakThis.get())
+            if (auto* owner = safeThis.getComponent())
             {
                 if (owner->shuttingDown.load())
                     return;

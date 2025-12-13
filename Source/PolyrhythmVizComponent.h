@@ -98,7 +98,6 @@ private:
     std::optional<NebulaSettings> queuedNebulaSettings;
     std::atomic<bool> nebulaRenderInProgress{ false };
     std::atomic<bool> shuttingDown{ false };
-    juce::WeakReference<PolyrhythmVizComponent>::Master weakRefMaster;
 
     void ensureNebulaCache();
     NebulaSettings computeNebulaSettings() const;
