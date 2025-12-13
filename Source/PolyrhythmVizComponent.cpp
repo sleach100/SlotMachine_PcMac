@@ -197,8 +197,8 @@ juce::Image PolyrhythmVizComponent::renderNebulaImage(const NebulaSettings& sett
     juce::Image image(juce::Image::ARGB, settings.width, settings.height, true);
     juce::Image::BitmapData data(image, juce::Image::BitmapData::writeOnly);
 
-    static constexpr float kNebulaFloor = 0.1f;
-    static constexpr float kContrastPower = 3.0f;
+    static constexpr float kNebulaFloor = 0.08f;
+    static constexpr float kContrastPower = 4.5f;
 
     const float invWidth = 1.0f / (float)settings.width;
     const float invHeight = 1.0f / (float)settings.height;
