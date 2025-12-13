@@ -64,6 +64,8 @@ private:
         bool edgeWalk = true;
         // Electric arc effect: track when this slot last fired
         float arcIntensity = 0.0f;  // Decays over time, used for arc brightness
+        juce::Image cachedArcGlow;   // Off-screen glow cache for electric arc
+        juce::Rectangle<float> cachedArcBounds{};  // Destination bounds for cached arc image
         // Starlight Twinkle effect: per-vertex brightness values
         std::vector<float> twinkleBrightness;  // Brightness for each vertex (0-1), decays over time
         // Alternating Rotation effect: current rotation angle for this polygon
@@ -104,4 +106,5 @@ private:
     void requestNebulaRender(const NebulaSettings& settings);
     void startNebulaRender(const NebulaSettings& settings);
     static juce::Image renderNebulaImage(const NebulaSettings& settings);
+    void updateElectricArcGlowCache(const std::vector<int>& activeSlots, float maxRadius, bool alternatingRotationEnabled);
 };
