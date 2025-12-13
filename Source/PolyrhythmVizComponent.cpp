@@ -11,6 +11,50 @@ namespace
     constexpr float kBeadRadius = 6.0f;
     constexpr float kFlashDecay = 0.06f;
     constexpr float kTwinkleDecay = 0.04f;  // Slower decay for starlight effect
+
+    float hashToUnit(int x, int y, uint32_t seed)
+    {
+        auto v = static_cast<uint32_t>(x * 73856093) ^ static_cast<uint32_t>(y * 19349663) ^ (seed * 83492791u);
+        v ^= (v >> 13);
+        v *= 1274126177u;
+        return (float)(v & 0x00ffffffu) / (float)0x01000000u;
+    }
+
+    float interpolatedNoise(float x, float y, uint32_t seed)
+    {
+        const int x0 = (int)std::floor(x);
+        const int y0 = (int)std::floor(y);
+        const int x1 = x0 + 1;
+        const int y1 = y0 + 1;
+
+        const float tx = x - (float)x0;
+        const float ty = y - (float)y0;
+
+        const float n00 = hashToUnit(x0, y0, seed);
+        const float n10 = hashToUnit(x1, y0, seed);
+        const float n01 = hashToUnit(x0, y1, seed);
+        const float n11 = hashToUnit(x1, y1, seed);
+
+        const float nx0 = juce::jmap(tx, n00, n10);
+        const float nx1 = juce::jmap(tx, n01, n11);
+        return juce::jmap(ty, nx0, nx1);
+    }
+
+    float fbm(float x, float y, uint32_t seed)
+    {
+        float value = 0.0f;
+        float amplitude = 0.6f;
+        float frequency = 1.2f;
+
+        for (int octave = 0; octave < 4; ++octave)
+        {
+            value += interpolatedNoise(x * frequency, y * frequency, seed + (uint32_t)(octave * 97)) * amplitude;
+            amplitude *= 0.55f;
+            frequency *= 1.7f;
+        }
+
+        return juce::jlimit(0.0f, 1.0f, value);
+    }
 }
 
 PolyrhythmVizComponent::PolyrhythmVizComponent(SlotMachineAudioProcessor& proc, APVTS& state)
@@ -32,7 +76,164 @@ PolyrhythmVizComponent::PolyrhythmVizComponent(SlotMachineAudioProcessor& proc, 
 
 PolyrhythmVizComponent::~PolyrhythmVizComponent()
 {
+    shuttingDown = true;
     stopTimer();
+}
+
+PolyrhythmVizComponent::NebulaSettings PolyrhythmVizComponent::computeNebulaSettings() const
+{
+    NebulaSettings settings;
+    const float dpiScale = (float)getDesktopScaleFactor();
+    settings.dpiScale = dpiScale;
+    settings.overscanScale = 1.45f;
+
+    const float scaledWidth = (float)getWidth() * settings.overscanScale * dpiScale;
+    const float scaledHeight = (float)getHeight() * settings.overscanScale * dpiScale;
+
+    settings.width = juce::jmax(1, (int)std::ceil(scaledWidth));
+    settings.height = juce::jmax(1, (int)std::ceil(scaledHeight));
+    settings.contrast = 1.35f;
+    settings.brightness = 1.0f;
+    settings.seed = 20240529;
+
+    return settings;
+}
+
+void PolyrhythmVizComponent::ensureNebulaCache()
+{
+    if (getWidth() <= 0 || getHeight() <= 0)
+        return;
+
+    const auto settings = computeNebulaSettings();
+
+    const bool sizeChanged = settings.width != cachedNebulaSettings.width
+        || settings.height != cachedNebulaSettings.height
+        || std::abs(settings.dpiScale - cachedNebulaSettings.dpiScale) > 0.001f
+        || std::abs(settings.overscanScale - cachedNebulaSettings.overscanScale) > 0.001f;
+
+    const bool paletteChanged = settings.paletteA != cachedNebulaSettings.paletteA
+        || settings.paletteB != cachedNebulaSettings.paletteB
+        || settings.seed != cachedNebulaSettings.seed
+        || std::abs(settings.contrast - cachedNebulaSettings.contrast) > 0.0001f
+        || std::abs(settings.brightness - cachedNebulaSettings.brightness) > 0.0001f;
+
+    if (!nebulaImage.isValid() || sizeChanged || paletteChanged)
+        requestNebulaRender(settings);
+}
+
+void PolyrhythmVizComponent::requestNebulaRender(const NebulaSettings& settings)
+{
+    if (!settings.isValid())
+        return;
+
+    if (nebulaImage.isValid()
+        && settings.width == cachedNebulaSettings.width
+        && settings.height == cachedNebulaSettings.height
+        && std::abs(settings.dpiScale - cachedNebulaSettings.dpiScale) < 0.001f
+        && std::abs(settings.overscanScale - cachedNebulaSettings.overscanScale) < 0.001f
+        && settings.paletteA == cachedNebulaSettings.paletteA
+        && settings.paletteB == cachedNebulaSettings.paletteB
+        && settings.seed == cachedNebulaSettings.seed
+        && std::abs(settings.contrast - cachedNebulaSettings.contrast) < 0.0001f
+        && std::abs(settings.brightness - cachedNebulaSettings.brightness) < 0.0001f)
+    {
+        return;
+    }
+
+    queuedNebulaSettings = settings;
+
+    if (nebulaRenderInProgress.exchange(true))
+        return;
+
+    startNebulaRender(settings);
+}
+
+void PolyrhythmVizComponent::startNebulaRender(const NebulaSettings& settings)
+{
+    juce::Component::SafePointer<PolyrhythmVizComponent> safeThis(this);
+
+    std::thread([safeThis, settings]() mutable
+    {
+        auto image = renderNebulaImage(settings);
+
+        juce::MessageManager::callAsync([safeThis, settings, image = std::move(image)]() mutable
+        {
+            if (auto* owner = safeThis.getComponent())
+            {
+                if (owner->shuttingDown.load())
+                    return;
+
+                owner->nebulaImage = std::move(image);
+                owner->cachedNebulaSettings = settings;
+                owner->nebulaRenderInProgress = false;
+
+                if (owner->queuedNebulaSettings.has_value()
+                    && (owner->queuedNebulaSettings->width != settings.width
+                        || owner->queuedNebulaSettings->height != settings.height
+                        || std::abs(owner->queuedNebulaSettings->dpiScale - settings.dpiScale) > 0.001f
+                        || std::abs(owner->queuedNebulaSettings->overscanScale - settings.overscanScale) > 0.001f
+                        || owner->queuedNebulaSettings->paletteA != settings.paletteA
+                        || owner->queuedNebulaSettings->paletteB != settings.paletteB
+                        || owner->queuedNebulaSettings->seed != settings.seed
+                        || std::abs(owner->queuedNebulaSettings->contrast - settings.contrast) > 0.0001f
+                        || std::abs(owner->queuedNebulaSettings->brightness - settings.brightness) > 0.0001f))
+                {
+                    auto nextSettings = *owner->queuedNebulaSettings;
+                    owner->queuedNebulaSettings.reset();
+                    owner->requestNebulaRender(nextSettings);
+                }
+                else
+                {
+                    owner->queuedNebulaSettings.reset();
+                    owner->repaint();
+                }
+            }
+        });
+    }).detach();
+}
+
+juce::Image PolyrhythmVizComponent::renderNebulaImage(const NebulaSettings& settings)
+{
+    juce::Image image(juce::Image::ARGB, settings.width, settings.height, true);
+    juce::Image::BitmapData data(image, juce::Image::BitmapData::writeOnly);
+
+    const float invWidth = 1.0f / (float)settings.width;
+    const float invHeight = 1.0f / (float)settings.height;
+    const auto centre = juce::Point<float>((float)settings.width * 0.5f, (float)settings.height * 0.5f);
+    const float maxRadius = centre.getDistanceFrom({ 0.0f, 0.0f });
+
+    for (int y = 0; y < settings.height; ++y)
+    {
+        for (int x = 0; x < settings.width; ++x)
+        {
+            const float nx = (float)x * invWidth;
+            const float ny = (float)y * invHeight;
+
+            // Multi-octave value noise for soft nebula texture
+            float noise = fbm(nx * 3.6f, ny * 3.6f, (uint32_t)settings.seed);
+
+            // Gentle warp to avoid grid patterns
+            const float warp = fbm((nx + 11.3f) * 1.2f, (ny - 7.1f) * 1.2f, (uint32_t)(settings.seed + 17));
+            noise = juce::jlimit(0.0f, 1.0f, juce::jmap(warp, 0.25f, 0.75f, noise * 0.8f, noise * 1.2f));
+
+            // Soft vignette baked into the texture to keep edges gentle
+            const auto p = juce::Point<float>((float)x, (float)y);
+            const float dist = p.getDistanceFrom(centre);
+            const float edgeFade = juce::jlimit(0.0f, 1.0f, 1.05f - (dist / maxRadius) * 0.75f);
+
+            float intensity = juce::jlimit(0.0f, 1.0f, noise * edgeFade * settings.brightness);
+            intensity = std::pow(intensity, settings.contrast);
+
+            const float mix = juce::jlimit(0.0f, 1.0f, intensity * 1.1f);
+            auto colour = settings.paletteA.interpolatedWith(settings.paletteB, mix);
+            const float alpha = juce::jlimit(0.0f, 1.0f, 0.35f + mix * 0.55f);
+            colour = colour.withAlpha(alpha);
+
+            data.setPixelColour(x, y, colour);
+        }
+    }
+
+    return image;
 }
 
 void PolyrhythmVizComponent::paint(juce::Graphics& g)
@@ -46,92 +247,44 @@ void PolyrhythmVizComponent::paint(juce::Graphics& g)
     if (auto* param = apvts.getRawParameterValue("optVisualizerNebulaDrift"))
         nebulaDriftEnabledEarly = param->load() >= 0.5f;
 
-    // Nebula Drift: soft, dreamy cinematic background with blur and vignette
+    // Nebula Drift: draw cached, overscanned texture with subtle translation
     if (nebulaDriftEnabledEarly)
     {
-        // Render nebula layers directly to screen (no offscreen buffer needed)
-        // Use very large, soft gradients for dreamy effect without expensive blur
+        ensureNebulaCache();
 
-        // Two-color palette: Teal #2BD7D1 → Magenta #FF4DD2
-        const juce::Colour tealAnchor(0x2B, 0xD7, 0xD1);
-        const juce::Colour magentaAnchor(0xFF, 0x4D, 0xD2);
-
-        // Slow sinusoidal crossfade between the two colors
-        const float paletteMix = std::sin(nebulaTime * 0.02f) * 0.5f + 0.5f;
-
-        // Gentle breathing modulation (±10% of alpha, long decay)
-        const float breathMod = 1.0f + nebulaEnergy * 0.10f;
-
-        const float bw = bounds.getWidth();
-        const float bh = bounds.getHeight();
-        const float maxDim = juce::jmax(bw, bh);
-
-        // === Layer 1: Base Aura (very large, covers entire canvas) ===
+        auto cachedImage = nebulaImage;
+        if (cachedImage.isValid() && cachedNebulaSettings.isValid())
         {
-            const float driftX = std::sin(nebulaTime * 0.015f) * 0.12f;
-            const float driftY = std::cos(nebulaTime * 0.012f + 0.7f) * 0.10f;
+            const float inverseScale = cachedNebulaSettings.dpiScale > 0.0f
+                ? 1.0f / cachedNebulaSettings.dpiScale
+                : 1.0f;
 
-            const float cx = bounds.getCentreX() + driftX * bw;
-            const float cy = bounds.getCentreY() + driftY * bh;
-            const float radius = maxDim * 0.95f;
+            const float destWidth = (float)cachedNebulaSettings.width * inverseScale;
+            const float destHeight = (float)cachedNebulaSettings.height * inverseScale;
 
-            const auto layerColour = tealAnchor.interpolatedWith(magentaAnchor, paletteMix * 0.3f);
-            const float alpha = 0.20f * breathMod;
+            juce::Rectangle<float> dest(bounds.getCentreX() - destWidth * 0.5f,
+                                        bounds.getCentreY() - destHeight * 0.5f,
+                                        destWidth,
+                                        destHeight);
 
-            juce::ColourGradient gradient(layerColour.withAlpha(alpha), cx, cy,
-                                          layerColour.withAlpha(0.0f), cx + radius, cy, true);
-            g.setGradientFill(gradient);
-            g.fillRect(bounds);
-        }
+            const float marginX = juce::jmax(0.0f, (destWidth - bounds.getWidth()) * 0.5f);
+            const float marginY = juce::jmax(0.0f, (destHeight - bounds.getHeight()) * 0.5f);
 
-        // === Layer 2: Mid Cloud ===
-        {
-            const float driftX = std::sin(nebulaTime * 0.022f + 1.2f) * 0.14f;
-            const float driftY = std::cos(nebulaTime * 0.018f + 2.1f) * 0.13f;
+            const float driftX = std::sin(nebulaTime * 0.018f) * marginX * 0.6f;
+            const float driftY = std::cos(nebulaTime * 0.015f + 0.7f) * marginY * 0.6f;
+            dest.translate(driftX, driftY);
 
-            const float cx = bounds.getCentreX() + driftX * bw;
-            const float cy = bounds.getCentreY() + driftY * bh;
-            const float radius = maxDim * 0.65f;
+            const float opacity = juce::jlimit(0.08f, 0.85f, 0.45f * (1.0f + nebulaEnergy * 0.12f));
+            g.setImageResamplingQuality(juce::Graphics::highResamplingQuality);
+            g.setOpacity(opacity);
+            g.drawImage(cachedImage, dest);
+            g.setOpacity(1.0f);
 
-            const auto layerColour = tealAnchor.interpolatedWith(magentaAnchor, paletteMix * 0.6f + 0.2f);
-            const float alpha = 0.14f * breathMod;
-
-            juce::ColourGradient gradient(layerColour.withAlpha(alpha), cx, cy,
-                                          layerColour.withAlpha(0.0f), cx + radius, cy, true);
-            g.setGradientFill(gradient);
-            g.fillRect(bounds);
-        }
-
-        // === Layer 3: Small accent cloud ===
-        {
-            const float driftX = std::cos(nebulaTime * 0.025f + 3.5f) * 0.16f;
-            const float driftY = std::sin(nebulaTime * 0.02f + 1.9f) * 0.15f;
-
-            const float cx = bounds.getCentreX() + driftX * bw;
-            const float cy = bounds.getCentreY() + driftY * bh;
-            const float radius = maxDim * 0.5f;
-
-            const auto layerColour = tealAnchor.interpolatedWith(magentaAnchor, paletteMix * 0.8f + 0.5f);
-            const float alpha = 0.10f * breathMod;
-
-            juce::ColourGradient gradient(layerColour.withAlpha(alpha), cx, cy,
-                                          layerColour.withAlpha(0.0f), cx + radius, cy, true);
-            g.setGradientFill(gradient);
-            g.fillRect(bounds);
-        }
-
-        // Draw soft vignette (darken edges by 3-5%)
-        {
-            const float vignetteInnerRadius = juce::jmin(bw, bh) * 0.35f;
-            const float vignetteOuterRadius = juce::jmin(bw, bh) * 0.7f;
-
-            juce::ColourGradient vignette(
-                juce::Colours::transparentBlack,
-                bounds.getCentreX(), bounds.getCentreY(),
-                juce::Colours::black.withAlpha(0.04f),
-                bounds.getCentreX() + vignetteOuterRadius, bounds.getCentreY(),
-                true);
-            vignette.addColour(vignetteInnerRadius / vignetteOuterRadius, juce::Colours::transparentBlack);
+            // Soft vignette to keep focus toward the center and hide far edges of overscan
+            juce::ColourGradient vignette(juce::Colours::transparentBlack, bounds.getCentreX(), bounds.getCentreY(),
+                                         juce::Colours::black.withAlpha(0.20f),
+                                         bounds.getCentreX() + bounds.getWidth() * 0.75f,
+                                         bounds.getCentreY(), true);
             g.setGradientFill(vignette);
             g.fillRect(bounds);
         }

@@ -2,6 +2,9 @@
 
 #include <juce_gui_extra/juce_gui_extra.h>
 #include <array>
+#include <atomic>
+#include <optional>
+#include <thread>
 #include <vector>
 
 #include "PluginProcessor.h"
@@ -27,6 +30,21 @@ private:
 
     SlotMachineAudioProcessor& processor;
     APVTS& apvts;
+
+    struct NebulaSettings
+    {
+        int width = 0;
+        int height = 0;
+        float overscanScale = 1.0f;
+        float dpiScale = 1.0f;
+        juce::Colour paletteA{ 0x2B, 0xD7, 0xD1 };
+        juce::Colour paletteB{ 0xFF, 0x4D, 0xD2 };
+        int seed = 1337;
+        float contrast = 1.25f;
+        float brightness = 1.0f;
+
+        bool isValid() const noexcept { return width > 0 && height > 0; }
+    };
 
     struct SlotVisual
     {
@@ -73,4 +91,17 @@ private:
     // Nebula Drift effect: animation time and global energy tracker
     float nebulaTime = 0.0f;        // Continuous time accumulator for slow drift
     float nebulaEnergy = 0.0f;      // Smoothed global energy (RMS-like) for subtle brightness breath
+
+    // Nebula Drift: cached image and async generation state
+    juce::Image nebulaImage;
+    NebulaSettings cachedNebulaSettings{};
+    std::optional<NebulaSettings> queuedNebulaSettings;
+    std::atomic<bool> nebulaRenderInProgress{ false };
+    std::atomic<bool> shuttingDown{ false };
+
+    void ensureNebulaCache();
+    NebulaSettings computeNebulaSettings() const;
+    void requestNebulaRender(const NebulaSettings& settings);
+    void startNebulaRender(const NebulaSettings& settings);
+    static juce::Image renderNebulaImage(const NebulaSettings& settings);
 };
