@@ -25,6 +25,7 @@ public:
 
 private:
     void timerCallback() override;
+    void drawElectricArc(int slotIndex);
     void updateSlotGeometry(int slotIndex, juce::Point<float> centre, float radius);
     static void approximateRational(double value, int maxDenominator, int& num, int& den);
 
@@ -66,6 +67,10 @@ private:
         float arcIntensity = 0.0f;  // Decays over time, used for arc brightness
         juce::Image cachedArcGlow;   // Off-screen glow cache for electric arc
         juce::Rectangle<float> cachedArcBounds{};  // Destination bounds for cached arc image
+        // NEW: Neural Chaos Optimization: Arc Rebuild Throttling and Persistence
+        int64_t lastArcRebuildTime = 0; // Tracks when the cache was last updated (ms)
+        float lastArcIntensityQuantized = 0.0f; // Stores intensity value from last rebuild
+        bool arcGeometryNeedsRebuild = false; // Forces an immediate rebuild (set on hit)
         // Starlight Twinkle effect: per-vertex brightness values
         std::vector<float> twinkleBrightness;  // Brightness for each vertex (0-1), decays over time
         // Alternating Rotation effect: current rotation angle for this polygon
@@ -89,6 +94,7 @@ private:
 
     // Alternating Rotation: track cycle count for slow rotation across cycles
     uint64_t cycleCount = 0;
+    bool lastAlternatingRotationEnabled = false;
 
     // Nebula Drift effect: animation time and global energy tracker
     float nebulaTime = 0.0f;        // Continuous time accumulator for slow drift
@@ -106,5 +112,4 @@ private:
     void requestNebulaRender(const NebulaSettings& settings);
     void startNebulaRender(const NebulaSettings& settings);
     static juce::Image renderNebulaImage(const NebulaSettings& settings);
-    void updateElectricArcGlowCache(const std::vector<int>& activeSlots, float maxRadius, bool alternatingRotationEnabled);
 };
