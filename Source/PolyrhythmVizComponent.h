@@ -3,6 +3,7 @@
 #include <juce_gui_extra/juce_gui_extra.h>
 #include <array>
 #include <atomic>
+#include <cstdint>
 #include <optional>
 #include <thread>
 #include <vector>
