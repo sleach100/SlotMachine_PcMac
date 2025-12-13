@@ -11,6 +11,10 @@ namespace
     constexpr float kBeadRadius = 6.0f;
     constexpr float kFlashDecay = 0.06f;
     constexpr float kTwinkleDecay = 0.04f;  // Slower decay for starlight effect
+    // NEW: Throttling and Persistence Constants for Electric Arc Cache
+    constexpr int kArcRebuildIntervalMs = 80;   // Rebuild at max ~12.5 Hz
+    constexpr float kArcIntensityDeltaThreshold = 0.05f; // Rebuild if intensity changes by 5%
+    constexpr float kArcCachePersistenceThreshold = 0.02f; // Keep cache allocated until this intensity (avoids churn)
     constexpr float kArcThreshold = 0.3f;
     constexpr float kArcAlphaMax = 0.4f;
     constexpr float kArcWidth = 1.2f;
@@ -690,6 +694,7 @@ void PolyrhythmVizComponent::mouseDown(const juce::MouseEvent& e)
 
 void PolyrhythmVizComponent::timerCallback()
 {
+    const int64_t nowMs = juce::Time::getMillisecondCounter();
     const double currentPhase = processor.getMasterPhase();
     const bool wrapped = (currentPhase + 0.02) < lastPhase;
     if (wrapped)
@@ -745,6 +750,7 @@ void PolyrhythmVizComponent::timerCallback()
     bool alternatingRotationEnabled = false;
     if (auto* param = apvts.getRawParameterValue("optVisualizerAlternatingRotation"))
         alternatingRotationEnabled = param->load() >= 0.5f;
+    lastAlternatingRotationEnabled = alternatingRotationEnabled;
 
     activeCount = 0;
 
@@ -769,6 +775,10 @@ void PolyrhythmVizComponent::timerCallback()
             slot.active = false;
             slot.flash = juce::jmax(0.0f, slot.flash - kFlashDecay);
             slot.arcIntensity = 0.0f;
+            slot.lastArcRebuildTime = 0;
+            slot.lastArcIntensityQuantized = 0.0f;
+            slot.arcGeometryNeedsRebuild = false;
+            slot.lastArcRotationAngle = 0.0f;
             slot.cachedArcGlow = {};
             slot.cachedArcBounds = {};
             continue;
@@ -812,6 +822,7 @@ void PolyrhythmVizComponent::timerCallback()
             slot.lastHitCounter = hits;
             slot.flash = 1.0f;
             slot.arcIntensity = 1.0f;  // Trigger arc intensity on hit
+            slot.arcGeometryNeedsRebuild = true;
             slot.sweepGain = 1.0f;     // Boost neon sweep on hit
             nebulaEnergy = juce::jmin(1.0f, nebulaEnergy + 0.12f);  // Gentle boost to nebula energy on hit
             const int sides = juce::jmax(1, slot.sides);
@@ -844,7 +855,6 @@ void PolyrhythmVizComponent::timerCallback()
         else
         {
             slot.flash = juce::jmax(0.0f, slot.flash - kFlashDecay);
-            slot.arcIntensity = juce::jmax(0.0f, slot.arcIntensity * 0.92f - 0.008f);  // Slower decay for arcs
             slot.sweepGain = juce::jmax(0.0f, slot.sweepGain * 0.88f - 0.015f);  // Fast decay for sweep boost
         }
 
@@ -853,6 +863,17 @@ void PolyrhythmVizComponent::timerCallback()
         {
             for (auto& brightness : slot.twinkleBrightness)
                 brightness = juce::jmax(0.0f, brightness - kTwinkleDecay);
+        }
+
+        if (!electricArcEnabled)
+        {
+            slot.arcIntensity = 0.0f;
+            slot.lastArcRebuildTime = 0;
+            slot.lastArcIntensityQuantized = 0.0f;
+            slot.arcGeometryNeedsRebuild = false;
+            slot.lastArcRotationAngle = 0.0f;
+            slot.cachedArcGlow = {};
+            slot.cachedArcBounds = {};
         }
     }
 
@@ -901,218 +922,281 @@ void PolyrhythmVizComponent::timerCallback()
         }
     }
 
-    if (electricArcEnabled && maxRadius > 2.0f)
+    // Second pass: update electric arc cache using freshly computed rotations and geometry
+    if (electricArcEnabled)
     {
-        std::vector<int> activeSlots;
-        activeSlots.reserve(kNumSlots);
-
         for (int i = 0; i < kNumSlots; ++i)
         {
-            if (slotVisuals[(size_t)i].active && !slotVisuals[(size_t)i].vertices.empty())
-                activeSlots.push_back(i);
-        }
+            auto& slot = slotVisuals[(size_t)i];
+            if (!slot.active)
+                continue;
 
-        updateElectricArcGlowCache(activeSlots, maxRadius, alternatingRotationEnabled);
-    }
-    else
-    {
-        for (auto& slot : slotVisuals)
-        {
-            slot.cachedArcGlow = {};
-            slot.cachedArcBounds = {};
+            slot.arcIntensity = juce::jmax(0.0f, slot.arcIntensity - kFlashDecay);
+
+            bool shouldRebuild = false;
+
+            const bool rotationDrifted = alternatingRotationEnabled
+                && slot.cachedArcGlow.isValid()
+                && std::abs(slot.rotationAngle - slot.lastArcRotationAngle) > 0.0005f;
+
+            if (slot.arcIntensity > kArcCachePersistenceThreshold)
+            {
+                if (rotationDrifted)
+                {
+                    // Drop stale geometry before the vertices rotate away from cached endpoints
+                    slot.cachedArcGlow = {};
+                    slot.cachedArcBounds = {};
+                    shouldRebuild = true;
+                }
+
+                if (slot.arcGeometryNeedsRebuild)
+                {
+                    shouldRebuild = true;
+                    slot.arcGeometryNeedsRebuild = false;
+                }
+                else if (nowMs - slot.lastArcRebuildTime >= kArcRebuildIntervalMs)
+                {
+                    float currentArcIntensityQuantized = std::round(slot.arcIntensity / kArcIntensityDeltaThreshold) * kArcIntensityDeltaThreshold;
+
+                    if (std::fabs(currentArcIntensityQuantized - slot.lastArcIntensityQuantized) > 0.001f)
+                    {
+                        shouldRebuild = true;
+                        slot.lastArcIntensityQuantized = currentArcIntensityQuantized;
+                    }
+                    else
+                    {
+                        shouldRebuild = true;
+                    }
+                }
+            }
+            else if (slot.cachedArcGlow.isValid())
+            {
+                slot.cachedArcGlow = juce::Image();
+                repaint();
+            }
+
+            if (shouldRebuild)
+            {
+                slot.lastArcIntensityQuantized = std::round(slot.arcIntensity / kArcIntensityDeltaThreshold) * kArcIntensityDeltaThreshold;
+                drawElectricArc(i);
+                slot.lastArcRebuildTime = nowMs;
+                slot.lastArcRotationAngle = slot.rotationAngle;
+                repaint();
+            }
+            else if (slot.arcIntensity > 0.001f && slot.cachedArcGlow.isValid())
+            {
+                repaint();
+            }
         }
     }
 
     repaint();
 }
 
-void PolyrhythmVizComponent::updateElectricArcGlowCache(const std::vector<int>& activeSlots, float maxRadius, bool alternatingRotationEnabled)
+void PolyrhythmVizComponent::drawElectricArc(int slotIndex)
 {
-    for (int srcIdx = 0; srcIdx < kNumSlots; ++srcIdx)
+    auto& srcSlot = slotVisuals[(size_t)slotIndex];
+
+    const bool validFlash = srcSlot.flashVertex >= 0 && srcSlot.flashVertex < (int)srcSlot.vertices.size();
+    const bool shouldRender = srcSlot.active && srcSlot.arcIntensity >= kArcThreshold && validFlash && !srcSlot.vertices.empty();
+
+    if (!shouldRender)
     {
-        auto& srcSlot = slotVisuals[(size_t)srcIdx];
+        srcSlot.cachedArcGlow = {};
+        srcSlot.cachedArcBounds = {};
+        return;
+    }
 
-        const bool validFlash = srcSlot.flashVertex >= 0 && srcSlot.flashVertex < (int)srcSlot.vertices.size();
-        const bool shouldRender = srcSlot.active && srcSlot.arcIntensity >= kArcThreshold && validFlash && !srcSlot.vertices.empty();
+    std::vector<int> activeSlots;
+    activeSlots.reserve(kNumSlots);
+    for (int idx = 0; idx < kNumSlots; ++idx)
+    {
+        if (slotVisuals[(size_t)idx].active && !slotVisuals[(size_t)idx].vertices.empty())
+            activeSlots.push_back(idx);
+    }
 
-        if (!shouldRender)
+    const int srcIdx = slotIndex;
+    const int srcNumVerts = (int)srcSlot.vertices.size();
+    if (srcNumVerts < 2)
+    {
+        srcSlot.cachedArcGlow = {};
+        srcSlot.cachedArcBounds = {};
+        return;
+    }
+
+    std::vector<int> adjacentSlots;
+    auto it = std::find(activeSlots.begin(), activeSlots.end(), srcIdx);
+    if (it != activeSlots.end())
+    {
+        if (it != activeSlots.begin())
+            adjacentSlots.push_back(*(it - 1));
+        if (it + 1 != activeSlots.end())
+            adjacentSlots.push_back(*(it + 1));
+    }
+
+    if (adjacentSlots.empty())
+    {
+        srcSlot.cachedArcGlow = {};
+        srcSlot.cachedArcBounds = {};
+        return;
+    }
+
+    auto rotatePointForSlot = [this](const SlotVisual& s, juce::Point<float> p) -> juce::Point<float>
+    {
+        if (lastAlternatingRotationEnabled && std::abs(s.rotationAngle) > 0.0001f)
         {
-            srcSlot.cachedArcGlow = {};
-            srcSlot.cachedArcBounds = {};
+            const auto transform = juce::AffineTransform::rotation(s.rotationAngle, s.centre.x, s.centre.y);
+            return p.transformedBy(transform);
+        }
+        return p;
+    };
+
+    float maxRadius = 1.0f;
+    for (int idx : activeSlots)
+        maxRadius = juce::jmax(maxRadius, slotVisuals[(size_t)idx].radius);
+
+    struct ArcStroke
+    {
+        juce::Path path;
+        juce::Colour colour;
+        float strokeWidth = 0.0f;
+        bool hasGlow = false;
+        float glowWidth = 0.0f;
+        juce::Colour glowColour;
+    };
+
+    std::vector<ArcStroke> strokes;
+    strokes.reserve(3);
+
+    juce::Rectangle<float> arcBounds;
+    bool hasBounds = false;
+
+    const int numArcs = 1 + (int)(srcSlot.arcIntensity * 2.0f);
+    for (int arcNum = 0; arcNum < numArcs; ++arcNum)
+    {
+        const float arcInt = srcSlot.arcIntensity;
+        const float seed1 = std::fmod((float)srcIdx * 0.17f + (float)arcNum * 0.31f + arcInt * 7.3f + (float)masterPhase * 13.7f, 1.0f);
+        const float seed2 = std::fmod((float)srcIdx * 0.13f + (float)arcNum * 0.37f + arcInt * 11.9f + (float)masterPhase * 17.3f, 1.0f);
+        const float seed3 = std::fmod((float)srcIdx * 0.23f + (float)arcNum * 0.41f + arcInt * 5.7f + (float)masterPhase * 19.1f, 1.0f);
+
+        const int srcVertIdx = (int)(seed3 * (float)srcNumVerts) % srcNumVerts;
+        const auto srcPoint = rotatePointForSlot(srcSlot, srcSlot.vertices[(size_t)srcVertIdx]);
+
+        const int targetIdx = adjacentSlots[(size_t)(seed1 * (float)adjacentSlots.size()) % adjacentSlots.size()];
+        const auto& targetSlot = slotVisuals[(size_t)targetIdx];
+        const int numVerts = (int)targetSlot.vertices.size();
+        if (numVerts < 2)
             continue;
-        }
 
-        const int srcNumVerts = (int)srcSlot.vertices.size();
-        if (srcNumVerts < 2)
+        int closestVertIdx = 0;
+        float closestDist = std::numeric_limits<float>::max();
+        for (int v = 0; v < numVerts; ++v)
         {
-            srcSlot.cachedArcGlow = {};
-            srcSlot.cachedArcBounds = {};
-            continue;
-        }
-
-        std::vector<int> adjacentSlots;
-        auto it = std::find(activeSlots.begin(), activeSlots.end(), srcIdx);
-        if (it != activeSlots.end())
-        {
-            if (it != activeSlots.begin())
-                adjacentSlots.push_back(*(it - 1));
-            if (it + 1 != activeSlots.end())
-                adjacentSlots.push_back(*(it + 1));
-        }
-
-        if (adjacentSlots.empty())
-        {
-            srcSlot.cachedArcGlow = {};
-            srcSlot.cachedArcBounds = {};
-            continue;
-        }
-
-        auto rotatePointForSlot = [alternatingRotationEnabled](const SlotVisual& s, juce::Point<float> p) -> juce::Point<float>
-        {
-            if (alternatingRotationEnabled && std::abs(s.rotationAngle) > 0.0001f)
+            const auto vPoint = rotatePointForSlot(targetSlot, targetSlot.vertices[(size_t)v]);
+            const float d = srcPoint.getDistanceFrom(vPoint);
+            if (d < closestDist)
             {
-                const auto transform = juce::AffineTransform::rotation(s.rotationAngle, s.centre.x, s.centre.y);
-                return p.transformedBy(transform);
-            }
-            return p;
-        };
-
-        struct ArcStroke
-        {
-            juce::Path path;
-            juce::Colour colour;
-            float strokeWidth = 0.0f;
-            bool hasGlow = false;
-            float glowWidth = 0.0f;
-            juce::Colour glowColour;
-        };
-
-        std::vector<ArcStroke> strokes;
-        strokes.reserve(3);
-
-        juce::Rectangle<float> arcBounds;
-        bool hasBounds = false;
-
-        const int numArcs = 1 + (int)(srcSlot.arcIntensity * 2.0f);
-        for (int arcNum = 0; arcNum < numArcs; ++arcNum)
-        {
-            const float arcInt = srcSlot.arcIntensity;
-            const float seed1 = std::fmod((float)srcIdx * 0.17f + (float)arcNum * 0.31f + arcInt * 7.3f + (float)masterPhase * 13.7f, 1.0f);
-            const float seed2 = std::fmod((float)srcIdx * 0.13f + (float)arcNum * 0.37f + arcInt * 11.9f + (float)masterPhase * 17.3f, 1.0f);
-            const float seed3 = std::fmod((float)srcIdx * 0.23f + (float)arcNum * 0.41f + arcInt * 5.7f + (float)masterPhase * 19.1f, 1.0f);
-
-            const int srcVertIdx = (int)(seed3 * (float)srcNumVerts) % srcNumVerts;
-            const auto srcPoint = rotatePointForSlot(srcSlot, srcSlot.vertices[(size_t)srcVertIdx]);
-
-            const int targetIdx = adjacentSlots[(size_t)(seed1 * (float)adjacentSlots.size()) % adjacentSlots.size()];
-            const auto& targetSlot = slotVisuals[(size_t)targetIdx];
-            const int numVerts = (int)targetSlot.vertices.size();
-            if (numVerts < 2)
-                continue;
-
-            int closestVertIdx = 0;
-            float closestDist = std::numeric_limits<float>::max();
-            for (int v = 0; v < numVerts; ++v)
-            {
-                const auto vPoint = rotatePointForSlot(targetSlot, targetSlot.vertices[(size_t)v]);
-                const float d = srcPoint.getDistanceFrom(vPoint);
-                if (d < closestDist)
-                {
-                    closestDist = d;
-                    closestVertIdx = v;
-                }
-            }
-
-            const auto targetPoint = rotatePointForSlot(targetSlot, targetSlot.vertices[(size_t)closestVertIdx]);
-            const auto diff = targetPoint - srcPoint;
-            const float dist = diff.getDistanceFromOrigin();
-            const float distNorm = juce::jlimit(0.0f, 1.0f, dist / juce::jmax(1.0f, maxRadius * 2.0f));
-
-            const float intensity = srcSlot.arcIntensity * (0.6f + seed1 * 0.4f);
-
-            const float hue = 0.50f + seed1 * 0.06f + distNorm * 0.08f;
-            const float alphaFade = 1.0f - distNorm * 0.4f;
-            const float alpha = kArcAlphaMax * intensity * alphaFade;
-
-            const auto arcColour = juce::Colour::fromHSV(hue, 0.35f + distNorm * 0.15f, 1.0f, alpha);
-
-            juce::Path arcPath;
-            arcPath.startNewSubPath(srcPoint);
-
-            const int segments = juce::jmax(2, (int)(dist / 35.0f));
-
-            for (int seg = 1; seg < segments; ++seg)
-            {
-                const float segT = (float)seg / (float)segments;
-                auto midPoint = srcPoint + diff * segT;
-
-                const float jitter = std::sin(seed1 * 6.28f + segT * 4.5f + seed2 * 3.14f) * 10.0f * intensity;
-                const auto perpRaw = juce::Point<float>(-diff.y, diff.x);
-                const float perpLen = perpRaw.getDistanceFromOrigin();
-                if (perpLen > 0.001f)
-                    midPoint = midPoint + perpRaw * (jitter / perpLen);
-
-                arcPath.lineTo(midPoint);
-            }
-
-            arcPath.lineTo(targetPoint);
-
-            ArcStroke stroke{};
-            stroke.path = std::move(arcPath);
-            stroke.colour = arcColour;
-            stroke.strokeWidth = kArcWidth + intensity * 0.6f;
-
-            if (intensity > 0.6f)
-            {
-                stroke.hasGlow = true;
-                stroke.glowWidth = kArcWidth + 2.5f + intensity * 1.5f;
-                stroke.glowColour = arcColour.withAlpha(alpha * 0.25f);
-            }
-
-            const float strokeMargin = 0.5f * juce::jmax(stroke.strokeWidth, stroke.hasGlow ? stroke.glowWidth : stroke.strokeWidth) + 1.5f;
-            const auto pathBounds = stroke.path.getBounds().expanded(strokeMargin);
-
-            if (!hasBounds)
-            {
-                arcBounds = pathBounds;
-                hasBounds = true;
-            }
-            else
-            {
-                arcBounds = arcBounds.getUnion(pathBounds);
-            }
-
-            strokes.push_back(std::move(stroke));
-        }
-
-        if (strokes.empty() || !hasBounds)
-        {
-            srcSlot.cachedArcGlow = {};
-            srcSlot.cachedArcBounds = {};
-            continue;
-        }
-
-        arcBounds = arcBounds.expanded(1.0f);
-
-        const int width = juce::jmax(1, (int)std::ceil(arcBounds.getWidth()));
-        const int height = juce::jmax(1, (int)std::ceil(arcBounds.getHeight()));
-        srcSlot.cachedArcBounds = { arcBounds.getX(), arcBounds.getY(), (float)width, (float)height };
-
-        srcSlot.cachedArcGlow = juce::Image(juce::Image::ARGB, width, height, true);
-        juce::Graphics g(srcSlot.cachedArcGlow);
-        g.addTransform(juce::AffineTransform::translation(-arcBounds.getX(), -arcBounds.getY()));
-
-        for (const auto& stroke : strokes)
-        {
-            g.setColour(stroke.colour);
-            g.strokePath(stroke.path, juce::PathStrokeType(stroke.strokeWidth));
-
-            if (stroke.hasGlow)
-            {
-                g.setColour(stroke.glowColour);
-                g.strokePath(stroke.path, juce::PathStrokeType(stroke.glowWidth));
+                closestDist = d;
+                closestVertIdx = v;
             }
         }
+
+        const auto targetPoint = rotatePointForSlot(targetSlot, targetSlot.vertices[(size_t)closestVertIdx]);
+        const auto diff = targetPoint - srcPoint;
+        const float dist = diff.getDistanceFromOrigin();
+        const float distNorm = juce::jlimit(0.0f, 1.0f, dist / juce::jmax(1.0f, maxRadius * 2.0f));
+
+        const float intensity = srcSlot.arcIntensity * (0.6f + seed1 * 0.4f);
+
+        const float hue = 0.50f + seed1 * 0.06f + distNorm * 0.08f;
+        const float alphaFade = 1.0f - distNorm * 0.4f;
+        const float alpha = kArcAlphaMax * intensity * alphaFade;
+
+        const auto arcColour = juce::Colour::fromHSV(hue, 0.35f + distNorm * 0.15f, 1.0f, alpha);
+
+        juce::Path arcPath;
+        arcPath.startNewSubPath(srcPoint);
+
+        const int segments = juce::jmax(2, (int)(dist / 35.0f));
+
+        for (int seg = 1; seg < segments; ++seg)
+        {
+            const float segT = (float)seg / (float)segments;
+            auto midPoint = srcPoint + diff * segT;
+
+            const float jitter = std::sin(seed1 * 6.28f + segT * 4.5f + seed2 * 3.14f) * 10.0f * intensity;
+            const auto perpRaw = juce::Point<float>(-diff.y, diff.x);
+            const float perpLen = perpRaw.getDistanceFromOrigin();
+            if (perpLen > 0.001f)
+                midPoint = midPoint + perpRaw * (jitter / perpLen);
+
+            arcPath.lineTo(midPoint);
+        }
+
+        arcPath.lineTo(targetPoint);
+
+        ArcStroke stroke{};
+        stroke.path = std::move(arcPath);
+        stroke.colour = arcColour;
+        stroke.strokeWidth = kArcWidth + intensity * 0.6f;
+
+        if (intensity > 0.6f)
+        {
+            stroke.hasGlow = true;
+            stroke.glowWidth = kArcWidth + 2.5f + intensity * 1.5f;
+            stroke.glowColour = arcColour.withAlpha(alpha * 0.25f);
+        }
+
+        const float strokeMargin = 0.5f * juce::jmax(stroke.strokeWidth, stroke.hasGlow ? stroke.glowWidth : stroke.strokeWidth) + 1.5f;
+        const auto pathBounds = stroke.path.getBounds().expanded(strokeMargin);
+
+        if (!hasBounds)
+        {
+            arcBounds = pathBounds;
+            hasBounds = true;
+        }
+        else
+        {
+            arcBounds = arcBounds.getUnion(pathBounds);
+        }
+
+        strokes.push_back(std::move(stroke));
+    }
+
+    if (strokes.empty() || !hasBounds)
+    {
+        srcSlot.cachedArcGlow = {};
+        srcSlot.cachedArcBounds = {};
+        return;
+    }
+
+    arcBounds = arcBounds.expanded(1.0f);
+
+    const int width = juce::jmax(1, (int)std::ceil(arcBounds.getWidth()));
+    const int height = juce::jmax(1, (int)std::ceil(arcBounds.getHeight()));
+    srcSlot.cachedArcBounds = { arcBounds.getX(), arcBounds.getY(), (float)width, (float)height };
+
+    srcSlot.cachedArcGlow = juce::Image(juce::Image::ARGB, width, height, true);
+    juce::Graphics g(srcSlot.cachedArcGlow);
+    g.addTransform(juce::AffineTransform::translation(-arcBounds.getX(), -arcBounds.getY()));
+
+    for (const auto& stroke : strokes)
+    {
+        const auto& jaggedPath = stroke.path;
+        const float maxGlowWidth = stroke.hasGlow ? stroke.glowWidth : juce::jmax(6.0f, stroke.strokeWidth + 2.0f);
+
+        float alpha = srcSlot.arcIntensity * 0.15f;
+        juce::Colour arcColour = srcSlot.colour.withHue(srcSlot.colour.getHue()).withSaturation(0.5f).withBrightness(1.0f);
+        g.setColour(arcColour.withAlpha(alpha));
+        g.strokePath(jaggedPath, juce::PathStrokeType(maxGlowWidth,
+                                                      juce::PathStrokeType::JointStyle::mitered,
+                                                      juce::PathStrokeType::EndCapStyle::butt));
+
+        alpha = srcSlot.arcIntensity * 0.9f;
+        g.setColour(juce::Colours::white.withAlpha(alpha));
+        g.strokePath(jaggedPath, juce::PathStrokeType(2.0f,
+                                                      juce::PathStrokeType::JointStyle::mitered,
+                                                      juce::PathStrokeType::EndCapStyle::butt));
     }
 }
 
