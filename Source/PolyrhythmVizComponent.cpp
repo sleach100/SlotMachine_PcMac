@@ -872,52 +872,6 @@ void PolyrhythmVizComponent::timerCallback()
             slot.arcGeometryNeedsRebuild = false;
             slot.cachedArcGlow = {};
             slot.cachedArcBounds = {};
-            continue;
-        }
-
-        slot.arcIntensity -= kFlashDecay;
-        slot.arcIntensity = juce::jmax(0.0f, slot.arcIntensity);
-
-        bool shouldRebuild = false;
-
-        if (slot.arcIntensity > kArcCachePersistenceThreshold)
-        {
-            if (slot.arcGeometryNeedsRebuild)
-            {
-                shouldRebuild = true;
-                slot.arcGeometryNeedsRebuild = false;
-            }
-            else if (nowMs - slot.lastArcRebuildTime >= kArcRebuildIntervalMs)
-            {
-                float currentArcIntensityQuantized = std::round(slot.arcIntensity / kArcIntensityDeltaThreshold) * kArcIntensityDeltaThreshold;
-
-                if (std::fabs(currentArcIntensityQuantized - slot.lastArcIntensityQuantized) > 0.001f)
-                {
-                    shouldRebuild = true;
-                    slot.lastArcIntensityQuantized = currentArcIntensityQuantized;
-                }
-                else
-                {
-                    shouldRebuild = true;
-                }
-            }
-        }
-        else if (slot.cachedArcGlow.isValid())
-        {
-            slot.cachedArcGlow = juce::Image();
-            repaint();
-        }
-
-        if (shouldRebuild)
-        {
-            slot.lastArcIntensityQuantized = std::round(slot.arcIntensity / kArcIntensityDeltaThreshold) * kArcIntensityDeltaThreshold;
-            drawElectricArc(i);
-            slot.lastArcRebuildTime = nowMs;
-            repaint();
-        }
-        else if (slot.arcIntensity > 0.001f && slot.cachedArcGlow.isValid())
-        {
-            repaint();
         }
     }
 
@@ -963,6 +917,61 @@ void PolyrhythmVizComponent::timerCallback()
             // Calculate colorwave hue offset for this ring
             // Each ring gets a unique base hue offset (spaced by golden ratio for pleasing variety)
             slot.colorwaveHueOffset = std::fmod((float)order * 0.618033988749895f, 1.0f);
+        }
+    }
+
+    // Second pass: update electric arc cache using freshly computed rotations and geometry
+    if (electricArcEnabled)
+    {
+        for (int i = 0; i < kNumSlots; ++i)
+        {
+            auto& slot = slotVisuals[(size_t)i];
+            if (!slot.active)
+                continue;
+
+            slot.arcIntensity = juce::jmax(0.0f, slot.arcIntensity - kFlashDecay);
+
+            bool shouldRebuild = false;
+
+            if (slot.arcIntensity > kArcCachePersistenceThreshold)
+            {
+                if (slot.arcGeometryNeedsRebuild)
+                {
+                    shouldRebuild = true;
+                    slot.arcGeometryNeedsRebuild = false;
+                }
+                else if (nowMs - slot.lastArcRebuildTime >= kArcRebuildIntervalMs)
+                {
+                    float currentArcIntensityQuantized = std::round(slot.arcIntensity / kArcIntensityDeltaThreshold) * kArcIntensityDeltaThreshold;
+
+                    if (std::fabs(currentArcIntensityQuantized - slot.lastArcIntensityQuantized) > 0.001f)
+                    {
+                        shouldRebuild = true;
+                        slot.lastArcIntensityQuantized = currentArcIntensityQuantized;
+                    }
+                    else
+                    {
+                        shouldRebuild = true;
+                    }
+                }
+            }
+            else if (slot.cachedArcGlow.isValid())
+            {
+                slot.cachedArcGlow = juce::Image();
+                repaint();
+            }
+
+            if (shouldRebuild)
+            {
+                slot.lastArcIntensityQuantized = std::round(slot.arcIntensity / kArcIntensityDeltaThreshold) * kArcIntensityDeltaThreshold;
+                drawElectricArc(i);
+                slot.lastArcRebuildTime = nowMs;
+                repaint();
+            }
+            else if (slot.arcIntensity > 0.001f && slot.cachedArcGlow.isValid())
+            {
+                repaint();
+            }
         }
     }
 
