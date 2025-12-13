@@ -72,6 +72,7 @@ private:
         int64_t lastArcRebuildTime = 0; // Tracks when the cache was last updated (ms)
         float lastArcIntensityQuantized = 0.0f; // Stores intensity value from last rebuild
         bool arcGeometryNeedsRebuild = false; // Forces an immediate rebuild (set on hit)
+        float lastArcRotationAngle = 0.0f; // Tracks rotation at last rebuild to avoid stale geometry
         // Starlight Twinkle effect: per-vertex brightness values
         std::vector<float> twinkleBrightness;  // Brightness for each vertex (0-1), decays over time
         // Alternating Rotation effect: current rotation angle for this polygon

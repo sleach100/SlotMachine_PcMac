@@ -778,6 +778,7 @@ void PolyrhythmVizComponent::timerCallback()
             slot.lastArcRebuildTime = 0;
             slot.lastArcIntensityQuantized = 0.0f;
             slot.arcGeometryNeedsRebuild = false;
+            slot.lastArcRotationAngle = 0.0f;
             slot.cachedArcGlow = {};
             slot.cachedArcBounds = {};
             continue;
@@ -870,6 +871,7 @@ void PolyrhythmVizComponent::timerCallback()
             slot.lastArcRebuildTime = 0;
             slot.lastArcIntensityQuantized = 0.0f;
             slot.arcGeometryNeedsRebuild = false;
+            slot.lastArcRotationAngle = 0.0f;
             slot.cachedArcGlow = {};
             slot.cachedArcBounds = {};
         }
@@ -933,8 +935,20 @@ void PolyrhythmVizComponent::timerCallback()
 
             bool shouldRebuild = false;
 
+            const bool rotationDrifted = alternatingRotationEnabled
+                && slot.cachedArcGlow.isValid()
+                && std::abs(slot.rotationAngle - slot.lastArcRotationAngle) > 0.0005f;
+
             if (slot.arcIntensity > kArcCachePersistenceThreshold)
             {
+                if (rotationDrifted)
+                {
+                    // Drop stale geometry before the vertices rotate away from cached endpoints
+                    slot.cachedArcGlow = {};
+                    slot.cachedArcBounds = {};
+                    shouldRebuild = true;
+                }
+
                 if (slot.arcGeometryNeedsRebuild)
                 {
                     shouldRebuild = true;
@@ -966,6 +980,7 @@ void PolyrhythmVizComponent::timerCallback()
                 slot.lastArcIntensityQuantized = std::round(slot.arcIntensity / kArcIntensityDeltaThreshold) * kArcIntensityDeltaThreshold;
                 drawElectricArc(i);
                 slot.lastArcRebuildTime = nowMs;
+                slot.lastArcRotationAngle = slot.rotationAngle;
                 repaint();
             }
             else if (slot.arcIntensity > 0.001f && slot.cachedArcGlow.isValid())
