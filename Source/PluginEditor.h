@@ -298,7 +298,27 @@ private:
                     target->triggerClick();
             }
 
+            bool hitTest(int x, int y) override
+            {
+                // Reduce hit area to center 50% of bounds
+                auto bounds = getLocalBounds().toFloat();
+                auto reduced = bounds.reduced(bounds.getWidth() * 0.25f, bounds.getHeight() * 0.2f);
+                return reduced.contains(static_cast<float>(x), static_cast<float>(y));
+            }
+
             juce::Button* target = nullptr;
+        };
+
+        // Custom ImageButton with reduced hit area for mute/solo buttons
+        struct SlotToggleButton : juce::ImageButton
+        {
+            bool hitTest(int x, int y) override
+            {
+                // Reduce hit area to center portion of bounds
+                auto bounds = getLocalBounds().toFloat();
+                auto reduced = bounds.reduced(bounds.getWidth() * 0.3f, bounds.getHeight() * 0.25f);
+                return reduced.contains(static_cast<float>(x), static_cast<float>(y));
+            }
         };
 
         struct FileButton : juce::TextButton, juce::FileDragAndDropTarget
@@ -323,18 +343,48 @@ private:
             bool dragActive = false;
         };
 
+        // Custom slider with reduced hit-test area to allow clicks to pass through
+        // to the parent for audio sampling and drag-drop operations
+        struct SlotKnobSlider : juce::Slider
+        {
+            bool hitTest(int x, int y) override
+            {
+                // Always allow clicks in the text box area
+                auto layout = getLookAndFeel().getSliderLayout(*this);
+                if (layout.textBoxBounds.contains(x, y))
+                    return true;
+
+                // Get the knob bounds
+                auto knobBounds = layout.sliderBounds.toFloat();
+                if (knobBounds.isEmpty())
+                    knobBounds = getLocalBounds().toFloat();
+
+                // Calculate a tighter knob circle (reduce radius to match visual arc)
+                const auto centre = knobBounds.getCentre();
+                const auto diameter = juce::jmin(knobBounds.getWidth(), knobBounds.getHeight());
+                // Use 0.38 of diameter for tighter hit area around the visual arc
+                const auto radius = diameter * 0.38f;
+
+                // Check if point is within the knob circle
+                const auto point = juce::Point<float>(static_cast<float>(x), static_cast<float>(y));
+                const auto distance = centre.getDistanceFrom(point);
+
+                return distance <= radius;
+            }
+        };
+
         juce::GroupComponent group;
         FileButton        fileBtn;
         juce::TextButton  clearBtn{ "X" };      // NEW: Clear sample
         juce::Label       fileLabel;
 
-        juce::ImageButton muteBtn;
-        juce::ImageButton soloBtn;
+        SlotToggleButton  muteBtn;
+        SlotToggleButton  soloBtn;
         ToggleLabel       muteLabel;
         ToggleLabel       soloLabel;
         juce::ComboBox    midiChannel;
 
-        juce::Slider count, rate, gain, decay;
+        SlotKnobSlider count, rate, gain, decay;
 
         void updateTimingModeVisibility(int timingMode);
 

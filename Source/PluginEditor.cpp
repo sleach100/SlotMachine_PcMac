@@ -4243,18 +4243,30 @@ void SlotMachineAudioProcessorEditor::mouseDown(const juce::MouseEvent& e)
                 continue;
 
             // Check if click is on an interactive control - if so, don't start drag
-            auto isOnInteractiveControl = [&screenPos](SlotUI& slot) -> bool
+            // For sliders, use hitTest to allow clicks in empty space to start drags
+            auto sliderHitTest = [&screenPos](juce::Component& c) -> bool
+            {
+                if (!c.isShowing())
+                    return false;
+                auto screenBounds = c.getScreenBounds();
+                if (!screenBounds.contains(screenPos))
+                    return false;
+                auto localPoint = c.getLocalPoint(nullptr, screenPos);
+                return c.hitTest(localPoint.x, localPoint.y);
+            };
+
+            auto isOnInteractiveControl = [&screenPos, &sliderHitTest](SlotUI& slot) -> bool
             {
                 return componentContainsScreenPoint(slot.fileBtn, screenPos)
                     || componentContainsScreenPoint(slot.clearBtn, screenPos)
-                    || componentContainsScreenPoint(slot.muteBtn, screenPos)
-                    || componentContainsScreenPoint(slot.soloBtn, screenPos)
-                    || componentContainsScreenPoint(slot.muteLabel, screenPos)
-                    || componentContainsScreenPoint(slot.soloLabel, screenPos)
-                    || componentContainsScreenPoint(slot.count, screenPos)
-                    || componentContainsScreenPoint(slot.rate, screenPos)
-                    || componentContainsScreenPoint(slot.gain, screenPos)
-                    || componentContainsScreenPoint(slot.decay, screenPos)
+                    || sliderHitTest(slot.muteBtn)
+                    || sliderHitTest(slot.soloBtn)
+                    || sliderHitTest(slot.muteLabel)
+                    || sliderHitTest(slot.soloLabel)
+                    || sliderHitTest(slot.count)
+                    || sliderHitTest(slot.rate)
+                    || sliderHitTest(slot.gain)
+                    || sliderHitTest(slot.decay)
                     || componentContainsScreenPoint(slot.midiChannel, screenPos)
                     || componentContainsScreenPoint(slot.fileLabel, screenPos);
             };
@@ -8078,10 +8090,23 @@ void SlotMachineAudioProcessorEditor::mouseUp(const juce::MouseEvent& e)
         return componentContainsScreenPoint(c, screenPos);
     };
 
+    // For sliders with custom hitTest, check both bounds AND hitTest
+    auto sliderHitTest = [screenPos](juce::Component& c) -> bool
+    {
+        if (!c.isShowing())
+            return false;
+        auto screenBounds = c.getScreenBounds();
+        if (!screenBounds.contains(screenPos))
+            return false;
+        // Convert screen point to local coordinates and use hitTest
+        auto localPoint = c.getLocalPoint(nullptr, screenPos);
+        return c.hitTest(localPoint.x, localPoint.y);
+    };
+
     if (isInteractiveHit(U.fileBtn) || isInteractiveHit(U.clearBtn) || isInteractiveHit(U.fileLabel)
-        || isInteractiveHit(U.muteBtn) || isInteractiveHit(U.soloBtn)
-        || isInteractiveHit(U.muteLabel) || isInteractiveHit(U.soloLabel)
-        || isInteractiveHit(U.rate) || isInteractiveHit(U.gain) || isInteractiveHit(U.decay))
+        || sliderHitTest(U.muteBtn) || sliderHitTest(U.soloBtn)
+        || sliderHitTest(U.muteLabel) || sliderHitTest(U.soloLabel)
+        || sliderHitTest(U.count) || sliderHitTest(U.rate) || sliderHitTest(U.gain) || sliderHitTest(U.decay))
         return;
 
     if (!processor.slotHasSample(clickedIndex))
