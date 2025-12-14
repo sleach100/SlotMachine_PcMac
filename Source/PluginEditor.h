@@ -300,9 +300,9 @@ private:
 
             bool hitTest(int x, int y) override
             {
-                // Reduce hit area to center 70% of bounds
+                // Reduce hit area to center 50% of bounds
                 auto bounds = getLocalBounds().toFloat();
-                auto reduced = bounds.reduced(bounds.getWidth() * 0.15f, bounds.getHeight() * 0.1f);
+                auto reduced = bounds.reduced(bounds.getWidth() * 0.25f, bounds.getHeight() * 0.2f);
                 return reduced.contains(static_cast<float>(x), static_cast<float>(y));
             }
 
@@ -316,7 +316,7 @@ private:
             {
                 // Reduce hit area to center portion of bounds
                 auto bounds = getLocalBounds().toFloat();
-                auto reduced = bounds.reduced(bounds.getWidth() * 0.2f, bounds.getHeight() * 0.15f);
+                auto reduced = bounds.reduced(bounds.getWidth() * 0.3f, bounds.getHeight() * 0.25f);
                 return reduced.contains(static_cast<float>(x), static_cast<float>(y));
             }
         };
