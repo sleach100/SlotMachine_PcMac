@@ -1475,7 +1475,7 @@ APVTS::ParameterLayout SlotMachineAudioProcessor::createParameterLayout()
     // Master
     layout.add(std::make_unique<juce::AudioParameterFloat>(
         "masterBPM", "Master BPM",
-        juce::NormalisableRange<float>(10.0f, 1000.0f, 0.01f, 0.33f), 120.0f));
+        juce::NormalisableRange<float>(10.0f, 400.0f, 0.01f, 0.33f), 120.0f));
 
     layout.add(std::make_unique<juce::AudioParameterBool>(
         "masterRun", "Master Run", false));
