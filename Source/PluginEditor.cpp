@@ -7141,7 +7141,7 @@ void SlotMachineAudioProcessorEditor::animateStartButton(juce::Colour glowColour
     const float mix = 0.5f * (1.0f + std::sin(startButtonAnimPhase));
     auto blended = glowColour.interpolatedWith(pulseColour, mix);
 
-    const float brightness = 0.55f + 0.45f * (0.5f * (1.0f + std::sin(startButtonAnimPhase * 0.75f + juce::MathConstants<float>::halfPi)));
+    const float brightness = 0.55f + 0.45f * (0.5f * (1.0f + std::sin(startButtonAnimPhase + juce::MathConstants<float>::halfPi)));
     blended = blended.withAlpha(juce::jlimit(0.35f, 1.0f, brightness));
 
     btnStart.setColour(juce::TextButton::textColourOffId, blended);
