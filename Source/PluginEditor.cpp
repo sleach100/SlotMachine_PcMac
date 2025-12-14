@@ -1279,6 +1279,16 @@ void SlotMachineAudioProcessorEditor::PatternTabs::handleTabMouseDrag(TabButton&
 
         dragging = true;
         suppressNextClick = true;
+
+        // Select the tab being dragged so it has the solid "focused" appearance
+        if (dragButton->index != currentIndex)
+        {
+            currentIndex = dragButton->index;
+            updateToggleStates();
+            if (tabSelected)
+                tabSelected(currentIndex);
+        }
+
         // Bring dragged tab to front so it renders on top
         dragButton->toFront(false);
     }
