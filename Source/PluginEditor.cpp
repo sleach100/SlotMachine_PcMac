@@ -5070,9 +5070,10 @@ void SlotMachineAudioProcessorEditor::copySlotData(int fromSlot, int toSlot)
     }
     else
     {
-        // Source has no sample - clear the destination
+        // Source has no sample - clear the destination completely
         embeddedSlotResourceNames[(size_t)toSlot].clear();
         processor.clearSlot(toSlot, startToggle.getToggleState());
+        processor.setSlotFilePath(toSlot, juce::String());
     }
 
     refreshSlotFileLabels(failed);
