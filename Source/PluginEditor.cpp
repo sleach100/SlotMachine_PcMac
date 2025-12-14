@@ -5033,12 +5033,23 @@ void SlotMachineAudioProcessorEditor::copySlotData(int fromSlot, int toSlot)
 
     juce::Array<int> failed;
 
+    // Property ID for file path in pattern/state
+    const juce::String filePropertyId = "slot" + juce::String(toSlot + 1) + "_File";
+
     if (!srcHasSample)
     {
         // Source has no sample loaded - clear the destination completely
         embeddedSlotResourceNames[(size_t)toSlot].clear();
         processor.clearSlot(toSlot, startToggle.getToggleState());
         processor.setSlotFilePath(toSlot, juce::String());
+
+        // Also clear from apvts.state and active pattern to prevent refreshSlotFileLabels from finding old path
+        apvts.state.removeProperty(filePropertyId, nullptr);
+        if (patternsTree.isValid() && juce::isPositiveAndBelow(currentPatternIndex, patternsTree.getNumChildren()))
+        {
+            if (auto pattern = patternsTree.getChild(currentPatternIndex); pattern.isValid())
+                pattern.removeProperty(filePropertyId, nullptr);
+        }
 
         // Update the UI directly since this isn't a "failed" case
         if (auto* destSlot = slots[(size_t)toSlot].get())
