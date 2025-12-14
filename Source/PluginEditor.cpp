@@ -1251,6 +1251,8 @@ void SlotMachineAudioProcessorEditor::PatternTabs::handleTabMouseDown(TabButton&
     dragStartIndex = dragButton->index;
     dragCurrentIndex = dragStartIndex;
     dragStartScreenX = e.getScreenX();
+    // Record where in the button the user grabbed (relative to button's left edge)
+    dragButtonGrabOffsetX = e.getScreenX() - button.getScreenX();
     dragging = false;
 }
 
@@ -1277,8 +1279,14 @@ void SlotMachineAudioProcessorEditor::PatternTabs::handleTabMouseDrag(TabButton&
 
         dragging = true;
         suppressNextClick = true;
+        // Bring dragged tab to front so it renders on top
+        dragButton->toFront(false);
     }
 
+    // Move the dragged tab directly with the mouse
+    updateDraggedTabPosition(e.getScreenX());
+
+    // Check if we need to swap with another tab
     const int localX = e.getScreenX() - getScreenX();
     const int target = getDropIndexForPosition(localX);
 
@@ -1286,8 +1294,9 @@ void SlotMachineAudioProcessorEditor::PatternTabs::handleTabMouseDrag(TabButton&
     {
         reorderTab(dragCurrentIndex, target, false);
         dragCurrentIndex = target;
+        // Animate non-dragged tabs to their new positions
+        layoutTabsWithAnimation(dragCurrentIndex);
     }
-
 }
 
 void SlotMachineAudioProcessorEditor::PatternTabs::handleTabMouseUp(TabButton& button, const juce::MouseEvent& e)
@@ -1312,6 +1321,9 @@ void SlotMachineAudioProcessorEditor::PatternTabs::handleTabMouseUp(TabButton& b
 
     if (dragging)
     {
+        // Animate the dragged tab to its final position
+        snapDraggedTabToSlot();
+
         if (dragStartIndex != -1 && dragCurrentIndex != -1 && dragStartIndex != dragCurrentIndex)
         {
             if (tabReordered)
@@ -1411,8 +1423,13 @@ void SlotMachineAudioProcessorEditor::PatternTabs::reorderTab(int fromIndex, int
         ++currentIndex;
 
     updateToggleStates();
-    resized();
-    repaint();
+    // Note: Don't call resized() here during drag - layoutTabsWithAnimation handles it
+    // When not dragging, we still need to call resized()
+    if (!dragging)
+    {
+        resized();
+        repaint();
+    }
 
     if (notify && tabReordered)
         tabReordered(fromIndex, toIndex);
@@ -1448,10 +1465,122 @@ void SlotMachineAudioProcessorEditor::PatternTabs::resetDragState(bool clearSupp
     dragStartIndex = -1;
     dragCurrentIndex = -1;
     dragStartScreenX = 0;
+    dragButtonGrabOffsetX = 0;
     dragging = false;
 
     if (clearSuppressed)
         suppressNextClick = false;
+}
+
+void SlotMachineAudioProcessorEditor::PatternTabs::animateTabToPosition(TabButton* tab, int targetX)
+{
+    if (tab == nullptr)
+        return;
+
+    auto currentBounds = tab->getBounds();
+    auto targetBounds = currentBounds.withX(targetX);
+
+    // Cancel any existing animation for this tab
+    tabAnimator.cancelAnimation(tab, false);
+
+    // Animate to the target position
+    tabAnimator.animateComponent(tab, targetBounds, 1.0f, kTabAnimationDurationMs, false, 0.0, 0.0);
+}
+
+void SlotMachineAudioProcessorEditor::PatternTabs::updateDraggedTabPosition(int mouseScreenX)
+{
+    if (dragButton == nullptr)
+        return;
+
+    // Calculate the new X position based on mouse position minus the grab offset
+    int newX = (mouseScreenX - getScreenX()) - dragButtonGrabOffsetX;
+
+    // Clamp to stay within the tab bar bounds
+    const int maxX = getWidth() - dragButton->getWidth();
+    newX = juce::jlimit(0, maxX, newX);
+
+    // Move the dragged tab directly (no animation - follows mouse)
+    auto bounds = dragButton->getBounds();
+    dragButton->setBounds(newX, bounds.getY(), bounds.getWidth(), bounds.getHeight());
+}
+
+void SlotMachineAudioProcessorEditor::PatternTabs::layoutTabsWithAnimation(int excludeIndex)
+{
+    const int count = buttons.size();
+    if (count <= 0)
+        return;
+
+    auto area = getLocalBounds();
+    const int baseWidth = area.getWidth() / count;
+    int remainder = area.getWidth() - baseWidth * count;
+    int x = area.getX();
+
+    for (int i = 0; i < count; ++i)
+    {
+        int w = baseWidth;
+        if (remainder > 0)
+        {
+            ++w;
+            --remainder;
+        }
+
+        if (auto* button = buttons[i])
+        {
+            // Skip the dragged tab - it follows the mouse directly
+            if (i != excludeIndex)
+            {
+                // Set the correct width first (in case it changed)
+                auto currentBounds = button->getBounds();
+                if (currentBounds.getWidth() != w)
+                    button->setSize(w, area.getHeight());
+
+                // Animate to the new position
+                animateTabToPosition(button, x);
+            }
+            else
+            {
+                // For the dragged tab, just update its width if needed
+                auto currentBounds = button->getBounds();
+                if (currentBounds.getWidth() != w)
+                    button->setSize(w, area.getHeight());
+            }
+        }
+        x += w;
+    }
+}
+
+void SlotMachineAudioProcessorEditor::PatternTabs::snapDraggedTabToSlot()
+{
+    if (dragButton == nullptr)
+        return;
+
+    const int count = buttons.size();
+    if (count <= 0)
+        return;
+
+    // Calculate the target X position for the dragged tab's current index
+    auto area = getLocalBounds();
+    const int baseWidth = area.getWidth() / count;
+    int remainder = area.getWidth() - baseWidth * count;
+    int x = area.getX();
+
+    for (int i = 0; i < count; ++i)
+    {
+        int w = baseWidth;
+        if (remainder > 0)
+        {
+            ++w;
+            --remainder;
+        }
+
+        if (buttons[i] == dragButton)
+        {
+            // Animate the dragged tab to its final position
+            animateTabToPosition(dragButton, x);
+            break;
+        }
+        x += w;
+    }
 }
 
 // ===== RenamePatternComponent =====

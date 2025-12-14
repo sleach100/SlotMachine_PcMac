@@ -142,13 +142,22 @@ private:
         std::function<void(const juce::MouseEvent&)> rightClick;
         std::function<void(int, int)> tabReordered;
 
+        void animateTabToPosition(TabButton* tab, int targetX);
+        void updateDraggedTabPosition(int mouseScreenX);
+        void layoutTabsWithAnimation(int excludeIndex);
+        void snapDraggedTabToSlot();
+
         TabButton* dragButton = nullptr;
         int dragStartIndex = -1;
         int dragCurrentIndex = -1;
         int dragStartScreenX = 0;
+        int dragButtonGrabOffsetX = 0;  // Offset from button left edge where mouse grabbed
         bool dragging = false;
         bool suppressNextClick = false;
         bool allowReordering = true;
+
+        juce::ComponentAnimator tabAnimator;
+        static constexpr int kTabAnimationDurationMs = 150;
     };
 
     class RenamePatternComponent : public juce::Component,
