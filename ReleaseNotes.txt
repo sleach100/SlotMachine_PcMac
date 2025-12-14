@@ -14,6 +14,7 @@ Release Date:  December 2025
 10. Smoothed out Start/Stop button fade in and out animation
 11. Optimized Visualizer effects, Neural Chaos and Nebula Drift.  Greatly reducing CPU usage and increasing performance.
 12. Added mouse wheel support the Repeat value dialog, Export MIDI dialog, and Export Audio dialog.
+13. Reduce the Max BPM from 1000 to 400.
 
 
 
