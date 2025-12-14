@@ -1447,26 +1447,37 @@ void SlotMachineAudioProcessorEditor::PatternTabs::reorderTab(int fromIndex, int
 
 int SlotMachineAudioProcessorEditor::PatternTabs::getDropIndexForPosition(int x) const
 {
-    if (buttons.isEmpty())
+    const int count = buttons.size();
+    if (count <= 0)
         return -1;
 
     int clampedX = juce::jlimit(0, getWidth(), x);
-    int result = buttons.size() - 1;
 
-    for (int i = 0; i < buttons.size(); ++i)
+    // Calculate slot boundaries mathematically rather than using visual button positions.
+    // This ensures consistent detection even when buttons are mid-animation.
+    auto area = getLocalBounds();
+    const int baseWidth = area.getWidth() / count;
+    int remainder = area.getWidth() - baseWidth * count;
+    int slotX = area.getX();
+
+    for (int i = 0; i < count; ++i)
     {
-        if (auto* button = buttons[i])
+        int w = baseWidth;
+        if (remainder > 0)
         {
-            const int boundary = button->getBounds().getCentreX();
-            if (clampedX < boundary)
-            {
-                result = i;
-                break;
-            }
+            ++w;
+            --remainder;
         }
+
+        // Calculate the center of this slot
+        const int slotCenterX = slotX + w / 2;
+        if (clampedX < slotCenterX)
+            return i;
+
+        slotX += w;
     }
 
-    return result;
+    return count - 1;
 }
 
 void SlotMachineAudioProcessorEditor::PatternTabs::resetDragState(bool clearSuppressed)
