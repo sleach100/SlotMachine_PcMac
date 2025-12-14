@@ -5026,13 +5026,28 @@ void SlotMachineAudioProcessorEditor::copySlotData(int fromSlot, int toSlot)
     // Copy MIDI Channel
     copyParam("_MidiChannel", juce::String(srcIdx), juce::String(dstIdx));
 
-    // Copy the sample file
+    // Copy the sample file - first check if source actually has a sample loaded
+    const bool srcHasSample = processor.slotHasSample(fromSlot);
     const juce::String srcFilePath = processor.getSlotFilePath(fromSlot);
     const juce::String srcEmbedded = embeddedSlotResourceNames[(size_t)fromSlot];
 
     juce::Array<int> failed;
 
-    if (srcEmbedded.isNotEmpty())
+    if (!srcHasSample)
+    {
+        // Source has no sample loaded - clear the destination completely
+        embeddedSlotResourceNames[(size_t)toSlot].clear();
+        processor.clearSlot(toSlot, startToggle.getToggleState());
+        processor.setSlotFilePath(toSlot, juce::String());
+
+        // Update the UI directly since this isn't a "failed" case
+        if (auto* destSlot = slots[(size_t)toSlot].get())
+        {
+            destSlot->fileLabel.setText("No file", juce::dontSendNotification);
+            destSlot->hasFile = false;
+        }
+    }
+    else if (srcEmbedded.isNotEmpty())
     {
         // Source is an embedded sample - load it from resources
         int resourceSize = 0;
@@ -5066,20 +5081,6 @@ void SlotMachineAudioProcessorEditor::copySlotData(int fromSlot, int toSlot)
             processor.clearSlot(toSlot, startToggle.getToggleState());
             processor.setSlotFilePath(toSlot, srcFilePath);
             failed.add(toSlot);
-        }
-    }
-    else
-    {
-        // Source has no sample - clear the destination completely
-        embeddedSlotResourceNames[(size_t)toSlot].clear();
-        processor.clearSlot(toSlot, startToggle.getToggleState());
-        processor.setSlotFilePath(toSlot, juce::String());
-
-        // Update the UI directly since this isn't a "failed" case
-        if (auto* destSlot = slots[(size_t)toSlot].get())
-        {
-            destSlot->fileLabel.setText("No file", juce::dontSendNotification);
-            destSlot->hasFile = false;
         }
     }
 
