@@ -5035,9 +5035,6 @@ void SlotMachineAudioProcessorEditor::copySlotData(int fromSlot, int toSlot)
     // Copy Decay
     copyParam("_Decay", juce::String(srcIdx), juce::String(dstIdx));
 
-    // Copy MIDI Channel
-    copyParam("_MidiChannel", juce::String(srcIdx), juce::String(dstIdx));
-
     // Copy the sample file - first check if source actually has a sample loaded
     const bool srcHasSample = processor.slotHasSample(fromSlot);
     const juce::String srcFilePath = processor.getSlotFilePath(fromSlot);
