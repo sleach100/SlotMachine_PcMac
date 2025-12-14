@@ -1,6 +1,5 @@
 S.L.O.T. Machine – Version 1.0.28
-Initial Release Notes
-Release Date:  November 2025
+Release Date:  December 2025
 
 
 1. Skip Update Successful message on 1st install
@@ -8,8 +7,8 @@ Release Date:  November 2025
 3. Remove lock from Load button during trial
 4. Add sample check before showing export midi or export audio dialog, to be sure at least one sample is loaded before exporting.
 5. Fixed Initialize and Reset UI not resetting Loop Playthrough to false.
-6. Add drag & drop slot duplication feature 12/13/2025
-7. Increase available hit space for sample triggering and dragging 12/13/25
+6. Add drag & drop slot duplication feature
+7. Increase available hit space for sample triggering and dragging
 8. Add hover effects to master button rows.
 9. Fix load preset not opening load dialog after the first time.  Successfully opened on the first try, failed on subsequent attempts.
 10. Improve Start/Stop fade in and out animation
