@@ -3522,7 +3522,7 @@ SlotMachineAudioProcessorEditor::SlotMachineAudioProcessorEditor(SlotMachineAudi
 
     addAndMakeVisible(masterBPM);
     masterBPM.setSliderStyle(juce::Slider::LinearHorizontal);
-    masterBPM.setRange(10.0, 1000.0, 0.01);
+    masterBPM.setRange(10.0, 400.0, 0.01);
     masterBPM.setTextBoxStyle(juce::Slider::TextBoxLeft, false, 70, 22);
     masterBPM.setName("Master BPM");
     masterBPMA = std::make_unique<APVTS::SliderAttachment>(apvts, "masterBPM", masterBPM);
