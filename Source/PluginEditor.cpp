@@ -4862,22 +4862,15 @@ void SlotMachineAudioProcessorEditor::resized()
         const juce::Rectangle<int> gainBounds(rateBounds.withX(rateBounds.getRight() + knobSpacing));
         const juce::Rectangle<int> decayBounds(gainBounds.withX(gainBounds.getRight() + knobSpacing));
 
-        // Reduce horizontal hit-test area for sliders to maximize empty space for sample clicks/drops
-        const int sliderHitReduction = slotScaled(10);
-        ui.count.setBounds(rateBounds.reduced(sliderHitReduction, 0));
-        ui.rate.setBounds(rateBounds.reduced(sliderHitReduction, 0));
-        ui.gain.setBounds(gainBounds.reduced(sliderHitReduction, 0));
-        ui.decay.setBounds(decayBounds.reduced(sliderHitReduction, 0));
+        ui.count.setBounds(rateBounds);
+        ui.rate.setBounds(rateBounds);
+        ui.gain.setBounds(gainBounds);
+        ui.decay.setBounds(decayBounds);
 
         const int buttonW = scaleDimension(60);
         const int buttonH = slotScaled(22);
         const int labelHeight = slotScaled(16);
         const int labelGapY = slotScaled(2);
-        // Reduced button/label dimensions for hit-test area
-        const int btnHitW = slotScaled(44);
-        const int btnHitH = slotScaled(18);
-        const int lblHitW = slotScaled(36);
-        const int lblHitH = slotScaled(14);
         const int midiComboW = scaleDimensionWithMax(80, 0.95f);
         const int midiComboH = scaleDimensionWithMax(22, 0.95f);
         const int controlBlockHeight = juce::jmax(midiComboH, buttonH + labelGapY + labelHeight);
@@ -4912,14 +4905,11 @@ void SlotMachineAudioProcessorEditor::resized()
 
         const int buttonY = togglesY;
         const int labelY = buttonY + buttonH + labelGapY;
-        // Use reduced hit-test bounds centered at the original visual positions
-        const int btnCentreY = buttonY + buttonH / 2;
-        const int lblCentreY = labelY + labelHeight / 2;
-        ui.muteBtn.setBounds(gainCentreX - btnHitW / 2, btnCentreY - btnHitH / 2, btnHitW, btnHitH);
-        ui.muteLabel.setBounds(gainCentreX - lblHitW / 2, lblCentreY - lblHitH / 2, lblHitW, lblHitH);
+        ui.muteBtn.setBounds(gainCentreX - buttonW / 2, buttonY, buttonW, buttonH);
+        ui.muteLabel.setBounds(gainCentreX - buttonW / 2, labelY, buttonW, labelHeight);
 
-        ui.soloBtn.setBounds(decayCentreX - btnHitW / 2, btnCentreY - btnHitH / 2, btnHitW, btnHitH);
-        ui.soloLabel.setBounds(decayCentreX - lblHitW / 2, lblCentreY - lblHitH / 2, lblHitW, lblHitH);
+        ui.soloBtn.setBounds(decayCentreX - buttonW / 2, buttonY, buttonW, buttonH);
+        ui.soloLabel.setBounds(decayCentreX - buttonW / 2, labelY, buttonW, labelHeight);
     }
 
     // VST3: Ensure lock overlay covers entire editor if visible
