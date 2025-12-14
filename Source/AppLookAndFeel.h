@@ -18,9 +18,9 @@ public:
         if (bg.getAlpha() < 10)
         {
             if (isDown)
-                base = juce::Colours::white.withAlpha (0.15f);
+                base = juce::Colours::white.withAlpha (0.25f);
             else if (isOver)
-                base = juce::Colours::white.withAlpha (0.08f);
+                base = juce::Colours::white.withAlpha (0.15f);
         }
         else
         {
@@ -31,7 +31,8 @@ public:
         g.setColour (base);
         g.fillRoundedRectangle (bounds, cornerRadius);
 
-        g.setColour (base.contrasting (0.35f));
+        // Use original bg color for border to keep it consistent across states
+        g.setColour (bg.contrasting (0.35f));
         g.drawRoundedRectangle (bounds, cornerRadius, 1.0f);
     }
 
