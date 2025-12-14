@@ -323,6 +323,32 @@ private:
             bool dragActive = false;
         };
 
+        // Custom slider with reduced hit-test area to allow clicks to pass through
+        // to the parent for audio sampling and drag-drop operations
+        struct SlotKnobSlider : juce::Slider
+        {
+            bool hitTest(int x, int y) override
+            {
+                // Get the knob layout from the look-and-feel
+                auto layout = getLookAndFeel().getSliderLayout(*this);
+                auto knobBounds = layout.sliderBounds.toFloat();
+
+                if (knobBounds.isEmpty())
+                    knobBounds = getLocalBounds().toFloat();
+
+                // Calculate the knob circle area (centered square)
+                const auto centre = knobBounds.getCentre();
+                const auto diameter = juce::jmin(knobBounds.getWidth(), knobBounds.getHeight());
+                const auto radius = diameter * 0.5f;
+
+                // Check if point is within the knob circle
+                const auto point = juce::Point<float>(static_cast<float>(x), static_cast<float>(y));
+                const auto distance = centre.getDistanceFrom(point);
+
+                return distance <= radius;
+            }
+        };
+
         juce::GroupComponent group;
         FileButton        fileBtn;
         juce::TextButton  clearBtn{ "X" };      // NEW: Clear sample
@@ -334,7 +360,7 @@ private:
         ToggleLabel       soloLabel;
         juce::ComboBox    midiChannel;
 
-        juce::Slider count, rate, gain, decay;
+        SlotKnobSlider count, rate, gain, decay;
 
         void updateTimingModeVisibility(int timingMode);
 
