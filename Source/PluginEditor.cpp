@@ -1502,6 +1502,9 @@ void SlotMachineAudioProcessorEditor::PatternTabs::updateDraggedTabPosition(int 
     // Move the dragged tab directly (no animation - follows mouse)
     auto bounds = dragButton->getBounds();
     dragButton->setBounds(newX, bounds.getY(), bounds.getWidth(), bounds.getHeight());
+
+    // Ensure dragged tab always stays on top of other tabs
+    dragButton->toFront(false);
 }
 
 void SlotMachineAudioProcessorEditor::PatternTabs::layoutTabsWithAnimation(int excludeIndex)
@@ -1547,6 +1550,10 @@ void SlotMachineAudioProcessorEditor::PatternTabs::layoutTabsWithAnimation(int e
         }
         x += w;
     }
+
+    // Ensure dragged tab stays on top after layout changes
+    if (dragButton != nullptr)
+        dragButton->toFront(false);
 }
 
 void SlotMachineAudioProcessorEditor::PatternTabs::snapDraggedTabToSlot()
