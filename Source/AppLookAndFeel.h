@@ -18,9 +18,9 @@ public:
         if (bg.getAlpha() < 10)
         {
             if (isDown)
-                base = juce::Colours::white.withAlpha (0.25f);
+                base = juce::Colours::white.withAlpha (0.35f);
             else if (isOver)
-                base = juce::Colours::white.withAlpha (0.15f);
+                base = juce::Colours::white.withAlpha (0.25f);
         }
         else
         {
