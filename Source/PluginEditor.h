@@ -206,6 +206,8 @@ private:
         void focusEditor();
 
         void resized() override;
+        void mouseWheelMove(const juce::MouseEvent& event,
+                            const juce::MouseWheelDetails& wheel) override;
 
     private:
         void buttonClicked(juce::Button* button) override;

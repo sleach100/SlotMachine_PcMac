@@ -1792,6 +1792,29 @@ void SlotMachineAudioProcessorEditor::EditPatternRepeatComponent::resized()
     cancelButton.setBounds(cancel);
 }
 
+void SlotMachineAudioProcessorEditor::EditPatternRepeatComponent::mouseWheelMove(
+    const juce::MouseEvent& event,
+    const juce::MouseWheelDetails& wheel)
+{
+    // Only respond to wheel when mouse is over the editor
+    if (editor.getBounds().contains(event.getPosition()))
+    {
+        int currentValue = parseEditorValue();
+        int delta = (wheel.deltaY > 0) ? 1 : ((wheel.deltaY < 0) ? -1 : 0);
+
+        if (delta != 0)
+        {
+            int newValue = juce::jmax(0, currentValue + delta);
+            editor.setText(juce::String(newValue), juce::dontSendNotification);
+        }
+    }
+    else
+    {
+        // Pass to parent for default handling
+        juce::Component::mouseWheelMove(event, wheel);
+    }
+}
+
 void SlotMachineAudioProcessorEditor::EditPatternRepeatComponent::buttonClicked(juce::Button* button)
 {
     if (button == &okButton)
