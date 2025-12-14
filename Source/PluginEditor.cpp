@@ -3618,6 +3618,7 @@ SlotMachineAudioProcessorEditor::SlotMachineAudioProcessorEditor(SlotMachineAudi
         addAndMakeVisible(ui->fileLabel);
         ui->fileLabel.setText("No file", juce::dontSendNotification);
         ui->fileLabel.setJustificationType(juce::Justification::centredLeft);
+        ui->fileLabel.setInterceptsMouseClicks(false, false); // Allow clicks to pass through for sample trigger/drag
         ui->fileBtn.addListener(this);
         ui->fileBtn.addMouseListener(this, false);
         ui->fileBtn.onFileDropped = [this, slotIndex](const juce::File& file)
