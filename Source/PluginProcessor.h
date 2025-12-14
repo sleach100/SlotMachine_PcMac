@@ -20,6 +20,7 @@ public:
 
     void clearSlot(int index, bool allowTail = false);
     void clearAllSlots();
+    void resetSlotParametersToDefault(int index);
 
     // ====== Constants ======
     static constexpr int kNumSlots = 16;
