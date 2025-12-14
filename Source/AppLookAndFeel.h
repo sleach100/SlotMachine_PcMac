@@ -14,13 +14,25 @@ public:
         auto bounds = b.getLocalBounds().toFloat();
         auto base = bg;
 
-        if (isDown)      base = base.darker (0.2f);
-        else if (isOver) base = base.brighter (0.1f);
+        // Handle transparent backgrounds - use an overlay for hover/press effects
+        if (bg.getAlpha() < 10)
+        {
+            if (isDown)
+                base = juce::Colours::white.withAlpha (0.35f);
+            else if (isOver)
+                base = juce::Colours::white.withAlpha (0.25f);
+        }
+        else
+        {
+            if (isDown)      base = base.darker (0.2f);
+            else if (isOver) base = base.brighter (0.1f);
+        }
 
         g.setColour (base);
         g.fillRoundedRectangle (bounds, cornerRadius);
 
-        g.setColour (base.contrasting (0.35f));
+        // Use original bg color for border to keep it consistent across states
+        g.setColour (bg.contrasting (0.35f));
         g.drawRoundedRectangle (bounds, cornerRadius, 1.0f);
     }
 
