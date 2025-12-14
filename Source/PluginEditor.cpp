@@ -152,7 +152,7 @@ namespace
             juce::ModalCallbackFunction::create([fn = std::move(onDismiss)](int)
             {
                 if (fn)
-                    fn();
+                    juce::MessageManager::callAsync(std::move(fn));
             }));
     }
 
