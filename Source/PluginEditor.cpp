@@ -4384,9 +4384,16 @@ void SlotMachineAudioProcessorEditor::mouseDrag(const juce::MouseEvent& e)
         if (distanceMoved >= dragThreshold)
         {
             slotDragActive = true;
-            // Force the dragging cursor regardless of what component is under the mouse
-            juce::Desktop::getInstance().getMainMouseSource().showMouseCursor(juce::MouseCursor::DraggingHandCursor);
+            // Store the original cursor so we can restore it
+            if (auto* component = e.eventComponent)
+                preDragCursor = component->getMouseCursor();
         }
+    }
+
+    // Continuously set the dragging cursor on the event component while drag is active
+    if (slotDragActive && e.eventComponent != nullptr)
+    {
+        e.eventComponent->setMouseCursor(juce::MouseCursor::DraggingHandCursor);
     }
 }
 
@@ -7983,8 +7990,9 @@ void SlotMachineAudioProcessorEditor::mouseUp(const juce::MouseEvent& e)
     // Handle slot drag-and-drop completion
     if (slotDragActive && slotDragSourceIndex >= 0)
     {
-        // Restore normal cursor behavior
-        juce::Desktop::getInstance().getMainMouseSource().revealCursor();
+        // Restore cursor on the event component
+        if (auto* component = e.eventComponent)
+            component->setMouseCursor(preDragCursor);
 
         // Find destination slot
         int destSlotIndex = -1;
@@ -8013,8 +8021,8 @@ void SlotMachineAudioProcessorEditor::mouseUp(const juce::MouseEvent& e)
     // Reset drag state (in case of cancelled drag)
     if (slotDragSourceIndex >= 0)
     {
-        if (slotDragActive)
-            juce::Desktop::getInstance().getMainMouseSource().revealCursor();
+        if (slotDragActive && e.eventComponent != nullptr)
+            e.eventComponent->setMouseCursor(preDragCursor);
         slotDragSourceIndex = -1;
         slotDragActive = false;
     }
