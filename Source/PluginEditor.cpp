@@ -4384,8 +4384,8 @@ void SlotMachineAudioProcessorEditor::mouseDrag(const juce::MouseEvent& e)
         if (distanceMoved >= dragThreshold)
         {
             slotDragActive = true;
-            preDragCursor = getMouseCursor();
-            setMouseCursor(juce::MouseCursor::DraggingHandCursor);
+            // Force the dragging cursor regardless of what component is under the mouse
+            juce::Desktop::getInstance().getMainMouseSource().showMouseCursor(juce::MouseCursor::DraggingHandCursor);
         }
     }
 }
@@ -7983,8 +7983,8 @@ void SlotMachineAudioProcessorEditor::mouseUp(const juce::MouseEvent& e)
     // Handle slot drag-and-drop completion
     if (slotDragActive && slotDragSourceIndex >= 0)
     {
-        // Restore cursor
-        setMouseCursor(preDragCursor);
+        // Restore normal cursor behavior
+        juce::Desktop::getInstance().getMainMouseSource().revealCursor();
 
         // Find destination slot
         int destSlotIndex = -1;
@@ -8014,7 +8014,7 @@ void SlotMachineAudioProcessorEditor::mouseUp(const juce::MouseEvent& e)
     if (slotDragSourceIndex >= 0)
     {
         if (slotDragActive)
-            setMouseCursor(preDragCursor);
+            juce::Desktop::getInstance().getMainMouseSource().revealCursor();
         slotDragSourceIndex = -1;
         slotDragActive = false;
     }
