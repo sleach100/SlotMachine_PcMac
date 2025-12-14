@@ -4852,7 +4852,7 @@ void SlotMachineAudioProcessorEditor::resized()
 
         const int knobsY = iy + fileRowH + slotScaled(4);
         const int knobsH = slotScaled(112);
-        const int knobSpacing = slotScaled(12);
+        const int knobSpacing = slotScaled(4);
         const int knobCount = 3;
         const int knobW = juce::jmax(8, (iw - knobSpacing * (knobCount - 1)) / knobCount);
         const int totalKnobWidth = knobW * knobCount + knobSpacing * (knobCount - 1);
