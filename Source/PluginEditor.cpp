@@ -4259,10 +4259,10 @@ void SlotMachineAudioProcessorEditor::mouseDown(const juce::MouseEvent& e)
             {
                 return componentContainsScreenPoint(slot.fileBtn, screenPos)
                     || componentContainsScreenPoint(slot.clearBtn, screenPos)
-                    || componentContainsScreenPoint(slot.muteBtn, screenPos)
-                    || componentContainsScreenPoint(slot.soloBtn, screenPos)
-                    || componentContainsScreenPoint(slot.muteLabel, screenPos)
-                    || componentContainsScreenPoint(slot.soloLabel, screenPos)
+                    || sliderHitTest(slot.muteBtn)
+                    || sliderHitTest(slot.soloBtn)
+                    || sliderHitTest(slot.muteLabel)
+                    || sliderHitTest(slot.soloLabel)
                     || sliderHitTest(slot.count)
                     || sliderHitTest(slot.rate)
                     || sliderHitTest(slot.gain)
@@ -8104,8 +8104,8 @@ void SlotMachineAudioProcessorEditor::mouseUp(const juce::MouseEvent& e)
     };
 
     if (isInteractiveHit(U.fileBtn) || isInteractiveHit(U.clearBtn) || isInteractiveHit(U.fileLabel)
-        || isInteractiveHit(U.muteBtn) || isInteractiveHit(U.soloBtn)
-        || isInteractiveHit(U.muteLabel) || isInteractiveHit(U.soloLabel)
+        || sliderHitTest(U.muteBtn) || sliderHitTest(U.soloBtn)
+        || sliderHitTest(U.muteLabel) || sliderHitTest(U.soloLabel)
         || sliderHitTest(U.count) || sliderHitTest(U.rate) || sliderHitTest(U.gain) || sliderHitTest(U.decay))
         return;
 

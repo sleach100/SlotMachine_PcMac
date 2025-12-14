@@ -298,7 +298,27 @@ private:
                     target->triggerClick();
             }
 
+            bool hitTest(int x, int y) override
+            {
+                // Reduce hit area to center 70% of bounds
+                auto bounds = getLocalBounds().toFloat();
+                auto reduced = bounds.reduced(bounds.getWidth() * 0.15f, bounds.getHeight() * 0.1f);
+                return reduced.contains(static_cast<float>(x), static_cast<float>(y));
+            }
+
             juce::Button* target = nullptr;
+        };
+
+        // Custom ImageButton with reduced hit area for mute/solo buttons
+        struct SlotToggleButton : juce::ImageButton
+        {
+            bool hitTest(int x, int y) override
+            {
+                // Reduce hit area to center portion of bounds
+                auto bounds = getLocalBounds().toFloat();
+                auto reduced = bounds.reduced(bounds.getWidth() * 0.2f, bounds.getHeight() * 0.15f);
+                return reduced.contains(static_cast<float>(x), static_cast<float>(y));
+            }
         };
 
         struct FileButton : juce::TextButton, juce::FileDragAndDropTarget
@@ -358,8 +378,8 @@ private:
         juce::TextButton  clearBtn{ "X" };      // NEW: Clear sample
         juce::Label       fileLabel;
 
-        juce::ImageButton muteBtn;
-        juce::ImageButton soloBtn;
+        SlotToggleButton  muteBtn;
+        SlotToggleButton  soloBtn;
         ToggleLabel       muteLabel;
         ToggleLabel       soloLabel;
         juce::ComboBox    midiChannel;
