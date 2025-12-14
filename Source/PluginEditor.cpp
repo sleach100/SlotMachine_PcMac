@@ -5074,6 +5074,13 @@ void SlotMachineAudioProcessorEditor::copySlotData(int fromSlot, int toSlot)
         embeddedSlotResourceNames[(size_t)toSlot].clear();
         processor.clearSlot(toSlot, startToggle.getToggleState());
         processor.setSlotFilePath(toSlot, juce::String());
+
+        // Update the UI directly since this isn't a "failed" case
+        if (auto* destSlot = slots[(size_t)toSlot].get())
+        {
+            destSlot->fileLabel.setText("No file", juce::dontSendNotification);
+            destSlot->hasFile = false;
+        }
     }
 
     refreshSlotFileLabels(failed);
