@@ -358,6 +358,29 @@ namespace
             }
         }
 
+        void mouseWheelMove(const juce::MouseEvent& event,
+                            const juce::MouseWheelDetails& wheel) override
+        {
+            // Only respond to wheel when mouse is over the cycles editor
+            if (cyclesEditor.getBounds().contains(event.getPosition()))
+            {
+                const auto text = cyclesEditor.getText().trim();
+                int currentValue = text.isEmpty() ? 1 : juce::jmax(1, text.getIntValue());
+                int delta = (wheel.deltaY > 0) ? 1 : ((wheel.deltaY < 0) ? -1 : 0);
+
+                if (delta != 0)
+                {
+                    int newValue = juce::jmax(1, currentValue + delta);
+                    cyclesEditor.setText(juce::String(newValue), juce::dontSendNotification);
+                }
+            }
+            else
+            {
+                // Pass to parent for default handling
+                juce::Component::mouseWheelMove(event, wheel);
+            }
+        }
+
     private:
         void buttonClicked(juce::Button* button) override
         {
@@ -1790,6 +1813,29 @@ void SlotMachineAudioProcessorEditor::EditPatternRepeatComponent::resized()
     auto cancel = buttonsArea.reduced(4, 0);
     okButton.setBounds(ok);
     cancelButton.setBounds(cancel);
+}
+
+void SlotMachineAudioProcessorEditor::EditPatternRepeatComponent::mouseWheelMove(
+    const juce::MouseEvent& event,
+    const juce::MouseWheelDetails& wheel)
+{
+    // Only respond to wheel when mouse is over the editor
+    if (editor.getBounds().contains(event.getPosition()))
+    {
+        int currentValue = parseEditorValue();
+        int delta = (wheel.deltaY > 0) ? 1 : ((wheel.deltaY < 0) ? -1 : 0);
+
+        if (delta != 0)
+        {
+            int newValue = juce::jmax(0, currentValue + delta);
+            editor.setText(juce::String(newValue), juce::dontSendNotification);
+        }
+    }
+    else
+    {
+        // Pass to parent for default handling
+        juce::Component::mouseWheelMove(event, wheel);
+    }
 }
 
 void SlotMachineAudioProcessorEditor::EditPatternRepeatComponent::buttonClicked(juce::Button* button)
