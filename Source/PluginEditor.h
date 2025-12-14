@@ -248,7 +248,7 @@ private:
     juce::TextButton btnUserManual{ "User Manual" };
     juce::TextButton btnAbout{ "About" };
     juce::TextButton btnLock{ "Lock" };
-    juce::TextButton btnUnlock{ "Unlock" };
+    juce::TextButton btnUnlock{ "Unlock Trial" };
 
     bool isUnlocked = false;
     juce::Image lockIconImage;
