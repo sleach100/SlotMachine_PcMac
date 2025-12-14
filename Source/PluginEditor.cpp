@@ -6725,6 +6725,7 @@ void SlotMachineAudioProcessorEditor::buttonClicked(juce::Button* b)
         if (b == &ui->clearBtn)
         {
             processor.clearSlot(i, startToggle.getToggleState());
+            processor.resetSlotParametersToDefault(i);
             embeddedSlotResourceNames[(size_t)i].clear();
             ui->hasFile = false;
             ui->fileLabel.setText("No file", juce::dontSendNotification);

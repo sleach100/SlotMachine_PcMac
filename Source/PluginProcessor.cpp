@@ -2482,6 +2482,48 @@ void SlotMachineAudioProcessor::clearAllSlots()
         clearSlot(i);
 }
 
+void SlotMachineAudioProcessor::resetSlotParametersToDefault(int index)
+{
+    jassert(juce::isPositiveAndBelow(index, kNumSlots));
+
+    const juce::String base = "slot" + juce::String(index + 1) + "_";
+
+    // Reset Mute to false
+    if (auto* param = dynamic_cast<juce::AudioParameterBool*>(apvts.getParameter(base + "Mute")))
+        *param = false;
+
+    // Reset Solo to false
+    if (auto* param = dynamic_cast<juce::AudioParameterBool*>(apvts.getParameter(base + "Solo")))
+        *param = false;
+
+    // Reset Rate to 1.0
+    if (auto* param = dynamic_cast<juce::AudioParameterFloat*>(apvts.getParameter(base + "Rate")))
+        *param = 1.0f;
+
+    // Reset Count to 4
+    if (auto* param = dynamic_cast<juce::AudioParameterInt*>(apvts.getParameter(base + "Count")))
+        *param = 4;
+
+    // Reset Gain to 80.0
+    if (auto* param = dynamic_cast<juce::AudioParameterFloat*>(apvts.getParameter(base + "Gain")))
+        *param = 80.0f;
+
+    // Reset Pan to 0.0
+    if (auto* param = dynamic_cast<juce::AudioParameterFloat*>(apvts.getParameter(base + "Pan")))
+        *param = 0.0f;
+
+    // Reset Decay to max (100.0)
+    if (auto* param = dynamic_cast<juce::AudioParameterFloat*>(apvts.getParameter(base + "Decay")))
+        *param = kDecayUiMax;
+
+    // Reset MidiChannel to slot index (slot 1 = 0, slot 2 = 1, etc.)
+    if (auto* param = dynamic_cast<juce::AudioParameterChoice*>(apvts.getParameter(base + "MidiChannel")))
+        *param = index;
+
+    // Reset CountMask to all beats enabled
+    setSlotCountMask(index, kDefaultCountMask);
+}
+
 uint32_t SlotMachineAudioProcessor::getSlotHitCounter(int index) const
 {
     jassert(juce::isPositiveAndBelow(index, kNumSlots));
