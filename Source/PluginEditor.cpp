@@ -4424,8 +4424,7 @@ void SlotMachineAudioProcessorEditor::mouseDown(const juce::MouseEvent& e)
                     || sliderHitTest(slot.rate)
                     || sliderHitTest(slot.gain)
                     || sliderHitTest(slot.decay)
-                    || componentContainsScreenPoint(slot.midiChannel, screenPos)
-                    || componentContainsScreenPoint(slot.fileLabel, screenPos);
+                    || componentContainsScreenPoint(slot.midiChannel, screenPos);
             };
 
             if (!isOnInteractiveControl(*ui))
@@ -8257,7 +8256,7 @@ void SlotMachineAudioProcessorEditor::mouseUp(const juce::MouseEvent& e)
         return c.hitTest(localPoint.x, localPoint.y);
     };
 
-    if (isInteractiveHit(U.fileBtn) || isInteractiveHit(U.clearBtn) || isInteractiveHit(U.fileLabel)
+    if (isInteractiveHit(U.fileBtn) || isInteractiveHit(U.clearBtn)
         || sliderHitTest(U.muteBtn) || sliderHitTest(U.soloBtn)
         || sliderHitTest(U.muteLabel) || sliderHitTest(U.soloLabel)
         || sliderHitTest(U.count) || sliderHitTest(U.rate) || sliderHitTest(U.gain) || sliderHitTest(U.decay))
