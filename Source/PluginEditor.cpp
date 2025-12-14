@@ -358,6 +358,29 @@ namespace
             }
         }
 
+        void mouseWheelMove(const juce::MouseEvent& event,
+                            const juce::MouseWheelDetails& wheel) override
+        {
+            // Only respond to wheel when mouse is over the cycles editor
+            if (cyclesEditor.getBounds().contains(event.getPosition()))
+            {
+                const auto text = cyclesEditor.getText().trim();
+                int currentValue = text.isEmpty() ? 1 : juce::jmax(1, text.getIntValue());
+                int delta = (wheel.deltaY > 0) ? 1 : ((wheel.deltaY < 0) ? -1 : 0);
+
+                if (delta != 0)
+                {
+                    int newValue = juce::jmax(1, currentValue + delta);
+                    cyclesEditor.setText(juce::String(newValue), juce::dontSendNotification);
+                }
+            }
+            else
+            {
+                // Pass to parent for default handling
+                juce::Component::mouseWheelMove(event, wheel);
+            }
+        }
+
     private:
         void buttonClicked(juce::Button* button) override
         {
