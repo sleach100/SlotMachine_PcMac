@@ -103,6 +103,14 @@ namespace
     constexpr int kMasterLabelExtraYOffset = 35;
     constexpr float kBannerScaleMultiplier = 2.24f;
 
+    bool componentContainsScreenPoint(const juce::Component& component, juce::Point<int> screenPoint)
+    {
+        if (!component.isShowing())
+            return false;
+
+        return component.getScreenBounds().contains(screenPoint);
+    }
+
     void confirmWarningWithContinue(juce::Component* parent,
         const juce::String& title,
         const juce::String& message,
@@ -4212,9 +4220,54 @@ void SlotMachineAudioProcessorEditor::mouseDown(const juce::MouseEvent& e)
     suppressNextFileBtnClick = false;
     juce::AudioProcessorEditor::mouseDown(e);
 
+    // Reset slot drag state
+    slotDragSourceIndex = -1;
+    slotDragActive = false;
+
     auto* eventComponent = e.eventComponent;
     if (eventComponent == nullptr)
         return;
+
+    // Check for potential slot-to-slot drag (left button only, no modifiers)
+    if (e.mods.isLeftButtonDown() && !e.mods.isPopupMenu())
+    {
+        const juce::Point<int> screenPos(e.getScreenX(), e.getScreenY());
+
+        for (int i = 0; i < kNumSlots; ++i)
+        {
+            auto* ui = slots[(size_t)i].get();
+            if (!ui)
+                continue;
+
+            if (!componentContainsScreenPoint(ui->group, screenPos))
+                continue;
+
+            // Check if click is on an interactive control - if so, don't start drag
+            auto isOnInteractiveControl = [&screenPos](SlotUI& slot) -> bool
+            {
+                return componentContainsScreenPoint(slot.fileBtn, screenPos)
+                    || componentContainsScreenPoint(slot.clearBtn, screenPos)
+                    || componentContainsScreenPoint(slot.muteBtn, screenPos)
+                    || componentContainsScreenPoint(slot.soloBtn, screenPos)
+                    || componentContainsScreenPoint(slot.muteLabel, screenPos)
+                    || componentContainsScreenPoint(slot.soloLabel, screenPos)
+                    || componentContainsScreenPoint(slot.count, screenPos)
+                    || componentContainsScreenPoint(slot.rate, screenPos)
+                    || componentContainsScreenPoint(slot.gain, screenPos)
+                    || componentContainsScreenPoint(slot.decay, screenPos)
+                    || componentContainsScreenPoint(slot.midiChannel, screenPos)
+                    || componentContainsScreenPoint(slot.fileLabel, screenPos);
+            };
+
+            if (!isOnInteractiveControl(*ui))
+            {
+                // Click is in slot's non-interactive area (title bar, empty space)
+                slotDragSourceIndex = i;
+                slotDragStartPosition = screenPos;
+            }
+            break;
+        }
+    }
 
     const int timingMode = Opt::getInt(apvts, "optTimingMode", 1);
 
@@ -4313,6 +4366,26 @@ void SlotMachineAudioProcessorEditor::mouseDown(const juce::MouseEvent& e)
                     return;
                 }
             }
+        }
+    }
+}
+
+void SlotMachineAudioProcessorEditor::mouseDrag(const juce::MouseEvent& e)
+{
+    juce::AudioProcessorEditor::mouseDrag(e);
+
+    // If we haven't started dragging yet, check if we should start
+    if (slotDragSourceIndex >= 0 && !slotDragActive)
+    {
+        const int dragThreshold = 5;
+        const juce::Point<int> currentPos = e.getScreenPosition();
+        const int distanceMoved = currentPos.getDistanceFrom(slotDragStartPosition);
+
+        if (distanceMoved >= dragThreshold)
+        {
+            slotDragActive = true;
+            preDragCursor = getMouseCursor();
+            setMouseCursor(juce::MouseCursor::DraggingHandCursor);
         }
     }
 }
@@ -4900,6 +4973,100 @@ void SlotMachineAudioProcessorEditor::handleSlotFileSelection(int slotIndex, con
     juce::Array<int> failed;
     if (!loaded)
         failed.add(slotIndex);
+
+    refreshSlotFileLabels(failed);
+    showPatternWarning(failed);
+    saveCurrentPattern();
+    repaint();
+}
+
+void SlotMachineAudioProcessorEditor::copySlotData(int fromSlot, int toSlot)
+{
+    if (fromSlot < 0 || fromSlot >= kNumSlots || toSlot < 0 || toSlot >= kNumSlots)
+        return;
+
+    const int srcIdx = fromSlot + 1;
+    const int dstIdx = toSlot + 1;
+
+    // Helper to copy a parameter value
+    auto copyParam = [this](const juce::String& paramId, const juce::String& srcSuffix, const juce::String& dstSuffix)
+    {
+        juce::String srcId = "slot" + juce::String(srcSuffix) + paramId;
+        juce::String dstId = "slot" + juce::String(dstSuffix) + paramId;
+
+        if (auto* srcParam = apvts.getRawParameterValue(srcId))
+        {
+            if (auto* dstParam = apvts.getParameter(dstId))
+            {
+                const float normalizedValue = dstParam->convertTo0to1(srcParam->load());
+                dstParam->setValueNotifyingHost(normalizedValue);
+            }
+        }
+    };
+
+    // Copy Count
+    copyParam("_Count", juce::String(srcIdx), juce::String(dstIdx));
+
+    // Copy Rate
+    copyParam("_Rate", juce::String(srcIdx), juce::String(dstIdx));
+
+    // Copy Gain (Volume)
+    copyParam("_Gain", juce::String(srcIdx), juce::String(dstIdx));
+
+    // Copy Decay
+    copyParam("_Decay", juce::String(srcIdx), juce::String(dstIdx));
+
+    // Copy MIDI Channel
+    copyParam("_MidiChannel", juce::String(srcIdx), juce::String(dstIdx));
+
+    // Copy the sample file
+    const juce::String srcFilePath = processor.getSlotFilePath(fromSlot);
+    const juce::String srcEmbedded = embeddedSlotResourceNames[(size_t)fromSlot];
+
+    juce::Array<int> failed;
+
+    if (srcEmbedded.isNotEmpty())
+    {
+        // Source is an embedded sample - load it from resources
+        int resourceSize = 0;
+        const void* bytes = BinaryData::getNamedResource(srcEmbedded.toRawUTF8(), resourceSize);
+        if (bytes != nullptr && resourceSize > 0
+            && processor.loadSampleForSlotFromMemory(toSlot, bytes, resourceSize, srcEmbedded))
+        {
+            embeddedSlotResourceNames[(size_t)toSlot] = srcEmbedded;
+        }
+        else
+        {
+            embeddedSlotResourceNames[(size_t)toSlot].clear();
+            processor.clearSlot(toSlot, startToggle.getToggleState());
+            failed.add(toSlot);
+        }
+    }
+    else if (srcFilePath.isNotEmpty())
+    {
+        // Source is an external file
+        juce::File file(srcFilePath);
+        embeddedSlotResourceNames[(size_t)toSlot].clear();
+
+        if (file.existsAsFile())
+        {
+            if (!processor.loadSampleForSlot(toSlot, file, startToggle.getToggleState()))
+                failed.add(toSlot);
+        }
+        else
+        {
+            // File doesn't exist but we keep the path for display
+            processor.clearSlot(toSlot, startToggle.getToggleState());
+            processor.setSlotFilePath(toSlot, srcFilePath);
+            failed.add(toSlot);
+        }
+    }
+    else
+    {
+        // Source has no sample - clear the destination
+        embeddedSlotResourceNames[(size_t)toSlot].clear();
+        processor.clearSlot(toSlot, startToggle.getToggleState());
+    }
 
     refreshSlotFileLabels(failed);
     showPatternWarning(failed);
@@ -7807,22 +7974,50 @@ void SlotMachineAudioProcessorEditor::handleMasterTap()
     }
 }
 
-namespace
-{
-    bool componentContainsScreenPoint(const juce::Component& component, juce::Point<int> screenPoint)
-    {
-        if (!component.isShowing())
-            return false;
-
-        return component.getScreenBounds().contains(screenPoint);
-    }
-}
-
 void SlotMachineAudioProcessorEditor::mouseUp(const juce::MouseEvent& e)
 {
     juce::AudioProcessorEditor::mouseUp(e);
 
     const juce::Point<int> screenPos(e.getScreenX(), e.getScreenY());
+
+    // Handle slot drag-and-drop completion
+    if (slotDragActive && slotDragSourceIndex >= 0)
+    {
+        // Restore cursor
+        setMouseCursor(preDragCursor);
+
+        // Find destination slot
+        int destSlotIndex = -1;
+        for (int i = 0; i < kNumSlots; ++i)
+        {
+            auto* ui = slots[(size_t)i].get();
+            if (ui && componentContainsScreenPoint(ui->group, screenPos))
+            {
+                destSlotIndex = i;
+                break;
+            }
+        }
+
+        // If dropped on a different slot, copy the data
+        if (destSlotIndex >= 0 && destSlotIndex != slotDragSourceIndex)
+        {
+            copySlotData(slotDragSourceIndex, destSlotIndex);
+        }
+
+        // Reset drag state
+        slotDragSourceIndex = -1;
+        slotDragActive = false;
+        return;
+    }
+
+    // Reset drag state (in case of cancelled drag)
+    if (slotDragSourceIndex >= 0)
+    {
+        if (slotDragActive)
+            setMouseCursor(preDragCursor);
+        slotDragSourceIndex = -1;
+        slotDragActive = false;
+    }
 
     if (componentContainsScreenPoint(masterLabel, screenPos))
     {

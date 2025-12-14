@@ -34,6 +34,7 @@ public:
     void resized() override;
     void parentHierarchyChanged() override;
     void mouseDown(const juce::MouseEvent& e) override;
+    void mouseDrag(const juce::MouseEvent& e) override;
     void mouseUp(const juce::MouseEvent& e) override;
     void mouseWheelMove(const juce::MouseEvent& e, const juce::MouseWheelDetails& wheel) override;
 
@@ -419,6 +420,7 @@ private:
         return juce::jlimit(0.0625f, 4.0f, rate);
     }
     void handleSlotFileSelection(int slotIndex, const juce::File& file);
+    void copySlotData(int fromSlot, int toSlot);
     void initialisePatterns();
     void saveCurrentPattern();
     void refreshPatternTabs();
@@ -505,6 +507,12 @@ private:
 
     // Update checker (standalone only)
     UpdateChecker updateChecker;
+
+    // Slot drag-and-drop state
+    int slotDragSourceIndex = -1;
+    bool slotDragActive = false;
+    juce::Point<int> slotDragStartPosition;
+    juce::MouseCursor preDragCursor;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SlotMachineAudioProcessorEditor)
 };
