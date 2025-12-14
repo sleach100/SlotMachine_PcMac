@@ -14,8 +14,19 @@ public:
         auto bounds = b.getLocalBounds().toFloat();
         auto base = bg;
 
-        if (isDown)      base = base.darker (0.2f);
-        else if (isOver) base = base.brighter (0.1f);
+        // Handle transparent backgrounds - use an overlay for hover/press effects
+        if (bg.getAlpha() < 10)
+        {
+            if (isDown)
+                base = juce::Colours::white.withAlpha (0.15f);
+            else if (isOver)
+                base = juce::Colours::white.withAlpha (0.08f);
+        }
+        else
+        {
+            if (isDown)      base = base.darker (0.2f);
+            else if (isOver) base = base.brighter (0.1f);
+        }
 
         g.setColour (base);
         g.fillRoundedRectangle (bounds, cornerRadius);
