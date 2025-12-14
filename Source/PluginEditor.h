@@ -342,8 +342,8 @@ private:
                 // Calculate a tighter knob circle (reduce radius to match visual arc)
                 const auto centre = knobBounds.getCentre();
                 const auto diameter = juce::jmin(knobBounds.getWidth(), knobBounds.getHeight());
-                // Use 0.42 of diameter for tighter hit area around the visual arc
-                const auto radius = diameter * 0.42f;
+                // Use 0.38 of diameter for tighter hit area around the visual arc
+                const auto radius = diameter * 0.38f;
 
                 // Check if point is within the knob circle
                 const auto point = juce::Point<float>(static_cast<float>(x), static_cast<float>(y));
