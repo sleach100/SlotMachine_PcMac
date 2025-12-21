@@ -128,16 +128,23 @@ private:
                                      (int)(sliderPosProportional * (numFrames - 1) + 0.5f));
 
         // Calculate source rectangle for this frame
-        juce::Rectangle<int> sourceRect(0, frameIndex * frameHeight, frameWidth, frameHeight);
+        const int sourceX = 0;
+        const int sourceY = frameIndex * frameHeight;
+        const int sourceWidth = frameWidth;
+        const int sourceHeight = frameHeight;
 
         // Calculate destination rectangle (center the knob in the available space)
         const int knobSize = juce::jmin(width, height);
-        const int offsetX = x + (width - knobSize) / 2;
-        const int offsetY = y + (height - knobSize) / 2;
-        juce::Rectangle<int> destRect(offsetX, offsetY, knobSize, knobSize);
+        const int destX = x + (width - knobSize) / 2;
+        const int destY = y + (height - knobSize) / 2;
+        const int destWidth = knobSize;
+        const int destHeight = knobSize;
 
-        // Draw the appropriate frame
-        g.drawImage(knobFilmstrip, destRect.toFloat(), sourceRect.toFloat());
+        // Draw the appropriate frame using JUCE's drawImage with explicit coordinates
+        g.drawImage(knobFilmstrip,
+                    destX, destY, destWidth, destHeight,
+                    sourceX, sourceY, sourceWidth, sourceHeight,
+                    false);
     }
 
     float cornerRadius = 6.0f;
