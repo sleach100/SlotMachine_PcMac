@@ -101,10 +101,10 @@ private:
 
     bool useFilmstripForSlider(juce::Slider& slider) const
     {
-        // Only use filmstrip for sliders named with slot-related names
-        // Currently: count/rate slider as proof of concept
+        // Use filmstrip for all slot knobs (count/rate, gain, decay)
         juce::String name = slider.getName();
-        return name.contains("Count") || name.contains("Rate");
+        return name.contains("Count") || name.contains("Rate") ||
+               name.contains("Gain") || name.contains("Decay");
     }
 
     void drawFilmstripKnob(juce::Graphics& g, int x, int y, int width, int height,
