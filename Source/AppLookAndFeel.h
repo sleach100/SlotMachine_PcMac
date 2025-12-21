@@ -119,11 +119,11 @@ private:
             return;
         }
 
-        const int numFrames = 101;
+        const int numFrames = 50;
         const int frameWidth = knobFilmstrip.getWidth();
         const int frameHeight = knobFilmstrip.getHeight() / numFrames;
 
-        // Calculate which frame to display (0-100)
+        // Calculate which frame to display (0-49)
         int frameIndex = juce::jlimit(0, numFrames - 1,
                                      (int)(sliderPosProportional * (numFrames - 1) + 0.5f));
 
