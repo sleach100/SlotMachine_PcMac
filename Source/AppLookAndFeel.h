@@ -45,14 +45,14 @@ public:
                           float sliderPosProportional, float rotaryStartAngle,
                           float rotaryEndAngle, juce::Slider& slider) override
     {
-        // Use filmstrip for slot knobs, fall back to default for others
-        if (useFilmstripForSlider(slider))
+        // Use filmstrip for slot knobs if filmstrip is valid, otherwise fall back to default
+        if (useFilmstripForSlider(slider) && knobFilmstrip.isValid())
         {
             drawFilmstripKnob(g, x, y, width, height, sliderPosProportional, slider);
         }
         else
         {
-            // Use default JUCE rendering for other sliders
+            // Use default JUCE rendering for other sliders or if filmstrip failed to load
             juce::LookAndFeel_V4::drawRotarySlider(g, x, y, width, height,
                                                    sliderPosProportional,
                                                    rotaryStartAngle, rotaryEndAngle, slider);
@@ -72,12 +72,8 @@ private:
 
         if (!knobFile.existsAsFile())
         {
-            filmstripErrorMessage = "ERROR: Knob filmstrip not found at: " + knobFile.getFullPathName();
-            DBG(filmstripErrorMessage);
-            juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
-                                                   "Missing Skin File",
-                                                   filmstripErrorMessage,
-                                                   "OK");
+            filmstripErrorMessage = "Knob filmstrip not found at: " + knobFile.getFullPathName();
+            DBG(filmstripErrorMessage + " - using default slider rendering");
             return;
         }
 
@@ -85,12 +81,8 @@ private:
 
         if (!knobFilmstrip.isValid())
         {
-            filmstripErrorMessage = "ERROR: Failed to load knob filmstrip from: " + knobFile.getFullPathName();
-            DBG(filmstripErrorMessage);
-            juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
-                                                   "Invalid Skin File",
-                                                   filmstripErrorMessage,
-                                                   "OK");
+            filmstripErrorMessage = "Failed to load knob filmstrip from: " + knobFile.getFullPathName();
+            DBG(filmstripErrorMessage + " - using default slider rendering");
             return;
         }
 
@@ -110,14 +102,10 @@ private:
     void drawFilmstripKnob(juce::Graphics& g, int x, int y, int width, int height,
                           float sliderPosProportional, juce::Slider& slider)
     {
+        // This function should only be called if filmstrip is valid
+        // (checked in drawRotarySlider), but double-check for safety
         if (!knobFilmstrip.isValid())
-        {
-            // Draw error indicator
-            g.setColour(juce::Colours::red);
-            g.drawRect(x, y, width, height, 2);
-            g.drawText("X", x, y, width, height, juce::Justification::centred);
             return;
-        }
 
         const int numFrames = 50;
         const int frameWidth = knobFilmstrip.getWidth();
