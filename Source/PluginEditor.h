@@ -294,6 +294,24 @@ private:
     // ===== Slot UI =====
     struct SlotUI
     {
+        // Custom GroupComponent that tracks flash state for skinning
+        struct SlotGroupComponent : juce::GroupComponent
+        {
+            void setFlashState(float flashAmount)
+            {
+                if (flashState != flashAmount)
+                {
+                    flashState = flashAmount;
+                    repaint();
+                }
+            }
+
+            float getFlashState() const { return flashState; }
+
+        private:
+            float flashState = 0.0f;
+        };
+
         struct ToggleLabel : juce::Label
         {
             ToggleLabel()
@@ -384,7 +402,7 @@ private:
             }
         };
 
-        juce::GroupComponent group;
+        SlotGroupComponent group;
         FileButton        fileBtn;
         juce::TextButton  clearBtn{ "X" };      // NEW: Clear sample
         juce::Label       fileLabel;

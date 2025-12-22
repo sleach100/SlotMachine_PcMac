@@ -8061,6 +8061,10 @@ void SlotMachineAudioProcessorEditor::timerCallback()
 
         // simple glow decay
         ui->glow = juce::jmax(0.0f, ui->glow - 0.06f);
+
+        // Update group component flash state for skinning
+        ui->group.getProperties().set("flashState", ui->glow);
+
         ui->hasFile = processor.slotHasSample(i);
 
         const bool beatsPerCycleMode = (timingMode == 1);

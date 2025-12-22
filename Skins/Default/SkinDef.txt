@@ -10,4 +10,14 @@ KnobFilmstripOrientation=Vertical
 ;   Vertical   - Frames are stacked top to bottom
 ;   Horizontal - Frames are arranged left to right
 
+; Slot Background Images
+; These images replace the default slot frames
+; Leave blank to use default JUCE frame rendering
+;Background=slot_background.png
+;BackgroundFlash=slot_background_flash.png
+
+; Background: Normal slot background image (shown behind sliders, buttons, etc.)
+; BackgroundFlash: Flash background image shown when a beat hits
+; Images should be sized appropriately for the slot dimensions
+
 ; Additional skin parameters will be added here as the skinning system develops
