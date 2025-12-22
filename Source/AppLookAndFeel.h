@@ -184,6 +184,24 @@ public:
         }
     }
 
+    void drawPopupMenuBackground (juce::Graphics& g, int width, int height) override
+    {
+        // Draw custom textbox image if available, otherwise use default rendering
+        if (textboxImage.isValid())
+        {
+            // Draw the textbox image stretched to fit the popup menu bounds
+            g.drawImage(textboxImage,
+                       0, 0, width, height,
+                       0, 0, textboxImage.getWidth(), textboxImage.getHeight(),
+                       false);
+        }
+        else
+        {
+            // Fall back to default JUCE popup menu background
+            juce::LookAndFeel_V4::drawPopupMenuBackground(g, width, height);
+        }
+    }
+
     bool hasKnobFilmstrip() const { return knobFilmstrip.isValid(); }
     juce::String getKnobFilmstripError() const { return filmstripErrorMessage; }
 
