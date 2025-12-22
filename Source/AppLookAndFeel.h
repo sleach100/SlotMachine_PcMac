@@ -7,6 +7,7 @@ class AppLookAndFeel : public juce::LookAndFeel_V4
 public:
     AppLookAndFeel()
     {
+        loadSkinDefinition();
         loadKnobFilmstrip();
     }
 
@@ -63,12 +64,62 @@ public:
     juce::String getKnobFilmstripError() const { return filmstripErrorMessage; }
 
 private:
+    void loadSkinDefinition()
+    {
+        // Set defaults
+        knobFilename = "knob.png";
+        knobFrameCount = 50;
+
+        juce::File skinDefFile = juce::File::getCurrentWorkingDirectory()
+                                    .getChildFile("Skins")
+                                    .getChildFile("Default")
+                                    .getChildFile("SkinDef.txt");
+
+        if (!skinDefFile.existsAsFile())
+        {
+            DBG("SkinDef.txt not found at: " + skinDefFile.getFullPathName() + " - using defaults");
+            return;
+        }
+
+        juce::StringArray lines;
+        skinDefFile.readLines(lines);
+
+        for (const auto& line : lines)
+        {
+            // Skip empty lines and comments (lines starting with ;)
+            auto trimmed = line.trim();
+            if (trimmed.isEmpty() || trimmed.startsWith(";"))
+                continue;
+
+            // Parse key=value pairs
+            int equalsPos = trimmed.indexOf("=");
+            if (equalsPos > 0)
+            {
+                juce::String key = trimmed.substring(0, equalsPos).trim();
+                juce::String value = trimmed.substring(equalsPos + 1).trim();
+
+                if (key.equalsIgnoreCase("Knobs"))
+                {
+                    knobFilename = value;
+                    DBG("Skin: Knobs = " + knobFilename);
+                }
+                else if (key.equalsIgnoreCase("KnobFrames"))
+                {
+                    knobFrameCount = value.getIntValue();
+                    DBG("Skin: KnobFrames = " + juce::String(knobFrameCount));
+                }
+            }
+        }
+
+        DBG("SkinDef.txt loaded successfully");
+    }
+
     void loadKnobFilmstrip()
     {
         juce::File knobFile = juce::File::getCurrentWorkingDirectory()
                                 .getChildFile("Skins")
                                 .getChildFile("Default")
-                                .getChildFile("knob.png");
+                                .getChildFile(knobFilename);
 
         if (!knobFile.existsAsFile())
         {
@@ -104,14 +155,14 @@ private:
     {
         // This function should only be called if filmstrip is valid
         // (checked in drawRotarySlider), but double-check for safety
-        if (!knobFilmstrip.isValid())
+        if (!knobFilmstrip.isValid() || knobFrameCount <= 0)
             return;
 
-        const int numFrames = 50;
+        const int numFrames = knobFrameCount;
         const int frameWidth = knobFilmstrip.getWidth();
         const int frameHeight = knobFilmstrip.getHeight() / numFrames;
 
-        // Calculate which frame to display (0-49)
+        // Calculate which frame to display
         int frameIndex = juce::jlimit(0, numFrames - 1,
                                      (int)(sliderPosProportional * (numFrames - 1) + 0.5f));
 
@@ -138,4 +189,8 @@ private:
     float cornerRadius = 6.0f;
     juce::Image knobFilmstrip;
     juce::String filmstripErrorMessage;
+
+    // Skin definition parameters
+    juce::String knobFilename;
+    int knobFrameCount = 50;
 };

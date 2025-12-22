@@ -1,0 +1,8 @@
+; Slot Machine Skin Definition File
+; Lines starting with ; are comments and will be ignored
+
+; Knob Settings
+Knobs=knob.png
+KnobFrames=50
+
+; Additional skin parameters will be added here as the skinning system develops
