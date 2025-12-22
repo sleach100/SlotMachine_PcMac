@@ -98,7 +98,8 @@ public:
             auto textColour = group.findColour(juce::GroupComponent::textColourId);
             g.setColour(textColour);
 
-            auto font = juce::LookAndFeel_V4::getLabelFont(group);
+            // Use standard font for group component title
+            juce::Font font(15.0f, juce::Font::bold);
             g.setFont(font);
 
             g.drawText(text, 4, 0, width - 8, (int)font.getHeight(),
