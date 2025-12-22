@@ -128,16 +128,8 @@ public:
             g.drawImage(*bgImage, 0, 0, width, height,
                        0, 0, bgImage->getWidth(), bgImage->getHeight());
 
-            // Draw the title text on top of the background image
-            auto textColour = group.findColour(juce::GroupComponent::textColourId);
-            g.setColour(textColour);
-
-            // Use standard font for group component title
-            juce::Font font(15.0f, juce::Font::bold);
-            g.setFont(font);
-
-            g.drawText(text, 4, 0, width - 8, (int)font.getHeight(),
-                      position, false);
+            // Don't draw slot number text when using custom background images
+            // The background image may include the slot number or shouldn't be obscured
         }
         else
         {
