@@ -67,7 +67,6 @@ public:
                                     juce::GroupComponent& group) override
     {
         // Try to get flash state from SlotGroupComponent
-        // We need to forward declare SlotGroupComponent, so we use dynamic_cast
         float flashState = 0.0f;
         bool hasFlashState = false;
 
@@ -94,6 +93,16 @@ public:
             // Draw the background image stretched to fit the group bounds
             g.drawImage(*bgImage, 0, 0, width, height,
                        0, 0, bgImage->getWidth(), bgImage->getHeight());
+
+            // Draw the title text on top of the background image
+            auto textColour = group.findColour(juce::GroupComponent::textColourId);
+            g.setColour(textColour);
+
+            auto font = juce::LookAndFeel_V4::getLabelFont(group);
+            g.setFont(font);
+
+            g.drawText(text, 4, 0, width - 8, (int)font.getHeight(),
+                      position, false);
         }
         else
         {
