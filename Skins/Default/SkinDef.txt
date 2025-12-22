@@ -4,5 +4,10 @@
 ; Knob Settings
 Knobs=knob.png
 KnobFrames=50
+KnobFilmstripOrientation=Vertical
+
+; KnobFilmstripOrientation options:
+;   Vertical   - Frames are stacked top to bottom
+;   Horizontal - Frames are arranged left to right
 
 ; Additional skin parameters will be added here as the skinning system develops

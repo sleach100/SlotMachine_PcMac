@@ -69,6 +69,7 @@ private:
         // Set defaults
         knobFilename = "knob.png";
         knobFrameCount = 50;
+        knobOrientation = "Vertical";
 
         juce::File skinDefFile = juce::File::getCurrentWorkingDirectory()
                                     .getChildFile("Skins")
@@ -107,6 +108,11 @@ private:
                 {
                     knobFrameCount = value.getIntValue();
                     DBG("Skin: KnobFrames = " + juce::String(knobFrameCount));
+                }
+                else if (key.equalsIgnoreCase("KnobFilmstripOrientation"))
+                {
+                    knobOrientation = value;
+                    DBG("Skin: KnobFilmstripOrientation = " + knobOrientation);
                 }
             }
         }
@@ -159,16 +165,37 @@ private:
             return;
 
         const int numFrames = knobFrameCount;
-        const int frameWidth = knobFilmstrip.getWidth();
-        const int frameHeight = knobFilmstrip.getHeight() / numFrames;
+        const bool isVertical = knobOrientation.equalsIgnoreCase("Vertical");
+
+        // Calculate frame dimensions based on orientation
+        int frameWidth, frameHeight;
+        if (isVertical)
+        {
+            frameWidth = knobFilmstrip.getWidth();
+            frameHeight = knobFilmstrip.getHeight() / numFrames;
+        }
+        else // Horizontal
+        {
+            frameWidth = knobFilmstrip.getWidth() / numFrames;
+            frameHeight = knobFilmstrip.getHeight();
+        }
 
         // Calculate which frame to display
         int frameIndex = juce::jlimit(0, numFrames - 1,
                                      (int)(sliderPosProportional * (numFrames - 1) + 0.5f));
 
-        // Calculate source rectangle for this frame
-        const int sourceX = 0;
-        const int sourceY = frameIndex * frameHeight;
+        // Calculate source rectangle for this frame based on orientation
+        int sourceX, sourceY;
+        if (isVertical)
+        {
+            sourceX = 0;
+            sourceY = frameIndex * frameHeight;
+        }
+        else // Horizontal
+        {
+            sourceX = frameIndex * frameWidth;
+            sourceY = 0;
+        }
         const int sourceWidth = frameWidth;
         const int sourceHeight = frameHeight;
 
@@ -193,4 +220,5 @@ private:
     // Skin definition parameters
     juce::String knobFilename;
     int knobFrameCount = 50;
+    juce::String knobOrientation = "Vertical";
 };
