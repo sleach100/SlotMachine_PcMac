@@ -153,6 +153,37 @@ public:
         }
     }
 
+    void drawComboBox (juce::Graphics& g, int width, int height, bool,
+                      int, int, int, int, juce::ComboBox& box) override
+    {
+        // Draw custom textbox image if available, otherwise use default rendering
+        if (textboxImage.isValid())
+        {
+            auto bounds = juce::Rectangle<int>(0, 0, width, height);
+
+            // Draw the textbox image stretched to fit the combobox bounds
+            g.drawImage(textboxImage,
+                       0, 0, width, height,
+                       0, 0, textboxImage.getWidth(), textboxImage.getHeight(),
+                       false);
+
+            // Draw the dropdown arrow on the right side
+            auto arrowZone = juce::Rectangle<int>(width - 20, 0, 20, height);
+            juce::Path path;
+            path.startNewSubPath(arrowZone.getX() + 3.0f, arrowZone.getCentreY() - 2.0f);
+            path.lineTo(arrowZone.getCentreX(), arrowZone.getCentreY() + 3.0f);
+            path.lineTo(arrowZone.getRight() - 3.0f, arrowZone.getCentreY() - 2.0f);
+
+            g.setColour(box.findColour(juce::ComboBox::arrowColourId).withAlpha(box.isEnabled() ? 0.9f : 0.2f));
+            g.strokePath(path, juce::PathStrokeType(2.0f));
+        }
+        else
+        {
+            // Fall back to default JUCE combobox rendering
+            juce::LookAndFeel_V4::drawComboBox(g, width, height, false, 0, 0, 0, 0, box);
+        }
+    }
+
     bool hasKnobFilmstrip() const { return knobFilmstrip.isValid(); }
     juce::String getKnobFilmstripError() const { return filmstripErrorMessage; }
 

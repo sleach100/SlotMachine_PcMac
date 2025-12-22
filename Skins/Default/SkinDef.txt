@@ -21,12 +21,13 @@ KnobFilmstripOrientation=Vertical
 ; Images should be sized appropriately for the slot dimensions
 
 ; Text Box Images
-; Replace the default text label backgrounds (file name display, etc.)
-; Leave blank to use default JUCE label rendering
+; Replace the default text label/combobox backgrounds (file name display, MIDI channel selector, etc.)
+; Leave blank to use default JUCE rendering
 ;TextBox=textbox_background.png
 
-; TextBox: Background image for text labels in slots
-; Image will be stretched to fit the label bounds, with text drawn on top
+; TextBox: Background image for text labels and combo boxes in slots
+; Image will be stretched to fit the component bounds, with text/arrow drawn on top
+; Applies to: File name labels, MIDI channel selector dropdown, etc.
 
 ; File Name Label Width
 ; Set a fixed width in pixels for the file name text box
