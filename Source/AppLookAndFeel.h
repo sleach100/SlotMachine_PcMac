@@ -126,8 +126,12 @@ public:
 
     void drawLabel (juce::Graphics& g, juce::Label& label) override
     {
-        // Draw custom textbox image if available, otherwise use default rendering
-        if (textboxImage.isValid())
+        // Skip TextBox image for Mute and Solo labels - leave them unaltered
+        auto labelText = label.getText();
+        bool isMuteOrSolo = labelText == "Mute" || labelText == "Solo";
+
+        // Draw custom textbox image if available and not Mute/Solo label
+        if (textboxImage.isValid() && !isMuteOrSolo)
         {
             auto bounds = label.getLocalBounds();
 

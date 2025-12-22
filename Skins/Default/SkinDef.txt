@@ -27,7 +27,8 @@ KnobFilmstripOrientation=Vertical
 
 ; TextBox: Background image for text labels, combo boxes, and popup menus in slots
 ; Image will be stretched to fit the component bounds, with text/arrow drawn on top
-; Applies to: File name labels, MIDI channel selector, dropdown popup menus, etc.
+; Applies to: File name labels, MIDI channel selector, dropdown popup menus
+; Excludes: Mute and Solo labels (left with default rendering)
 
 ; File Name Label Width
 ; Set a fixed width in pixels for the file name text box
