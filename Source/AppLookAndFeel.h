@@ -81,11 +81,23 @@ public:
                 flashState = (float)flashVar;
                 hasFlashState = true;
             }
+
+            // Debug: log flash state when it's significant
+            if (flashState > 0.01f)
+            {
+                DBG("Flash state for " + group.getName() + ": " + juce::String(flashState));
+                DBG("  backgroundFlashImage.isValid(): " + juce::String(backgroundFlashImage.isValid() ? "true" : "false"));
+            }
         }
 
         // Determine which background image to use
         bool useFlashImage = hasFlashState && flashState > 0.01f && backgroundFlashImage.isValid();
         const juce::Image* bgImage = useFlashImage ? &backgroundFlashImage : &backgroundImage;
+
+        if (useFlashImage)
+        {
+            DBG("Using FLASH image for " + group.getName());
+        }
 
         // Draw background image if available, otherwise use default rendering
         if (bgImage->isValid())
