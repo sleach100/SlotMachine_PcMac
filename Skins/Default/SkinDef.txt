@@ -20,4 +20,12 @@ KnobFilmstripOrientation=Vertical
 ; BackgroundFlash: Flash background image shown when a beat hits
 ; Images should be sized appropriately for the slot dimensions
 
+; Text Box Images
+; Replace the default text label backgrounds (file name display, etc.)
+; Leave blank to use default JUCE label rendering
+;TextBox=textbox_background.png
+
+; TextBox: Background image for text labels in slots
+; Image will be stretched to fit the label bounds, with text drawn on top
+
 ; Additional skin parameters will be added here as the skinning system develops

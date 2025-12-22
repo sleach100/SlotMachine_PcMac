@@ -124,6 +124,35 @@ public:
         }
     }
 
+    void drawLabel (juce::Graphics& g, juce::Label& label) override
+    {
+        // Draw custom textbox image if available, otherwise use default rendering
+        if (textboxImage.isValid())
+        {
+            auto bounds = label.getLocalBounds();
+
+            // Draw the textbox image stretched to fit the label bounds
+            g.drawImage(textboxImage,
+                       0, 0, bounds.getWidth(), bounds.getHeight(),
+                       0, 0, textboxImage.getWidth(), textboxImage.getHeight(),
+                       false);
+
+            // Draw the label text on top of the textbox image
+            g.setColour(label.findColour(juce::Label::textColourId));
+            g.setFont(label.getFont());
+
+            auto textArea = bounds.reduced(2, 0); // Small padding
+            g.drawText(label.getText(), textArea,
+                      label.getJustificationType(),
+                      label.getText().length() > 0);
+        }
+        else
+        {
+            // Fall back to default JUCE label rendering
+            juce::LookAndFeel_V4::drawLabel(g, label);
+        }
+    }
+
     bool hasKnobFilmstrip() const { return knobFilmstrip.isValid(); }
     juce::String getKnobFilmstripError() const { return filmstripErrorMessage; }
 
@@ -142,6 +171,7 @@ private:
         knobOrientation = "Vertical";
         backgroundFilename = "";
         backgroundFlashFilename = "";
+        textboxFilename = "";
 
         juce::File skinDefFile = juce::File::getCurrentWorkingDirectory()
                                     .getChildFile("Skins")
@@ -195,6 +225,11 @@ private:
                 {
                     backgroundFlashFilename = value;
                     DBG("Skin: BackgroundFlash = " + backgroundFlashFilename);
+                }
+                else if (key.equalsIgnoreCase("TextBox"))
+                {
+                    textboxFilename = value;
+                    DBG("Skin: TextBox = " + textboxFilename);
                 }
             }
         }
@@ -275,6 +310,28 @@ private:
                 DBG("Background flash file not found: " + bgFlashFile.getFullPathName());
             }
         }
+
+        // Load textbox image
+        if (textboxFilename.isNotEmpty())
+        {
+            juce::File textboxFile = juce::File::getCurrentWorkingDirectory()
+                                         .getChildFile("Skins")
+                                         .getChildFile("Default")
+                                         .getChildFile(textboxFilename);
+
+            if (textboxFile.existsAsFile())
+            {
+                textboxImage = juce::ImageFileFormat::loadFrom(textboxFile);
+                if (textboxImage.isValid())
+                    DBG("Successfully loaded textbox: " + textboxFile.getFullPathName());
+                else
+                    DBG("Failed to load textbox: " + textboxFile.getFullPathName());
+            }
+            else
+            {
+                DBG("Textbox file not found: " + textboxFile.getFullPathName());
+            }
+        }
     }
 
     bool useFilmstripForSlider(juce::Slider& slider) const
@@ -352,8 +409,10 @@ private:
     juce::String knobOrientation = "Vertical";
     juce::String backgroundFilename;
     juce::String backgroundFlashFilename;
+    juce::String textboxFilename;
 
     // Loaded skin images
     juce::Image backgroundImage;
     juce::Image backgroundFlashImage;
+    juce::Image textboxImage;
 };
