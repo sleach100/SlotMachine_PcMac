@@ -28,4 +28,14 @@ KnobFilmstripOrientation=Vertical
 ; TextBox: Background image for text labels in slots
 ; Image will be stretched to fit the label bounds, with text drawn on top
 
+; File Name Label Width
+; Set a fixed width in pixels for the file name text box
+; Leave at 0 or omit for automatic/dynamic width (fills available space)
+; Useful for preventing the file name from extending into the bezel
+;FileNameWidth=0
+
+; FileNameWidth: Width of the file name label in pixels
+; 0 = auto (default: ~142px at 1280px window width, scales dynamically)
+; Example: FileNameWidth=120 (sets fixed 120px width)
+
 ; Additional skin parameters will be added here as the skinning system develops

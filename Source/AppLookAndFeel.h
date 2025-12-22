@@ -162,6 +162,9 @@ public:
         return backgroundImage.isValid() || backgroundFlashImage.isValid();
     }
 
+    // Get filename label width from skin (0 = auto/dynamic)
+    int getFileNameWidth() const { return fileNameWidth; }
+
 private:
     void loadSkinDefinition()
     {
@@ -172,6 +175,7 @@ private:
         backgroundFilename = "";
         backgroundFlashFilename = "";
         textboxFilename = "";
+        fileNameWidth = 0; // 0 = auto/dynamic width
 
         juce::File skinDefFile = juce::File::getCurrentWorkingDirectory()
                                     .getChildFile("Skins")
@@ -230,6 +234,11 @@ private:
                 {
                     textboxFilename = value;
                     DBG("Skin: TextBox = " + textboxFilename);
+                }
+                else if (key.equalsIgnoreCase("FileNameWidth"))
+                {
+                    fileNameWidth = value.getIntValue();
+                    DBG("Skin: FileNameWidth = " + juce::String(fileNameWidth));
                 }
             }
         }
@@ -410,6 +419,7 @@ private:
     juce::String backgroundFilename;
     juce::String backgroundFlashFilename;
     juce::String textboxFilename;
+    int fileNameWidth = 0;
 
     // Loaded skin images
     juce::Image backgroundImage;

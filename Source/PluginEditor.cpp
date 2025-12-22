@@ -5060,9 +5060,10 @@ void SlotMachineAudioProcessorEditor::resized()
         ui.fileBtn.setBounds(ix, iy, loadW, fileRowH);
         ui.clearBtn.setBounds(ix + loadW + gap, iy, clearW, fileRowH);
 
-        // filename label fills the rest
+        // filename label: use custom width from skin if set, otherwise fills the rest
         const int labelX = ix + loadW + gap + clearW + gap;
-        const int labelW = juce::jmax(0, iw - (labelX - ix));
+        const int skinFileNameWidth = appLF.getFileNameWidth();
+        const int labelW = (skinFileNameWidth > 0) ? skinFileNameWidth : juce::jmax(0, iw - (labelX - ix));
         ui.fileLabel.setBounds(labelX, iy, labelW, fileRowH);
 
 
