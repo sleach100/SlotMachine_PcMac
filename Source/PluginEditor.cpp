@@ -4764,7 +4764,8 @@ void SlotMachineAudioProcessorEditor::paint(juce::Graphics& g)
 
         const auto boundsF = ui->group.getBounds().toFloat();
 
-        // 1) Glow + pulse frame
+        // 1) Glow + pulse frame (only if no background images from skin)
+        if (!appLF.hasSlotBackgroundImages())
         {
             auto frame = boundsF.reduced(1.5f, 1.5f);
             const bool  selected = ui->hasFile;

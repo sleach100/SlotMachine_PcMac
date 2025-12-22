@@ -127,6 +127,12 @@ public:
     bool hasKnobFilmstrip() const { return knobFilmstrip.isValid(); }
     juce::String getKnobFilmstripError() const { return filmstripErrorMessage; }
 
+    // Check if slot background images are loaded from skin
+    bool hasSlotBackgroundImages() const
+    {
+        return backgroundImage.isValid() || backgroundFlashImage.isValid();
+    }
+
 private:
     void loadSkinDefinition()
     {
