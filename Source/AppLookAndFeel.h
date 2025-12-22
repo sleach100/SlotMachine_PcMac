@@ -71,8 +71,8 @@ public:
         bool hasFlashState = false;
 
         // Check if this is a custom slot group component with flash state
-        // Use component name as a way to identify slot groups
-        if (group.getName().startsWith("SLOT"))
+        // Use the text parameter (not getName) to identify slot groups
+        if (text.startsWith("SLOT"))
         {
             // Try to get flash state via component properties
             auto flashVar = group.getProperties()["flashState"];
@@ -85,7 +85,7 @@ public:
             // Debug: log flash state when it's significant
             if (flashState > 0.01f)
             {
-                DBG("Flash state for " + group.getName() + ": " + juce::String(flashState));
+                DBG("Flash state for " + text + ": " + juce::String(flashState));
                 DBG("  backgroundFlashImage.isValid(): " + juce::String(backgroundFlashImage.isValid() ? "true" : "false"));
             }
         }
@@ -96,7 +96,7 @@ public:
 
         if (useFlashImage)
         {
-            DBG("Using FLASH image for " + group.getName());
+            DBG("Using FLASH image for " + text);
         }
 
         // Draw background image if available, otherwise use default rendering
