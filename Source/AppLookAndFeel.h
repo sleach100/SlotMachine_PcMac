@@ -18,29 +18,51 @@ public:
     void drawButtonBackground (juce::Graphics& g, juce::Button& b,
                                const juce::Colour& bg, bool isOver, bool isDown) override
     {
-        auto bounds = b.getLocalBounds().toFloat();
-        auto base = bg;
-
-        // Handle transparent backgrounds - use an overlay for hover/press effects
-        if (bg.getAlpha() < 10)
+        // Use custom button images if available, based on button state
+        if (buttonImage.isValid())
         {
-            if (isDown)
-                base = juce::Colours::white.withAlpha (0.35f);
-            else if (isOver)
-                base = juce::Colours::white.withAlpha (0.25f);
+            auto bounds = b.getLocalBounds();
+            const juce::Image* imageToUse = &buttonImage;
+
+            // Select image based on state
+            if (isDown && buttonClickedImage.isValid())
+                imageToUse = &buttonClickedImage;
+            else if (isOver && buttonHoverImage.isValid())
+                imageToUse = &buttonHoverImage;
+
+            // Draw the button image stretched to fit bounds
+            g.drawImage(*imageToUse,
+                       0, 0, bounds.getWidth(), bounds.getHeight(),
+                       0, 0, imageToUse->getWidth(), imageToUse->getHeight(),
+                       false);
         }
         else
         {
-            if (isDown)      base = base.darker (0.2f);
-            else if (isOver) base = base.brighter (0.1f);
+            // Fall back to default JUCE button rendering
+            auto bounds = b.getLocalBounds().toFloat();
+            auto base = bg;
+
+            // Handle transparent backgrounds - use an overlay for hover/press effects
+            if (bg.getAlpha() < 10)
+            {
+                if (isDown)
+                    base = juce::Colours::white.withAlpha (0.35f);
+                else if (isOver)
+                    base = juce::Colours::white.withAlpha (0.25f);
+            }
+            else
+            {
+                if (isDown)      base = base.darker (0.2f);
+                else if (isOver) base = base.brighter (0.1f);
+            }
+
+            g.setColour (base);
+            g.fillRoundedRectangle (bounds, cornerRadius);
+
+            // Use original bg color for border to keep it consistent across states
+            g.setColour (bg.contrasting (0.35f));
+            g.drawRoundedRectangle (bounds, cornerRadius, 1.0f);
         }
-
-        g.setColour (base);
-        g.fillRoundedRectangle (bounds, cornerRadius);
-
-        // Use original bg color for border to keep it consistent across states
-        g.setColour (bg.contrasting (0.35f));
-        g.drawRoundedRectangle (bounds, cornerRadius, 1.0f);
     }
 
     void drawRotarySlider (juce::Graphics& g, int x, int y, int width, int height,
@@ -233,6 +255,9 @@ private:
         textboxFilename = "";
         fileNameWidth = 0; // 0 = auto/dynamic width
         loadButtonWidth = 0; // 0 = auto/default width (110px scaled)
+        buttonFilename = "";
+        buttonHoverFilename = "";
+        buttonClickedFilename = "";
 
         juce::File skinDefFile = juce::File::getCurrentWorkingDirectory()
                                     .getChildFile("Skins")
@@ -301,6 +326,21 @@ private:
                 {
                     loadButtonWidth = value.getIntValue();
                     DBG("Skin: LoadButtonWidth = " + juce::String(loadButtonWidth));
+                }
+                else if (key.equalsIgnoreCase("Button"))
+                {
+                    buttonFilename = value;
+                    DBG("Skin: Button = " + buttonFilename);
+                }
+                else if (key.equalsIgnoreCase("ButtonHover"))
+                {
+                    buttonHoverFilename = value;
+                    DBG("Skin: ButtonHover = " + buttonHoverFilename);
+                }
+                else if (key.equalsIgnoreCase("ButtonClicked"))
+                {
+                    buttonClickedFilename = value;
+                    DBG("Skin: ButtonClicked = " + buttonClickedFilename);
                 }
             }
         }
@@ -403,6 +443,70 @@ private:
                 DBG("Textbox file not found: " + textboxFile.getFullPathName());
             }
         }
+
+        // Load button images
+        if (buttonFilename.isNotEmpty())
+        {
+            juce::File buttonFile = juce::File::getCurrentWorkingDirectory()
+                                        .getChildFile("Skins")
+                                        .getChildFile("Default")
+                                        .getChildFile(buttonFilename);
+
+            if (buttonFile.existsAsFile())
+            {
+                buttonImage = juce::ImageFileFormat::loadFrom(buttonFile);
+                if (buttonImage.isValid())
+                    DBG("Successfully loaded button: " + buttonFile.getFullPathName());
+                else
+                    DBG("Failed to load button: " + buttonFile.getFullPathName());
+            }
+            else
+            {
+                DBG("Button file not found: " + buttonFile.getFullPathName());
+            }
+        }
+
+        if (buttonHoverFilename.isNotEmpty())
+        {
+            juce::File buttonHoverFile = juce::File::getCurrentWorkingDirectory()
+                                             .getChildFile("Skins")
+                                             .getChildFile("Default")
+                                             .getChildFile(buttonHoverFilename);
+
+            if (buttonHoverFile.existsAsFile())
+            {
+                buttonHoverImage = juce::ImageFileFormat::loadFrom(buttonHoverFile);
+                if (buttonHoverImage.isValid())
+                    DBG("Successfully loaded button hover: " + buttonHoverFile.getFullPathName());
+                else
+                    DBG("Failed to load button hover: " + buttonHoverFile.getFullPathName());
+            }
+            else
+            {
+                DBG("Button hover file not found: " + buttonHoverFile.getFullPathName());
+            }
+        }
+
+        if (buttonClickedFilename.isNotEmpty())
+        {
+            juce::File buttonClickedFile = juce::File::getCurrentWorkingDirectory()
+                                               .getChildFile("Skins")
+                                               .getChildFile("Default")
+                                               .getChildFile(buttonClickedFilename);
+
+            if (buttonClickedFile.existsAsFile())
+            {
+                buttonClickedImage = juce::ImageFileFormat::loadFrom(buttonClickedFile);
+                if (buttonClickedImage.isValid())
+                    DBG("Successfully loaded button clicked: " + buttonClickedFile.getFullPathName());
+                else
+                    DBG("Failed to load button clicked: " + buttonClickedFile.getFullPathName());
+            }
+            else
+            {
+                DBG("Button clicked file not found: " + buttonClickedFile.getFullPathName());
+            }
+        }
     }
 
     bool useFilmstripForSlider(juce::Slider& slider) const
@@ -483,9 +587,15 @@ private:
     juce::String textboxFilename;
     int fileNameWidth = 0;
     int loadButtonWidth = 0;
+    juce::String buttonFilename;
+    juce::String buttonHoverFilename;
+    juce::String buttonClickedFilename;
 
     // Loaded skin images
     juce::Image backgroundImage;
     juce::Image backgroundFlashImage;
     juce::Image textboxImage;
+    juce::Image buttonImage;
+    juce::Image buttonHoverImage;
+    juce::Image buttonClickedImage;
 };

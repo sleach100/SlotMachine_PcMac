@@ -53,4 +53,18 @@ KnobFilmstripOrientation=Vertical
 ; Example: LoadButtonWidth=80 (narrower button, extends left edge inward)
 ; Example: LoadButtonWidth=140 (wider button, extends left edge outward)
 
+; Button Images
+; Custom images for the Load button with different interaction states
+; Leave blank to use default JUCE button rendering
+;Button=button_normal.png
+;ButtonHover=button_hover.png
+;ButtonClicked=button_clicked.png
+
+; Button: Normal button state image
+; ButtonHover: Image shown when mouse hovers over button
+; ButtonClicked: Image shown when button is being clicked
+; Images will be stretched to fit the button bounds
+; If only Button is provided, it will be used for all states
+; Falls back to default rendering if Button image not provided
+
 ; Additional skin parameters will be added here as the skinning system develops
