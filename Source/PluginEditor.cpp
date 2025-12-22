@@ -8060,8 +8060,16 @@ void SlotMachineAudioProcessorEditor::timerCallback()
             ui->glow = 1.0f; // pulse on hit
         }
 
-        // simple glow decay
-        ui->glow = juce::jmax(0.0f, ui->glow - 0.06f);
+        // Variable glow decay based on count value (higher count = faster decay = shorter flash)
+        // Get the count parameter for this slot
+        int count = 4; // default
+        if (auto* countParam = apvts.getRawParameterValue("slot" + juce::String(i + 1) + "_Count"))
+            count = juce::jlimit(1, 64, (int)std::round(countParam->load()));
+
+        // Calculate decay rate: base * sqrt(count) for proportional scaling
+        // count=1: 0.03, count=4: 0.06, count=16: 0.12, count=64: 0.24
+        const float decayRate = 0.03f * std::sqrt((float)count);
+        ui->glow = juce::jmax(0.0f, ui->glow - decayRate);
 
         // Update group component flash state for skinning
         ui->group.getProperties().set("flashState", ui->glow);
