@@ -38,4 +38,17 @@ KnobFilmstripOrientation=Vertical
 ; 0 = auto (default: ~142px at 1280px window width, scales dynamically)
 ; Example: FileNameWidth=120 (sets fixed 120px width)
 
+; Load Button Width
+; Set a custom width in pixels for the Load button
+; The right edge is anchored - width changes extend/reduce from the left edge
+; Leave at 0 or omit for default width (110px scaled)
+; Button will not extend past the visible drawing area
+;LoadButtonWidth=0
+
+; LoadButtonWidth: Width of the Load button in pixels
+; 0 = auto (default: 110px scaled)
+; Right edge is anchored at default position
+; Example: LoadButtonWidth=80 (narrower button, extends left edge inward)
+; Example: LoadButtonWidth=140 (wider button, extends left edge outward)
+
 ; Additional skin parameters will be added here as the skinning system develops

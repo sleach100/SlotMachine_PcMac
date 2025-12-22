@@ -5053,15 +5053,23 @@ void SlotMachineAudioProcessorEditor::resized()
         const int iw = w - 2 * innerPad;
 
         const int fileRowH = slotScaled(28);
-        const int loadW = scaleDimension(110);  // your existing Load width
-        const int clearW = scaleDimension(24);   // tiny X button
+        const int defaultLoadW = scaleDimension(110);  // default Load button width
+        const int clearW = scaleDimension(24);         // tiny X button
         const int gap = slotScaled(4);
 
-        ui.fileBtn.setBounds(ix, iy, loadW, fileRowH);
-        ui.clearBtn.setBounds(ix + loadW + gap, iy, clearW, fileRowH);
+        // Load button: use custom width from skin if set, anchor right edge
+        const int skinLoadW = appLF.getLoadButtonWidth();
+        const int loadW = (skinLoadW > 0) ? skinLoadW : defaultLoadW;
+
+        // Anchor right edge at default position, adjust left edge based on width
+        const int loadRightEdge = ix + defaultLoadW;
+        const int loadX = juce::jmax(ix, loadRightEdge - loadW);  // Don't extend past left edge
+
+        ui.fileBtn.setBounds(loadX, iy, loadW, fileRowH);
+        ui.clearBtn.setBounds(loadX + loadW + gap, iy, clearW, fileRowH);
 
         // filename label: use custom width from skin if set, otherwise fills the rest
-        const int labelX = ix + loadW + gap + clearW + gap;
+        const int labelX = loadX + loadW + gap + clearW + gap;
         const int skinFileNameWidth = appLF.getFileNameWidth();
         const int labelW = (skinFileNameWidth > 0) ? skinFileNameWidth : juce::jmax(0, iw - (labelX - ix));
         ui.fileLabel.setBounds(labelX, iy, labelW, fileRowH);

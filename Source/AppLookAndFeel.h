@@ -165,6 +165,9 @@ public:
     // Get filename label width from skin (0 = auto/dynamic)
     int getFileNameWidth() const { return fileNameWidth; }
 
+    // Get load button width from skin (0 = auto/default 110px scaled)
+    int getLoadButtonWidth() const { return loadButtonWidth; }
+
 private:
     void loadSkinDefinition()
     {
@@ -176,6 +179,7 @@ private:
         backgroundFlashFilename = "";
         textboxFilename = "";
         fileNameWidth = 0; // 0 = auto/dynamic width
+        loadButtonWidth = 0; // 0 = auto/default width (110px scaled)
 
         juce::File skinDefFile = juce::File::getCurrentWorkingDirectory()
                                     .getChildFile("Skins")
@@ -239,6 +243,11 @@ private:
                 {
                     fileNameWidth = value.getIntValue();
                     DBG("Skin: FileNameWidth = " + juce::String(fileNameWidth));
+                }
+                else if (key.equalsIgnoreCase("LoadButtonWidth"))
+                {
+                    loadButtonWidth = value.getIntValue();
+                    DBG("Skin: LoadButtonWidth = " + juce::String(loadButtonWidth));
                 }
             }
         }
@@ -420,6 +429,7 @@ private:
     juce::String backgroundFlashFilename;
     juce::String textboxFilename;
     int fileNameWidth = 0;
+    int loadButtonWidth = 0;
 
     // Loaded skin images
     juce::Image backgroundImage;
