@@ -90,6 +90,9 @@ public:
         // Use custom slider thumb image if available, otherwise use default rendering
         if (sliderThumbImage.isValid())
         {
+            DBG("drawLinearSliderThumb: Using custom thumb image for slider: " + slider.getName()
+                + " (bounds: " + juce::String(width) + "x" + juce::String(height) + ")");
+
             // Draw the static slider thumb image maintaining aspect ratio, centered in bounds
             const int imgW = sliderThumbImage.getWidth();
             const int imgH = sliderThumbImage.getHeight();
@@ -110,6 +113,7 @@ public:
         }
         else
         {
+            DBG("drawLinearSliderThumb: No custom thumb image, using default for: " + slider.getName());
             // Fall back to default JUCE slider thumb rendering
             juce::LookAndFeel_V4::drawLinearSliderThumb(g, x, y, width, height,
                                                         sliderPos, minSliderPos, maxSliderPos,
