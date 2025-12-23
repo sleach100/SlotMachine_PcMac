@@ -18,8 +18,21 @@ public:
     void drawButtonBackground (juce::Graphics& g, juce::Button& b,
                                const juce::Colour& bg, bool isOver, bool isDown) override
     {
-        // Use custom button images if available, based on button state
-        if (buttonImage.isValid())
+        // Check if this is a tab button (TextButton with toggle state)
+        bool isTab = dynamic_cast<juce::TextButton*>(&b) != nullptr && b.getClickingTogglesState();
+        bool isTabSelected = isTab && b.getToggleState();
+
+        // If it's a selected tab and we have a tab selected image, use that
+        if (isTabSelected && tabSelectedImage.isValid())
+        {
+            auto bounds = b.getLocalBounds();
+            g.drawImage(tabSelectedImage,
+                       0, 0, bounds.getWidth(), bounds.getHeight(),
+                       0, 0, tabSelectedImage.getWidth(), tabSelectedImage.getHeight(),
+                       false);
+        }
+        // Otherwise use custom button images if available, based on button state
+        else if (buttonImage.isValid())
         {
             auto bounds = b.getLocalBounds();
             const juce::Image* imageToUse = &buttonImage;
@@ -351,6 +364,7 @@ private:
         buttonClickedFilename = "";
         sliderThumbFilename = "";
         sliderThumbScale = 100; // Default to 100% (actual size)
+        tabSelectedFilename = "";
 
         juce::File skinDefFile = juce::File::getCurrentWorkingDirectory()
                                     .getChildFile("Skins")
@@ -449,6 +463,11 @@ private:
                 {
                     sliderThumbScale = juce::jlimit(1, 100, value.getIntValue());
                     DBG("Skin: SliderThumbScale = " + juce::String(sliderThumbScale));
+                }
+                else if (key.equalsIgnoreCase("TabSelected"))
+                {
+                    tabSelectedFilename = value;
+                    DBG("Skin: TabSelected = " + tabSelectedFilename);
                 }
             }
         }
@@ -659,6 +678,28 @@ private:
                 DBG("Slider thumb file not found: " + sliderThumbFile.getFullPathName());
             }
         }
+
+        // Load tab selected image
+        if (tabSelectedFilename.isNotEmpty())
+        {
+            juce::File tabSelectedFile = juce::File::getCurrentWorkingDirectory()
+                                             .getChildFile("Skins")
+                                             .getChildFile("Default")
+                                             .getChildFile(tabSelectedFilename);
+
+            if (tabSelectedFile.existsAsFile())
+            {
+                tabSelectedImage = juce::ImageFileFormat::loadFrom(tabSelectedFile);
+                if (tabSelectedImage.isValid())
+                    DBG("Successfully loaded tab selected: " + tabSelectedFile.getFullPathName());
+                else
+                    DBG("Failed to load tab selected: " + tabSelectedFile.getFullPathName());
+            }
+            else
+            {
+                DBG("Tab selected file not found: " + tabSelectedFile.getFullPathName());
+            }
+        }
     }
 
     bool useFilmstripForSlider(juce::Slider& slider) const
@@ -745,6 +786,7 @@ private:
     juce::String buttonClickedFilename;
     juce::String sliderThumbFilename;
     int sliderThumbScale = 100; // Scale percentage (1-100)
+    juce::String tabSelectedFilename;
 
     // Loaded skin images
     juce::Image backgroundImage;
@@ -755,4 +797,5 @@ private:
     juce::Image buttonHoverImage;
     juce::Image buttonClickedImage;
     juce::Image sliderThumbImage;
+    juce::Image tabSelectedImage;
 };
