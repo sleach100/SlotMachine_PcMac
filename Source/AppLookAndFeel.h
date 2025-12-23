@@ -90,10 +90,22 @@ public:
         // Use custom slider thumb image if available, otherwise use default rendering
         if (sliderThumbImage.isValid())
         {
-            // Draw the slider thumb image stretched to fit the thumb bounds
+            // Draw the static slider thumb image maintaining aspect ratio, centered in bounds
+            const int imgW = sliderThumbImage.getWidth();
+            const int imgH = sliderThumbImage.getHeight();
+
+            // Calculate scaling to fit within bounds while maintaining aspect ratio
+            const float scale = juce::jmin((float)width / (float)imgW, (float)height / (float)imgH);
+            const int scaledW = (int)(imgW * scale);
+            const int scaledH = (int)(imgH * scale);
+
+            // Center the image within the thumb bounds
+            const int drawX = x + (width - scaledW) / 2;
+            const int drawY = y + (height - scaledH) / 2;
+
             g.drawImage(sliderThumbImage,
-                       x, y, width, height,
-                       0, 0, sliderThumbImage.getWidth(), sliderThumbImage.getHeight(),
+                       drawX, drawY, scaledW, scaledH,
+                       0, 0, imgW, imgH,
                        false);
         }
         else
