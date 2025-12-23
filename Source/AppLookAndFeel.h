@@ -90,17 +90,10 @@ public:
         // Use custom slider thumb image if available, otherwise use default rendering
         if (sliderThumbImage.isValid())
         {
-            // Draw the slider thumb image centered at the thumb position
-            const int imageWidth = sliderThumbImage.getWidth();
-            const int imageHeight = sliderThumbImage.getHeight();
-
-            // Center the image on the slider position
-            const int imageX = x + (width - imageWidth) / 2;
-            const int imageY = y + (height - imageHeight) / 2;
-
+            // Draw the slider thumb image stretched to fit the thumb bounds
             g.drawImage(sliderThumbImage,
-                       imageX, imageY, imageWidth, imageHeight,
-                       0, 0, imageWidth, imageHeight,
+                       x, y, width, height,
+                       0, 0, sliderThumbImage.getWidth(), sliderThumbImage.getHeight(),
                        false);
         }
         else
