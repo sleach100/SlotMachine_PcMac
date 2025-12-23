@@ -89,15 +89,25 @@ public:
     {
         DBG("drawLinearSlider called for: " + slider.getName() + " (style: " + juce::String((int)style) + ")");
 
-        // Call default drawing first
-        juce::LookAndFeel_V4::drawLinearSlider(g, x, y, width, height,
-                                              sliderPos, minSliderPos, maxSliderPos,
-                                              style, slider);
-
-        // If we have a custom thumb image and this is a horizontal slider, draw it on top
+        // If we have a custom thumb image for horizontal sliders, draw track only then custom thumb
         if (sliderThumbImage.isValid() && style == juce::Slider::LinearHorizontal)
         {
-            DBG("Drawing custom slider thumb on top for: " + slider.getName()
+            // Draw only the slider background/track (not the thumb)
+            auto trackBounds = juce::Rectangle<int>(x, y, width, height);
+
+            // Draw the track background
+            auto trackColour = slider.findColour(juce::Slider::trackColourId);
+            auto backgroundColour = slider.findColour(juce::Slider::backgroundColourId);
+
+            g.setColour(backgroundColour);
+            g.fillRect(trackBounds);
+
+            auto trackY = y + height / 2 - 2;
+            auto trackHeight = 4;
+            g.setColour(trackColour);
+            g.fillRect(x, trackY, width, trackHeight);
+
+            DBG("Drawing custom slider thumb for: " + slider.getName()
                 + " (scale: " + juce::String(sliderThumbScale) + "%)");
 
             const int imgW = sliderThumbImage.getWidth();
@@ -119,6 +129,13 @@ public:
                        thumbX, thumbY, scaledW, scaledH,
                        0, 0, imgW, imgH,
                        false);
+        }
+        else
+        {
+            // No custom thumb - use default JUCE rendering
+            juce::LookAndFeel_V4::drawLinearSlider(g, x, y, width, height,
+                                                  sliderPos, minSliderPos, maxSliderPos,
+                                                  style, slider);
         }
     }
 
