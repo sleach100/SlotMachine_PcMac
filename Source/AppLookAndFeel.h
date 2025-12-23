@@ -83,6 +83,35 @@ public:
         }
     }
 
+    void drawLinearSliderThumb (juce::Graphics& g, int x, int y, int width, int height,
+                               float sliderPos, float minSliderPos, float maxSliderPos,
+                               const juce::Slider::SliderStyle style, juce::Slider& slider) override
+    {
+        // Use custom slider thumb image if available, otherwise use default rendering
+        if (sliderThumbImage.isValid())
+        {
+            // Draw the slider thumb image centered at the thumb position
+            const int imageWidth = sliderThumbImage.getWidth();
+            const int imageHeight = sliderThumbImage.getHeight();
+
+            // Center the image on the slider position
+            const int imageX = x + (width - imageWidth) / 2;
+            const int imageY = y + (height - imageHeight) / 2;
+
+            g.drawImage(sliderThumbImage,
+                       imageX, imageY, imageWidth, imageHeight,
+                       0, 0, imageWidth, imageHeight,
+                       false);
+        }
+        else
+        {
+            // Fall back to default JUCE slider thumb rendering
+            juce::LookAndFeel_V4::drawLinearSliderThumb(g, x, y, width, height,
+                                                        sliderPos, minSliderPos, maxSliderPos,
+                                                        style, slider);
+        }
+    }
+
     void drawGroupComponentOutline (juce::Graphics& g, int width, int height,
                                     const juce::String& text,
                                     const juce::Justification& position,
@@ -250,6 +279,7 @@ private:
         buttonFilename = "";
         buttonHoverFilename = "";
         buttonClickedFilename = "";
+        sliderThumbFilename = "";
 
         juce::File skinDefFile = juce::File::getCurrentWorkingDirectory()
                                     .getChildFile("Skins")
@@ -333,6 +363,11 @@ private:
                 {
                     buttonClickedFilename = value;
                     DBG("Skin: ButtonClicked = " + buttonClickedFilename);
+                }
+                else if (key.equalsIgnoreCase("SliderThumb"))
+                {
+                    sliderThumbFilename = value;
+                    DBG("Skin: SliderThumb = " + sliderThumbFilename);
                 }
             }
         }
@@ -499,6 +534,28 @@ private:
                 DBG("Button clicked file not found: " + buttonClickedFile.getFullPathName());
             }
         }
+
+        // Load slider thumb image
+        if (sliderThumbFilename.isNotEmpty())
+        {
+            juce::File sliderThumbFile = juce::File::getCurrentWorkingDirectory()
+                                             .getChildFile("Skins")
+                                             .getChildFile("Default")
+                                             .getChildFile(sliderThumbFilename);
+
+            if (sliderThumbFile.existsAsFile())
+            {
+                sliderThumbImage = juce::ImageFileFormat::loadFrom(sliderThumbFile);
+                if (sliderThumbImage.isValid())
+                    DBG("Successfully loaded slider thumb: " + sliderThumbFile.getFullPathName());
+                else
+                    DBG("Failed to load slider thumb: " + sliderThumbFile.getFullPathName());
+            }
+            else
+            {
+                DBG("Slider thumb file not found: " + sliderThumbFile.getFullPathName());
+            }
+        }
     }
 
     bool useFilmstripForSlider(juce::Slider& slider) const
@@ -582,6 +639,7 @@ private:
     juce::String buttonFilename;
     juce::String buttonHoverFilename;
     juce::String buttonClickedFilename;
+    juce::String sliderThumbFilename;
 
     // Loaded skin images
     juce::Image backgroundImage;
@@ -590,4 +648,5 @@ private:
     juce::Image buttonImage;
     juce::Image buttonHoverImage;
     juce::Image buttonClickedImage;
+    juce::Image sliderThumbImage;
 };

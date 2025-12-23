@@ -67,4 +67,14 @@ KnobFilmstripOrientation=Vertical
 ; If only Button is provided, it will be used for all states
 ; Falls back to default rendering if Button image not provided
 
+; Slider Thumb Image
+; Custom image for the slider thumb (Master BPM slider, etc.)
+; Leave blank to use default JUCE slider thumb rendering
+;SliderThumb=slider_thumb.png
+
+; SliderThumb: Image for linear slider thumb controls
+; Applies to: Master BPM slider and other linear sliders
+; Image will be drawn at actual size, centered on thumb position
+; Falls back to default rendering if SliderThumb image not provided
+
 ; Additional skin parameters will be added here as the skinning system develops
