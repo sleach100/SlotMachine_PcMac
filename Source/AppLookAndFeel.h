@@ -97,20 +97,26 @@ public:
         // If we have a custom thumb image and this is a horizontal slider, draw it on top
         if (sliderThumbImage.isValid() && style == juce::Slider::LinearHorizontal)
         {
-            DBG("Drawing custom slider thumb on top for: " + slider.getName());
+            DBG("Drawing custom slider thumb on top for: " + slider.getName()
+                + " (scale: " + juce::String(sliderThumbScale) + "%)");
 
             const int imgW = sliderThumbImage.getWidth();
             const int imgH = sliderThumbImage.getHeight();
 
-            // Calculate thumb position based on slider value
-            auto iw = width - imgW;
-            auto ih = height - imgH;
-            auto thumbX = x + juce::jlimit(0, iw, (int)(sliderPos - imgW * 0.5f));
+            // Apply scale percentage
+            const float scale = sliderThumbScale / 100.0f;
+            const int scaledW = (int)(imgW * scale);
+            const int scaledH = (int)(imgH * scale);
+
+            // Calculate thumb position based on slider value and scaled size
+            auto iw = width - scaledW;
+            auto ih = height - scaledH;
+            auto thumbX = x + juce::jlimit(0, iw, (int)(sliderPos - scaledW * 0.5f));
             auto thumbY = y + ih / 2;
 
-            // Draw the thumb image at actual size
+            // Draw the thumb image at scaled size
             g.drawImage(sliderThumbImage,
-                       thumbX, thumbY, imgW, imgH,
+                       thumbX, thumbY, scaledW, scaledH,
                        0, 0, imgW, imgH,
                        false);
         }
@@ -324,6 +330,7 @@ private:
         buttonHoverFilename = "";
         buttonClickedFilename = "";
         sliderThumbFilename = "";
+        sliderThumbScale = 100; // Default to 100% (actual size)
 
         juce::File skinDefFile = juce::File::getCurrentWorkingDirectory()
                                     .getChildFile("Skins")
@@ -412,6 +419,11 @@ private:
                 {
                     sliderThumbFilename = value;
                     DBG("Skin: SliderThumb = " + sliderThumbFilename);
+                }
+                else if (key.equalsIgnoreCase("SliderThumbScale"))
+                {
+                    sliderThumbScale = juce::jlimit(1, 100, value.getIntValue());
+                    DBG("Skin: SliderThumbScale = " + juce::String(sliderThumbScale));
                 }
             }
         }
@@ -684,6 +696,7 @@ private:
     juce::String buttonHoverFilename;
     juce::String buttonClickedFilename;
     juce::String sliderThumbFilename;
+    int sliderThumbScale = 100; // Scale percentage (1-100)
 
     // Loaded skin images
     juce::Image backgroundImage;
