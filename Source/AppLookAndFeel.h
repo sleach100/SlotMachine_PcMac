@@ -92,20 +92,8 @@ public:
         // If we have a custom thumb image for horizontal sliders, draw track only then custom thumb
         if (sliderThumbImage.isValid() && style == juce::Slider::LinearHorizontal)
         {
-            // Draw only the slider background/track (not the thumb)
-            auto trackBounds = juce::Rectangle<int>(x, y, width, height);
-
-            // Draw the track background
-            auto trackColour = slider.findColour(juce::Slider::trackColourId);
-            auto backgroundColour = slider.findColour(juce::Slider::backgroundColourId);
-
-            g.setColour(backgroundColour);
-            g.fillRect(trackBounds);
-
-            auto trackY = y + height / 2 - 2;
-            auto trackHeight = 4;
-            g.setColour(trackColour);
-            g.fillRect(x, trackY, width, trackHeight);
+            // Draw the slider background/track using JUCE's method (without the thumb)
+            drawLinearSliderBackground(g, x, y, width, height, sliderPos, minSliderPos, maxSliderPos, style, slider);
 
             DBG("Drawing custom slider thumb for: " + slider.getName()
                 + " (scale: " + juce::String(sliderThumbScale) + "%)");
@@ -118,11 +106,9 @@ public:
             const int scaledW = (int)(imgW * scale);
             const int scaledH = (int)(imgH * scale);
 
-            // Calculate thumb position based on slider value and scaled size
-            auto iw = width - scaledW;
-            auto ih = height - scaledH;
-            auto thumbX = x + juce::jlimit(0, iw, (int)(sliderPos - scaledW * 0.5f));
-            auto thumbY = y + ih / 2;
+            // Calculate thumb position - sliderPos is the center X position of the thumb
+            auto thumbX = (int)(sliderPos - scaledW * 0.5f);
+            auto thumbY = y + (height - scaledH) / 2;
 
             // Draw the thumb image at scaled size
             g.drawImage(sliderThumbImage,
