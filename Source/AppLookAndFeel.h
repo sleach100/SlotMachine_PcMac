@@ -22,8 +22,23 @@ public:
         bool isTab = dynamic_cast<juce::TextButton*>(&b) != nullptr && b.getClickingTogglesState();
         bool isTabSelected = isTab && b.getToggleState();
 
+        // Count the number of tab siblings (only show TabSelected if there are multiple tabs)
+        int tabCount = 0;
+        if (isTab && b.getParentComponent() != nullptr)
+        {
+            for (auto* child : b.getParentComponent()->getChildren())
+            {
+                if (auto* btn = dynamic_cast<juce::TextButton*>(child))
+                {
+                    if (btn->getClickingTogglesState())
+                        tabCount++;
+                }
+            }
+        }
+
         // If it's a selected tab and we have a tab selected image, use that
-        if (isTabSelected && tabSelectedImage.isValid())
+        // But only if there are multiple tabs (if only 1 tab, use default button image)
+        if (isTabSelected && tabCount > 1 && tabSelectedImage.isValid())
         {
             auto bounds = b.getLocalBounds();
             g.drawImage(tabSelectedImage,
