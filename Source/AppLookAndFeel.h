@@ -170,9 +170,10 @@ public:
                                     const juce::Justification& position,
                                     juce::GroupComponent& group) override
     {
-        // Try to get flash state from SlotGroupComponent
+        // Try to get flash state and hasFile state from SlotGroupComponent
         float flashState = 0.0f;
         bool hasFlashState = false;
+        bool hasFile = false;
 
         // Check if this is a custom slot group component with flash state
         // Use the text parameter (not getName) to identify slot groups
@@ -186,6 +187,13 @@ public:
                 hasFlashState = true;
             }
 
+            // Try to get hasFile state via component properties
+            auto hasFileVar = group.getProperties()["hasFile"];
+            if (!hasFileVar.isVoid())
+            {
+                hasFile = (bool)hasFileVar;
+            }
+
             // Debug: log flash state when it's significant
             if (flashState > 0.01f)
             {
@@ -195,16 +203,24 @@ public:
         }
 
         // Determine which background image to use
-        bool useFlashImage = hasFlashState && flashState > 0.01f && backgroundFlashImage.isValid();
-        const juce::Image* bgImage = useFlashImage ? &backgroundFlashImage : &backgroundImage;
-
-        if (useFlashImage)
+        // Priority: Flash > Sample Loaded > Normal Background
+        const juce::Image* bgImage = nullptr;
+        if (hasFlashState && flashState > 0.01f && backgroundFlashImage.isValid())
         {
+            bgImage = &backgroundFlashImage;
             DBG("Using FLASH image for " + text);
+        }
+        else if (hasFile && backgroundSampleLoadedImage.isValid())
+        {
+            bgImage = &backgroundSampleLoadedImage;
+        }
+        else if (backgroundImage.isValid())
+        {
+            bgImage = &backgroundImage;
         }
 
         // Draw background image if available, otherwise use default rendering
-        if (bgImage->isValid())
+        if (bgImage != nullptr)
         {
             // Draw the background image stretched to fit the group bounds
             g.drawImage(*bgImage, 0, 0, width, height,
@@ -326,6 +342,7 @@ private:
         knobOrientation = "Vertical";
         backgroundFilename = "";
         backgroundFlashFilename = "";
+        backgroundSampleLoadedFilename = "";
         textboxFilename = "";
         fileNameWidth = 0; // 0 = auto/dynamic width
         loadButtonWidth = 0; // 0 = auto/default width (110px scaled)
@@ -387,6 +404,11 @@ private:
                 {
                     backgroundFlashFilename = value;
                     DBG("Skin: BackgroundFlash = " + backgroundFlashFilename);
+                }
+                else if (key.equalsIgnoreCase("BackgroundSampleLoaded"))
+                {
+                    backgroundSampleLoadedFilename = value;
+                    DBG("Skin: BackgroundSampleLoaded = " + backgroundSampleLoadedFilename);
                 }
                 else if (key.equalsIgnoreCase("TextBox"))
                 {
@@ -505,6 +527,28 @@ private:
             else
             {
                 DBG("Background flash file not found: " + bgFlashFile.getFullPathName());
+            }
+        }
+
+        // Load sample loaded background image
+        if (backgroundSampleLoadedFilename.isNotEmpty())
+        {
+            juce::File bgSampleLoadedFile = juce::File::getCurrentWorkingDirectory()
+                                                .getChildFile("Skins")
+                                                .getChildFile("Default")
+                                                .getChildFile(backgroundSampleLoadedFilename);
+
+            if (bgSampleLoadedFile.existsAsFile())
+            {
+                backgroundSampleLoadedImage = juce::ImageFileFormat::loadFrom(bgSampleLoadedFile);
+                if (backgroundSampleLoadedImage.isValid())
+                    DBG("Successfully loaded background sample loaded: " + bgSampleLoadedFile.getFullPathName());
+                else
+                    DBG("Failed to load background sample loaded: " + bgSampleLoadedFile.getFullPathName());
+            }
+            else
+            {
+                DBG("Background sample loaded file not found: " + bgSampleLoadedFile.getFullPathName());
             }
         }
 
@@ -692,6 +736,7 @@ private:
     juce::String knobOrientation = "Vertical";
     juce::String backgroundFilename;
     juce::String backgroundFlashFilename;
+    juce::String backgroundSampleLoadedFilename;
     juce::String textboxFilename;
     int fileNameWidth = 0;
     int loadButtonWidth = 0;
@@ -704,6 +749,7 @@ private:
     // Loaded skin images
     juce::Image backgroundImage;
     juce::Image backgroundFlashImage;
+    juce::Image backgroundSampleLoadedImage;
     juce::Image textboxImage;
     juce::Image buttonImage;
     juce::Image buttonHoverImage;

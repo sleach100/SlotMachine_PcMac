@@ -8084,6 +8084,7 @@ void SlotMachineAudioProcessorEditor::timerCallback()
         ui->group.getProperties().set("flashState", ui->glow);
 
         ui->hasFile = processor.slotHasSample(i);
+        ui->group.getProperties().set("hasFile", ui->hasFile);
 
         const bool beatsPerCycleMode = (timingMode == 1);
         const bool countEnabled = beatsPerCycleMode && !playThroughActive;
