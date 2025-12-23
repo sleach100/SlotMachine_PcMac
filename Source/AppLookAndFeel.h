@@ -83,10 +83,45 @@ public:
         }
     }
 
+    void drawLinearSlider (juce::Graphics& g, int x, int y, int width, int height,
+                          float sliderPos, float minSliderPos, float maxSliderPos,
+                          const juce::Slider::SliderStyle style, juce::Slider& slider) override
+    {
+        DBG("drawLinearSlider called for: " + slider.getName() + " (style: " + juce::String((int)style) + ")");
+
+        // Call default drawing first
+        juce::LookAndFeel_V4::drawLinearSlider(g, x, y, width, height,
+                                              sliderPos, minSliderPos, maxSliderPos,
+                                              style, slider);
+
+        // If we have a custom thumb image and this is a horizontal slider, draw it on top
+        if (sliderThumbImage.isValid() && style == juce::Slider::LinearHorizontal)
+        {
+            DBG("Drawing custom slider thumb on top for: " + slider.getName());
+
+            const int imgW = sliderThumbImage.getWidth();
+            const int imgH = sliderThumbImage.getHeight();
+
+            // Calculate thumb position based on slider value
+            auto iw = width - imgW;
+            auto ih = height - imgH;
+            auto thumbX = x + juce::jlimit(0, iw, (int)(sliderPos - imgW * 0.5f));
+            auto thumbY = y + ih / 2;
+
+            // Draw the thumb image at actual size
+            g.drawImage(sliderThumbImage,
+                       thumbX, thumbY, imgW, imgH,
+                       0, 0, imgW, imgH,
+                       false);
+        }
+    }
+
     void drawLinearSliderThumb (juce::Graphics& g, int x, int y, int width, int height,
                                float sliderPos, float minSliderPos, float maxSliderPos,
                                const juce::Slider::SliderStyle style, juce::Slider& slider) override
     {
+        DBG("drawLinearSliderThumb called for: " + slider.getName() + " (style: " + juce::String((int)style) + ")");
+
         // Use custom slider thumb image if available, otherwise use default rendering
         if (sliderThumbImage.isValid())
         {
