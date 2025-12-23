@@ -361,6 +361,12 @@ public:
     // Get load button width from skin (0 = auto/default 110px scaled)
     int getLoadButtonWidth() const { return loadButtonWidth; }
 
+    // Get mute/solo button images from skin
+    const juce::Image& getMuteOnImage() const { return muteOnImage; }
+    const juce::Image& getMuteOffImage() const { return muteOffImage; }
+    const juce::Image& getSoloOnImage() const { return soloOnImage; }
+    const juce::Image& getSoloOffImage() const { return soloOffImage; }
+
 private:
     void loadSkinDefinition()
     {
@@ -380,6 +386,10 @@ private:
         sliderThumbFilename = "";
         sliderThumbScale = 100; // Default to 100% (actual size)
         tabSelectedFilename = "";
+        muteOnFilename = "";
+        muteOffFilename = "";
+        soloOnFilename = "";
+        soloOffFilename = "";
 
         juce::File skinDefFile = juce::File::getCurrentWorkingDirectory()
                                     .getChildFile("Skins")
@@ -483,6 +493,26 @@ private:
                 {
                     tabSelectedFilename = value;
                     DBG("Skin: TabSelected = " + tabSelectedFilename);
+                }
+                else if (key.equalsIgnoreCase("MuteON"))
+                {
+                    muteOnFilename = value;
+                    DBG("Skin: MuteON = " + muteOnFilename);
+                }
+                else if (key.equalsIgnoreCase("MuteOFF"))
+                {
+                    muteOffFilename = value;
+                    DBG("Skin: MuteOFF = " + muteOffFilename);
+                }
+                else if (key.equalsIgnoreCase("SoloON"))
+                {
+                    soloOnFilename = value;
+                    DBG("Skin: SoloON = " + soloOnFilename);
+                }
+                else if (key.equalsIgnoreCase("SoloOFF"))
+                {
+                    soloOffFilename = value;
+                    DBG("Skin: SoloOFF = " + soloOffFilename);
                 }
             }
         }
@@ -715,6 +745,79 @@ private:
                 DBG("Tab selected file not found: " + tabSelectedFile.getFullPathName());
             }
         }
+
+        // Load mute/solo button images
+        if (muteOnFilename.isNotEmpty())
+        {
+            juce::File muteOnFile = juce::File::getCurrentWorkingDirectory()
+                                        .getChildFile("Skins")
+                                        .getChildFile("Default")
+                                        .getChildFile(muteOnFilename);
+            if (muteOnFile.existsAsFile())
+            {
+                muteOnImage = juce::ImageFileFormat::loadFrom(muteOnFile);
+                if (muteOnImage.isValid())
+                    DBG("Successfully loaded mute ON: " + muteOnFile.getFullPathName());
+                else
+                    DBG("Failed to load mute ON: " + muteOnFile.getFullPathName());
+            }
+            else
+                DBG("Mute ON file not found: " + muteOnFile.getFullPathName());
+        }
+
+        if (muteOffFilename.isNotEmpty())
+        {
+            juce::File muteOffFile = juce::File::getCurrentWorkingDirectory()
+                                         .getChildFile("Skins")
+                                         .getChildFile("Default")
+                                         .getChildFile(muteOffFilename);
+            if (muteOffFile.existsAsFile())
+            {
+                muteOffImage = juce::ImageFileFormat::loadFrom(muteOffFile);
+                if (muteOffImage.isValid())
+                    DBG("Successfully loaded mute OFF: " + muteOffFile.getFullPathName());
+                else
+                    DBG("Failed to load mute OFF: " + muteOffFile.getFullPathName());
+            }
+            else
+                DBG("Mute OFF file not found: " + muteOffFile.getFullPathName());
+        }
+
+        if (soloOnFilename.isNotEmpty())
+        {
+            juce::File soloOnFile = juce::File::getCurrentWorkingDirectory()
+                                        .getChildFile("Skins")
+                                        .getChildFile("Default")
+                                        .getChildFile(soloOnFilename);
+            if (soloOnFile.existsAsFile())
+            {
+                soloOnImage = juce::ImageFileFormat::loadFrom(soloOnFile);
+                if (soloOnImage.isValid())
+                    DBG("Successfully loaded solo ON: " + soloOnFile.getFullPathName());
+                else
+                    DBG("Failed to load solo ON: " + soloOnFile.getFullPathName());
+            }
+            else
+                DBG("Solo ON file not found: " + soloOnFile.getFullPathName());
+        }
+
+        if (soloOffFilename.isNotEmpty())
+        {
+            juce::File soloOffFile = juce::File::getCurrentWorkingDirectory()
+                                         .getChildFile("Skins")
+                                         .getChildFile("Default")
+                                         .getChildFile(soloOffFilename);
+            if (soloOffFile.existsAsFile())
+            {
+                soloOffImage = juce::ImageFileFormat::loadFrom(soloOffFile);
+                if (soloOffImage.isValid())
+                    DBG("Successfully loaded solo OFF: " + soloOffFile.getFullPathName());
+                else
+                    DBG("Failed to load solo OFF: " + soloOffFile.getFullPathName());
+            }
+            else
+                DBG("Solo OFF file not found: " + soloOffFile.getFullPathName());
+        }
     }
 
     bool useFilmstripForSlider(juce::Slider& slider) const
@@ -802,6 +905,10 @@ private:
     juce::String sliderThumbFilename;
     int sliderThumbScale = 100; // Scale percentage (1-100)
     juce::String tabSelectedFilename;
+    juce::String muteOnFilename;
+    juce::String muteOffFilename;
+    juce::String soloOnFilename;
+    juce::String soloOffFilename;
 
     // Loaded skin images
     juce::Image backgroundImage;
@@ -813,4 +920,8 @@ private:
     juce::Image buttonClickedImage;
     juce::Image sliderThumbImage;
     juce::Image tabSelectedImage;
+    juce::Image muteOnImage;
+    juce::Image muteOffImage;
+    juce::Image soloOnImage;
+    juce::Image soloOffImage;
 };

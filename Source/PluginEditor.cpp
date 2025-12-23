@@ -3615,10 +3615,19 @@ SlotMachineAudioProcessorEditor::SlotMachineAudioProcessorEditor(SlotMachineAudi
     patternWarningLabel.setFont(createBoldFont(13.0f));
 
     // Slots
-    const juce::Image muteOffImage = juce::ImageCache::getFromMemory(BinaryData::MuteOFF_png, BinaryData::MuteOFF_pngSize);
-    const juce::Image muteOnImage  = juce::ImageCache::getFromMemory(BinaryData::MuteON_png,  BinaryData::MuteON_pngSize);
-    const juce::Image soloOffImage = juce::ImageCache::getFromMemory(BinaryData::SoloOFF_png, BinaryData::SoloOFF_pngSize);
-    const juce::Image soloOnImage  = juce::ImageCache::getFromMemory(BinaryData::SoloON_png,  BinaryData::SoloON_pngSize);
+    // Use custom mute/solo images from skin if available, otherwise use embedded images
+    const juce::Image muteOffImage = appLF.getMuteOffImage().isValid()
+        ? appLF.getMuteOffImage()
+        : juce::ImageCache::getFromMemory(BinaryData::MuteOFF_png, BinaryData::MuteOFF_pngSize);
+    const juce::Image muteOnImage = appLF.getMuteOnImage().isValid()
+        ? appLF.getMuteOnImage()
+        : juce::ImageCache::getFromMemory(BinaryData::MuteON_png, BinaryData::MuteON_pngSize);
+    const juce::Image soloOffImage = appLF.getSoloOffImage().isValid()
+        ? appLF.getSoloOffImage()
+        : juce::ImageCache::getFromMemory(BinaryData::SoloOFF_png, BinaryData::SoloOFF_pngSize);
+    const juce::Image soloOnImage = appLF.getSoloOnImage().isValid()
+        ? appLF.getSoloOnImage()
+        : juce::ImageCache::getFromMemory(BinaryData::SoloON_png, BinaryData::SoloON_pngSize);
 
     const auto configureToggleImageButton = [](juce::ImageButton& button,
                                                const juce::Image& offImage,
