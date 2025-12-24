@@ -250,21 +250,9 @@ public:
         // Draw background image if available, otherwise use default rendering
         if (bgImage != nullptr)
         {
-            // Exclude bottom area where progress bars are drawn
-            // Progress bars are ~8px high with ~8px inset from bottom
-            const int progressAreaHeight = 20; // Reserve space for progress bars
-            const int drawHeight = height - progressAreaHeight;
-
-            if (drawHeight > 0)
-            {
-                // Save graphics state and clip to exclude progress bar area
-                juce::Graphics::ScopedSaveState savedState(g);
-                g.reduceClipRegion(0, 0, width, drawHeight);
-
-                // Draw the background image stretched to fit the group bounds (excluding progress area)
-                g.drawImage(*bgImage, 0, 0, width, height,
-                           0, 0, bgImage->getWidth(), bgImage->getHeight());
-            }
+            // Draw the background image stretched to fit the group bounds
+            g.drawImage(*bgImage, 0, 0, width, height,
+                       0, 0, bgImage->getWidth(), bgImage->getHeight());
 
             // Don't draw slot number text when using custom background images
             // The background image may include the slot number or shouldn't be obscured
