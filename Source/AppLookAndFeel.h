@@ -386,39 +386,6 @@ public:
         return juce::LookAndFeel_V4::getLabelFont(label);
     }
 
-    juce::TextEditor* createLabelTextEditor (juce::Label& label) override
-    {
-        auto* editor = juce::LookAndFeel_V4::createLabelTextEditor(label);
-
-        // Check if this is a numeric label
-        auto labelText = label.getText();
-        auto labelName = label.getName();
-        bool isExcluded = labelText == "Mute" || labelText == "Solo" || labelText == "Master BPM" || labelName == "SlotFileLabel";
-
-        bool isNumeric = false;
-        if (!isExcluded && labelText.isNotEmpty())
-        {
-            isNumeric = true;
-            for (int i = 0; i < labelText.length(); ++i)
-            {
-                juce::juce_wchar c = labelText[i];
-                if (!juce::CharacterFunctions::isDigit(c) && c != '.' && c != '-' && c != ' ')
-                {
-                    isNumeric = false;
-                    break;
-                }
-            }
-        }
-
-        // Apply custom color to text editor for numeric labels
-        if (isNumeric && textboxFontColor.isNotEmpty() && editor != nullptr)
-        {
-            editor->setColour(juce::TextEditor::textColourId, textboxCustomColor);
-        }
-
-        return editor;
-    }
-
     void drawComboBox (juce::Graphics& g, int width, int height, bool,
                       int, int, int, int, juce::ComboBox& box) override
     {
