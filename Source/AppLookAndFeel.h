@@ -368,6 +368,14 @@ public:
     const juce::Image& getSoloOnImage() const { return soloOnImage; }
     const juce::Image& getSoloOffImage() const { return soloOffImage; }
 
+    // Reload skin from SkinDef.txt
+    void reloadSkin()
+    {
+        loadSkinDefinition();
+        loadKnobFilmstrip();
+        loadBackgroundImages();
+    }
+
 private:
     void loadSkinDefinition()
     {

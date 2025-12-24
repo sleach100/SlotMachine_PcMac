@@ -6460,6 +6460,10 @@ void SlotMachineAudioProcessorEditor::buttonClicked(juce::Button* b)
                     // Only reset Loop Playthrough if there is only 1 tab open
                     if (editor->patternsTree.getNumChildren() <= 1)
                         editor->setLoopPlaythroughEnabled(false);
+
+                    // Reload skin
+                    editor->appLF.reloadSkin();
+                    editor->repaint();
                 }
             });
 
@@ -6479,6 +6483,10 @@ void SlotMachineAudioProcessorEditor::buttonClicked(juce::Button* b)
                     editor->resetPatternsToSingleDefault();
                     editor->doResetAll();
                     editor->setLoopPlaythroughEnabled(false);
+
+                    // Reload skin
+                    editor->appLF.reloadSkin();
+                    editor->repaint();
                 }
             });
 
