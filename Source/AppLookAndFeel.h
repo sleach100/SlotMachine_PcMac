@@ -376,10 +376,20 @@ public:
             }
         }
 
-        // Return custom font for numeric labels if available
-        if (isNumeric && textboxCustomFont.getHeight() > 0.0f)
+        // Apply custom font and color for numeric labels if available
+        if (isNumeric)
         {
-            return textboxCustomFont;
+            // Set the label's text color so it's used by the text editor
+            if (textboxFontColor.isNotEmpty())
+            {
+                label.setColour(juce::Label::textColourId, textboxCustomColor);
+            }
+
+            // Return custom font if available
+            if (textboxCustomFont.getHeight() > 0.0f)
+            {
+                return textboxCustomFont;
+            }
         }
 
         // Fall back to default font
