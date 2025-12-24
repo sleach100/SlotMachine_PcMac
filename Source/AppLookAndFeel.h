@@ -353,6 +353,39 @@ public:
         }
     }
 
+    juce::Font getLabelFont (juce::Label& label) override
+    {
+        // Check if this is a numeric label (count, volume, decay, Master BPM slider)
+        auto labelText = label.getText();
+        auto labelName = label.getName();
+        bool isExcluded = labelText == "Mute" || labelText == "Solo" || labelText == "Master BPM" || labelName == "SlotFileLabel";
+
+        // Check if this is a numeric label
+        bool isNumeric = false;
+        if (!isExcluded && labelText.isNotEmpty())
+        {
+            isNumeric = true;
+            for (int i = 0; i < labelText.length(); ++i)
+            {
+                juce::juce_wchar c = labelText[i];
+                if (!juce::CharacterFunctions::isDigit(c) && c != '.' && c != '-' && c != ' ')
+                {
+                    isNumeric = false;
+                    break;
+                }
+            }
+        }
+
+        // Return custom font for numeric labels if available
+        if (isNumeric && textboxCustomFont.getHeight() > 0.0f)
+        {
+            return textboxCustomFont;
+        }
+
+        // Fall back to default font
+        return juce::LookAndFeel_V4::getLabelFont(label);
+    }
+
     void drawComboBox (juce::Graphics& g, int width, int height, bool,
                       int, int, int, int, juce::ComboBox& box) override
     {
