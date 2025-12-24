@@ -4716,59 +4716,6 @@ void SlotMachineAudioProcessorEditor::paint(juce::Graphics& g)
     const juce::Colour glowColour = Opt::rgbParam(apvts, "optGlowColor", 0x6994FC, glowAlpha);
     const juce::Colour pulseColour = Opt::rgbParam(apvts, "optPulseColor", 0xD5CFEE, pulseAlpha);
 
-    const auto barBack = juce::Colours::white.withAlpha(0.18f);
-    const auto barFill = pulseColour.withAlpha(0.92f);
-
-    // Master progress bar
-    if (showMasterBar)
-    {
-        float masterButtonCornerRadius = 6.0f;
-        if (auto* lf = dynamic_cast<AppLookAndFeel*>(&getLookAndFeel()))
-            masterButtonCornerRadius = lf->getCornerRadius();
-
-        g.setColour(barBack);
-        g.fillRoundedRectangle(masterBarBounds.toFloat(), masterButtonCornerRadius);
-
-        paintMasterWaveform(g, masterBarBounds);
-
-        const float clampedPhase = juce::jlimit(0.0f, 1.0f, masterPhase);
-        const float w = masterBarBounds.getWidth() * clampedPhase;
-        if (w > 1.0f)
-        {
-            auto filled = juce::Rectangle<float>((float)masterBarBounds.getX(),
-                (float)masterBarBounds.getY(),
-                w,
-                (float)masterBarBounds.getHeight());
-            g.setColour(barFill.withAlpha(0.7f));
-            g.fillRoundedRectangle(filled, masterButtonCornerRadius);
-        }
-
-        if (masterBarBounds.getWidth() > 0)
-        {
-            const float widthMinusOne = (float) juce::jmax(1, masterBarBounds.getWidth() - 1);
-            const float playheadX = (float) masterBarBounds.getX() + clampedPhase * widthMinusOne;
-            g.setColour(juce::Colours::white.withAlpha(0.85f));
-            g.drawLine(playheadX, (float) masterBarBounds.getY(), playheadX, (float) masterBarBounds.getBottom(), 2.0f);
-        }
-
-        // Flash overlay on cycle wrap, using the selected pulse colour/alpha
-        if (cycleFlash > 0.001f)
-        {
-            // use the same 'pulseColour' and its alpha you already read from Options
-            const float flashA = juce::jlimit(0.0f, 1.0f, cycleFlash);
-            auto flashCol = pulseColour.withAlpha(pulseColour.getFloatAlpha() * flashA);
-
-            // subtle full-bar glow
-            g.setColour(flashCol);
-            g.fillRoundedRectangle(masterBarBounds.toFloat(), masterButtonCornerRadius);
-
-            // crisp highlight line at bar start (downbeat tick)
-            g.setColour(juce::Colours::white.withAlpha(0.25f * flashA));
-            auto tick = masterBarBounds.toFloat().removeFromLeft(3.0f);
-            g.fillRoundedRectangle(tick, juce::jmin(masterButtonCornerRadius, 2.0f));
-        }
-    }
-
     // Slots
     for (int i = 0; i < kNumSlots; ++i)
     {
@@ -4792,29 +4739,7 @@ void SlotMachineAudioProcessorEditor::paint(juce::Graphics& g)
                 pulseColour, pulseWidthPx, pulse);
         }
 
-        // 2) Per-slot progress bar
-        if (showSlotBars)
-        {
-            const float barH = 8.0f;
-            auto inner = boundsF.reduced(8.0f, 8.0f);
-            auto bar = juce::Rectangle<float>(inner.getX(), inner.getBottom() - barH,
-                inner.getWidth(), barH);
-
-            g.setColour(barBack);
-            g.fillRoundedRectangle(bar, 3.0f);
-
-            if (ui->hasFile)
-            {
-                const float w = bar.getWidth() * juce::jlimit(0.0f, 1.0f, ui->phase);
-                if (w > 1.0f)
-                {
-                    g.setColour(pulseColour);
-                    g.fillRoundedRectangle(juce::Rectangle<float>(bar.getX(), bar.getY(), w, barH), 3.0f);
-                }
-            }
-        }
-
-        // 3) Knob labels
+        // 2) Knob labels
         auto drawKnobLabel = [&g](juce::Slider& slider, const juce::String& text)
             {
                 auto layout = slider.getLookAndFeel().getSliderLayout(slider);
@@ -4849,6 +4774,90 @@ void SlotMachineAudioProcessorEditor::paint(juce::Graphics& g)
             drawKnobLabel(ui->rate, "RATE");
         drawKnobLabel(ui->gain, "VOL");
         drawKnobLabel(ui->decay, "DECAY");
+    }
+}
+
+void SlotMachineAudioProcessorEditor::paintOverChildren(juce::Graphics& g)
+{
+    // Draw progress bars on top of all components including skin backgrounds
+    const auto barBack = juce::Colours::black.withAlpha(0.55f);
+    const auto pulseColour = Opt::getColour(apvts, "optPulseColour", juce::Colours::cyan);
+    const auto barFill = pulseColour.withAlpha(0.92f);
+
+    // Master progress bar
+    if (showMasterBar)
+    {
+        float masterButtonCornerRadius = 6.0f;
+        if (auto* lf = dynamic_cast<AppLookAndFeel*>(&getLookAndFeel()))
+            masterButtonCornerRadius = lf->getCornerRadius();
+
+        g.setColour(barBack);
+        g.fillRoundedRectangle(masterBarBounds.toFloat(), masterButtonCornerRadius);
+
+        paintMasterWaveform(g, masterBarBounds);
+
+        const float clampedPhase = juce::jlimit(0.0f, 1.0f, masterPhase);
+        const float w = masterBarBounds.getWidth() * clampedPhase;
+        if (w > 1.0f)
+        {
+            auto filled = juce::Rectangle<float>((float)masterBarBounds.getX(),
+                (float)masterBarBounds.getY(),
+                w,
+                (float)masterBarBounds.getHeight());
+            g.setColour(barFill.withAlpha(0.7f));
+            g.fillRoundedRectangle(filled, masterButtonCornerRadius);
+        }
+
+        if (masterBarBounds.getWidth() > 0)
+        {
+            const float widthMinusOne = (float) juce::jmax(1, masterBarBounds.getWidth() - 1);
+            const float playheadX = (float) masterBarBounds.getX() + clampedPhase * widthMinusOne;
+            g.setColour(juce::Colours::white.withAlpha(0.85f));
+            g.drawLine(playheadX, (float) masterBarBounds.getY(), playheadX, (float) masterBarBounds.getBottom(), 2.0f);
+        }
+
+        // Flash overlay on cycle wrap
+        if (cycleFlash > 0.001f)
+        {
+            const float flashA = juce::jlimit(0.0f, 1.0f, cycleFlash);
+            auto flashCol = pulseColour.withAlpha(pulseColour.getFloatAlpha() * flashA);
+
+            g.setColour(flashCol);
+            g.fillRoundedRectangle(masterBarBounds.toFloat(), masterButtonCornerRadius);
+
+            g.setColour(juce::Colours::white.withAlpha(0.25f * flashA));
+            auto tick = masterBarBounds.toFloat().removeFromLeft(3.0f);
+            g.fillRoundedRectangle(tick, juce::jmin(masterButtonCornerRadius, 2.0f));
+        }
+    }
+
+    // Per-slot progress bars
+    if (showSlotBars)
+    {
+        for (int i = 0; i < kNumSlots; ++i)
+        {
+            auto* ui = slots[(size_t)i].get();
+            if (!ui) continue;
+
+            const auto boundsF = ui->group.getBounds().toFloat();
+            const float barH = 8.0f;
+            auto inner = boundsF.reduced(8.0f, 8.0f);
+            auto bar = juce::Rectangle<float>(inner.getX(), inner.getBottom() - barH,
+                inner.getWidth(), barH);
+
+            g.setColour(barBack);
+            g.fillRoundedRectangle(bar, 3.0f);
+
+            if (ui->hasFile)
+            {
+                const float w = bar.getWidth() * juce::jlimit(0.0f, 1.0f, ui->phase);
+                if (w > 1.0f)
+                {
+                    g.setColour(pulseColour);
+                    g.fillRoundedRectangle(juce::Rectangle<float>(bar.getX(), bar.getY(), w, barH), 3.0f);
+                }
+            }
+        }
     }
 }
 

@@ -31,6 +31,7 @@ public:
     ~SlotMachineAudioProcessorEditor() override;
 
     void paint(juce::Graphics&) override;
+    void paintOverChildren(juce::Graphics& g) override;
     void resized() override;
     void parentHierarchyChanged() override;
     void mouseDown(const juce::MouseEvent& e) override;
