@@ -368,6 +368,9 @@ public:
     const juce::Image& getSoloOnImage() const { return soloOnImage; }
     const juce::Image& getSoloOffImage() const { return soloOffImage; }
 
+    // Get logo image from skin
+    const juce::Image& getLogoImage() const { return logoImage; }
+
     // Reload skin from SkinDef.txt
     void reloadSkin()
     {
@@ -399,6 +402,7 @@ private:
         muteOffFilename = "";
         soloOnFilename = "";
         soloOffFilename = "";
+        logoFilename = "";
 
         juce::File skinDefFile = juce::File::getCurrentWorkingDirectory()
                                     .getChildFile("Skins")
@@ -522,6 +526,11 @@ private:
                 {
                     soloOffFilename = value;
                     DBG("Skin: SoloOFF = " + soloOffFilename);
+                }
+                else if (key.equalsIgnoreCase("Logo"))
+                {
+                    logoFilename = value;
+                    DBG("Skin: Logo = " + logoFilename);
                 }
             }
         }
@@ -827,6 +836,25 @@ private:
             else
                 DBG("Solo OFF file not found: " + soloOffFile.getFullPathName());
         }
+
+        // Load logo image
+        if (logoFilename.isNotEmpty())
+        {
+            juce::File logoFile = juce::File::getCurrentWorkingDirectory()
+                                      .getChildFile("Skins")
+                                      .getChildFile("Default")
+                                      .getChildFile(logoFilename);
+            if (logoFile.existsAsFile())
+            {
+                logoImage = juce::ImageFileFormat::loadFrom(logoFile);
+                if (logoImage.isValid())
+                    DBG("Successfully loaded logo: " + logoFile.getFullPathName());
+                else
+                    DBG("Failed to load logo: " + logoFile.getFullPathName());
+            }
+            else
+                DBG("Logo file not found: " + logoFile.getFullPathName());
+        }
     }
 
     bool useFilmstripForSlider(juce::Slider& slider) const
@@ -918,6 +946,7 @@ private:
     juce::String muteOffFilename;
     juce::String soloOnFilename;
     juce::String soloOffFilename;
+    juce::String logoFilename;
 
     // Loaded skin images
     juce::Image backgroundImage;
@@ -933,4 +962,5 @@ private:
     juce::Image muteOffImage;
     juce::Image soloOnImage;
     juce::Image soloOffImage;
+    juce::Image logoImage;
 };

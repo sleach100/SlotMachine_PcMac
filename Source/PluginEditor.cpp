@@ -3491,7 +3491,10 @@ SlotMachineAudioProcessorEditor::SlotMachineAudioProcessorEditor(SlotMachineAudi
 
     setWantsKeyboardFocus(true);
 
-    logoImage = juce::ImageCache::getFromMemory(BinaryData::SM5_png, BinaryData::SM5_pngSize);
+    // Use custom logo from skin if available, otherwise use embedded image
+    logoImage = appLF.getLogoImage().isValid()
+        ? appLF.getLogoImage()
+        : juce::ImageCache::getFromMemory(BinaryData::SM5_png, BinaryData::SM5_pngSize);
 
     slotScale = juce::jlimit(0.75f, 1.0f, Opt::getFloat(apvts, "optSlotScale", 0.8f));
     const int initialTimingMode = Opt::getInt(apvts, "optTimingMode", 1);
@@ -6463,6 +6466,9 @@ void SlotMachineAudioProcessorEditor::buttonClicked(juce::Button* b)
 
                     // Reload skin
                     editor->appLF.reloadSkin();
+                    editor->logoImage = editor->appLF.getLogoImage().isValid()
+                        ? editor->appLF.getLogoImage()
+                        : juce::ImageCache::getFromMemory(BinaryData::SM5_png, BinaryData::SM5_pngSize);
                     editor->repaint();
                 }
             });
@@ -6486,6 +6492,9 @@ void SlotMachineAudioProcessorEditor::buttonClicked(juce::Button* b)
 
                     // Reload skin
                     editor->appLF.reloadSkin();
+                    editor->logoImage = editor->appLF.getLogoImage().isValid()
+                        ? editor->appLF.getLogoImage()
+                        : juce::ImageCache::getFromMemory(BinaryData::SM5_png, BinaryData::SM5_pngSize);
                     editor->repaint();
                 }
             });
