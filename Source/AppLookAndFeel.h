@@ -271,6 +271,23 @@ public:
         auto labelName = label.getName();
         bool isExcluded = labelText == "Mute" || labelText == "Solo" || labelText == "Master BPM" || labelName == "SlotFileLabel";
 
+        // Check if this is a numeric label (count, volume, decay, Master BPM slider)
+        // Numeric labels contain only digits, decimal points, minus signs, and spaces
+        bool isNumeric = false;
+        if (!isExcluded && labelText.isNotEmpty())
+        {
+            isNumeric = true;
+            for (int i = 0; i < labelText.length(); ++i)
+            {
+                juce::juce_wchar c = labelText[i];
+                if (!juce::CharacterFunctions::isDigit(c) && c != '.' && c != '-' && c != ' ')
+                {
+                    isNumeric = false;
+                    break;
+                }
+            }
+        }
+
         // Draw custom textbox image if available and not excluded label
         if (textboxImage.isValid() && !isExcluded)
         {
@@ -283,8 +300,24 @@ public:
                        false);
 
             // Draw the label text on top of the textbox image
-            g.setColour(label.findColour(juce::Label::textColourId));
-            g.setFont(label.getFont());
+            // Use custom font and color for numeric labels if available
+            if (isNumeric && textboxCustomFont.getHeight() > 0.0f)
+            {
+                g.setFont(textboxCustomFont);
+            }
+            else
+            {
+                g.setFont(label.getFont());
+            }
+
+            if (isNumeric && textboxFontColor.isNotEmpty())
+            {
+                g.setColour(textboxCustomColor);
+            }
+            else
+            {
+                g.setColour(label.findColour(juce::Label::textColourId));
+            }
 
             auto textArea = bounds.reduced(2, 0); // Small padding
             g.drawText(label.getText(), textArea,
@@ -293,8 +326,30 @@ public:
         }
         else
         {
-            // Fall back to default JUCE label rendering
-            juce::LookAndFeel_V4::drawLabel(g, label);
+            // No textbox image, but still apply custom font/color to numeric labels if available
+            if (isNumeric && (textboxCustomFont.getHeight() > 0.0f || textboxFontColor.isNotEmpty()))
+            {
+                auto bounds = label.getLocalBounds();
+
+                if (textboxCustomFont.getHeight() > 0.0f)
+                    g.setFont(textboxCustomFont);
+                else
+                    g.setFont(label.getFont());
+
+                if (textboxFontColor.isNotEmpty())
+                    g.setColour(textboxCustomColor);
+                else
+                    g.setColour(label.findColour(juce::Label::textColourId));
+
+                g.drawText(label.getText(), bounds,
+                          label.getJustificationType(),
+                          label.getText().length() > 0);
+            }
+            else
+            {
+                // Fall back to default JUCE label rendering
+                juce::LookAndFeel_V4::drawLabel(g, label);
+            }
         }
     }
 
@@ -403,6 +458,9 @@ private:
         soloOnFilename = "";
         soloOffFilename = "";
         logoFilename = "";
+        textboxFontFilename = "";
+        textboxFontSize = 0; // 0 = use default
+        textboxFontColor = ""; // Empty = use default
 
         juce::File skinDefFile = juce::File::getCurrentWorkingDirectory()
                                     .getChildFile("Skins")
@@ -531,6 +589,21 @@ private:
                 {
                     logoFilename = value;
                     DBG("Skin: Logo = " + logoFilename);
+                }
+                else if (key.equalsIgnoreCase("TextBoxFont"))
+                {
+                    textboxFontFilename = value;
+                    DBG("Skin: TextBoxFont = " + textboxFontFilename);
+                }
+                else if (key.equalsIgnoreCase("TextBoxFontSize"))
+                {
+                    textboxFontSize = value.getIntValue();
+                    DBG("Skin: TextBoxFontSize = " + juce::String(textboxFontSize));
+                }
+                else if (key.equalsIgnoreCase("TextBoxFontColor"))
+                {
+                    textboxFontColor = value;
+                    DBG("Skin: TextBoxFontColor = " + textboxFontColor);
                 }
             }
         }
@@ -855,6 +928,41 @@ private:
             else
                 DBG("Logo file not found: " + logoFile.getFullPathName());
         }
+
+        // Load custom font for numeric textboxes
+        if (textboxFontFilename.isNotEmpty())
+        {
+            juce::File fontFile = juce::File::getCurrentWorkingDirectory()
+                                      .getChildFile("Skins")
+                                      .getChildFile("Default")
+                                      .getChildFile(textboxFontFilename);
+            if (fontFile.existsAsFile())
+            {
+                juce::Typeface::Ptr typeface = juce::Typeface::createSystemTypefaceFor(fontFile.loadFileAsData().getData(),
+                                                                                        fontFile.loadFileAsData().getSize());
+                if (typeface != nullptr)
+                {
+                    float fontSize = textboxFontSize > 0 ? (float)textboxFontSize : 14.0f;
+                    textboxCustomFont = juce::Font(typeface).withHeight(fontSize);
+                    DBG("Successfully loaded custom font: " + fontFile.getFullPathName());
+                }
+                else
+                {
+                    DBG("Failed to load custom font: " + fontFile.getFullPathName());
+                }
+            }
+            else
+            {
+                DBG("Custom font file not found: " + fontFile.getFullPathName());
+            }
+        }
+
+        // Parse custom font color
+        if (textboxFontColor.isNotEmpty())
+        {
+            textboxCustomColor = juce::Colour::fromString(textboxFontColor);
+            DBG("Custom font color set to: " + textboxFontColor);
+        }
     }
 
     bool useFilmstripForSlider(juce::Slider& slider) const
@@ -947,6 +1055,9 @@ private:
     juce::String soloOnFilename;
     juce::String soloOffFilename;
     juce::String logoFilename;
+    juce::String textboxFontFilename;
+    int textboxFontSize = 0; // 0 = use default
+    juce::String textboxFontColor; // Hex RGB color (e.g., "#D0D0D0")
 
     // Loaded skin images
     juce::Image backgroundImage;
@@ -963,4 +1074,8 @@ private:
     juce::Image soloOnImage;
     juce::Image soloOffImage;
     juce::Image logoImage;
+
+    // Custom font for numeric textboxes
+    juce::Font textboxCustomFont;
+    juce::Colour textboxCustomColor;
 };
