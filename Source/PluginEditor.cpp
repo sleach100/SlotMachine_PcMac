@@ -4780,8 +4780,12 @@ void SlotMachineAudioProcessorEditor::paint(juce::Graphics& g)
 void SlotMachineAudioProcessorEditor::paintOverChildren(juce::Graphics& g)
 {
     // Draw progress bars on top of all components including skin backgrounds
+    const bool showMasterBar = Opt::getBool(apvts, "optShowMasterBar", true);
+    const bool showSlotBars = Opt::getBool(apvts, "optShowSlotBars", true);
+
     const auto barBack = juce::Colours::black.withAlpha(0.55f);
-    const auto pulseColour = Opt::getColour(apvts, "optPulseColour", juce::Colours::cyan);
+    const float pulseAlpha = Opt::getFloat(apvts, "optPulseAlpha", 1.0f);
+    const juce::Colour pulseColour = Opt::rgbParam(apvts, "optPulseColor", 0xD5CFEE, pulseAlpha);
     const auto barFill = pulseColour.withAlpha(0.92f);
 
     // Master progress bar
