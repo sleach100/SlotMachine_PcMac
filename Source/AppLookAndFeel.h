@@ -967,8 +967,35 @@ private:
         // Parse custom font color
         if (textboxFontColor.isNotEmpty())
         {
-            textboxCustomColor = juce::Colour::fromString(textboxFontColor);
-            DBG("Custom font color set to: " + textboxFontColor);
+            juce::String colorStr = textboxFontColor.trim();
+
+            // Remove '#' prefix if present
+            if (colorStr.startsWithChar('#'))
+                colorStr = colorStr.substring(1);
+
+            // Parse hex color (RGB or RRGGBB format)
+            if (colorStr.length() == 6 || colorStr.length() == 3)
+            {
+                // Convert to full RRGGBB if using shorthand RGB
+                if (colorStr.length() == 3)
+                {
+                    juce::String r = colorStr.substring(0, 1);
+                    juce::String g = colorStr.substring(1, 2);
+                    juce::String b = colorStr.substring(2, 3);
+                    colorStr = r + r + g + g + b + b;
+                }
+
+                // Parse the hex string as RRGGBB
+                int rgb = colorStr.getHexValue32();
+                textboxCustomColor = juce::Colour((juce::uint8)((rgb >> 16) & 0xFF),
+                                                   (juce::uint8)((rgb >> 8) & 0xFF),
+                                                   (juce::uint8)(rgb & 0xFF));
+                DBG("Custom font color set to: #" + colorStr + " = " + textboxCustomColor.toString());
+            }
+            else
+            {
+                DBG("Invalid color format: " + textboxFontColor + " (expected #RRGGBB)");
+            }
         }
     }
 
