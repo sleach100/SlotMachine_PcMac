@@ -379,10 +379,11 @@ public:
         // Apply custom font and color for numeric labels if available
         if (isNumeric)
         {
-            // Set the label's text color so it's used by the text editor
+            // Set the label's text color for both display and editing
             if (textboxFontColor.isNotEmpty())
             {
                 label.setColour(juce::Label::textColourId, textboxCustomColor);
+                label.setColour(juce::Label::textWhenEditingColourId, textboxCustomColor);
             }
 
             // Return custom font if available
