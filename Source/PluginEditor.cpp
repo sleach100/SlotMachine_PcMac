@@ -3671,7 +3671,8 @@ SlotMachineAudioProcessorEditor::SlotMachineAudioProcessorEditor(SlotMachineAudi
         ui->clearBtn.setConnectedEdges(juce::Button::ConnectedOnLeft); // makes it look attached to Load
 
         addAndMakeVisible(ui->fileLabel);
-        ui->fileLabel.setText("No file", juce::dontSendNotification);
+        ui->fileLabel.setName("SlotFileLabel");
+        ui->fileLabel.setText("", juce::dontSendNotification);
         ui->fileLabel.setJustificationType(juce::Justification::centredLeft);
         ui->fileLabel.setInterceptsMouseClicks(false, false); // Allow clicks to pass through for sample trigger/drag
         ui->fileBtn.addListener(this);
@@ -5289,7 +5290,7 @@ void SlotMachineAudioProcessorEditor::copySlotData(int fromSlot, int toSlot)
         // Update the UI directly since this isn't a "failed" case
         if (auto* destSlot = slots[(size_t)toSlot].get())
         {
-            destSlot->fileLabel.setText("No file", juce::dontSendNotification);
+            destSlot->fileLabel.setText("", juce::dontSendNotification);
             destSlot->hasFile = false;
         }
     }
@@ -5526,7 +5527,7 @@ void SlotMachineAudioProcessorEditor::refreshSlotFileLabels(const juce::Array<in
         if (!hasSample)
             embeddedSlotResourceNames[(size_t)i].clear();
 
-        juce::String label = "No file";
+        juce::String label = "";
         juce::String embeddedResource = embeddedSlotResourceNames[(size_t)i];
 
         if (embeddedResource.isEmpty() && path.isNotEmpty())
@@ -6797,7 +6798,7 @@ void SlotMachineAudioProcessorEditor::buttonClicked(juce::Button* b)
             processor.resetSlotParametersToDefault(i);
             embeddedSlotResourceNames[(size_t)i].clear();
             ui->hasFile = false;
-            ui->fileLabel.setText("No file", juce::dontSendNotification);
+            ui->fileLabel.setText("", juce::dontSendNotification);
             ui->fileLabel.setColour(juce::Label::textColourId, juce::Label().findColour(juce::Label::textColourId));
             ui->glow = 0.0f;
             ui->phase = 0.0f;
@@ -7590,7 +7591,7 @@ void SlotMachineAudioProcessorEditor::doResetAll(bool persistOptions)
         if (slots[(size_t)i])
         {
             slots[(size_t)i]->hasFile = false;
-            slots[(size_t)i]->fileLabel.setText("No file", juce::dontSendNotification);
+            slots[(size_t)i]->fileLabel.setText("", juce::dontSendNotification);
             slots[(size_t)i]->glow = 0.0f;
             slots[(size_t)i]->phase = 0.0f;
             slots[(size_t)i]->lastHitCounter = 0;

@@ -266,9 +266,10 @@ public:
 
     void drawLabel (juce::Graphics& g, juce::Label& label) override
     {
-        // Skip TextBox image for Mute, Solo, and Master BPM labels - leave them unaltered
+        // Skip TextBox image for Mute, Solo, Master BPM labels, and file labels - leave them unaltered
         auto labelText = label.getText();
-        bool isExcluded = labelText == "Mute" || labelText == "Solo" || labelText == "Master BPM";
+        auto labelName = label.getName();
+        bool isExcluded = labelText == "Mute" || labelText == "Solo" || labelText == "Master BPM" || labelName == "SlotFileLabel";
 
         // Draw custom textbox image if available and not excluded label
         if (textboxImage.isValid() && !isExcluded)
