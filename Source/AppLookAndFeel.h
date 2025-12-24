@@ -301,7 +301,7 @@ public:
 
             // Draw the label text on top of the textbox image
             // Use custom font and color for numeric labels if available
-            if (isNumeric && textboxCustomFont.getHeight() > 0.0f)
+            if (isNumeric && textboxFontFilename.isNotEmpty())
             {
                 g.setFont(textboxCustomFont);
             }
@@ -327,11 +327,11 @@ public:
         else
         {
             // No textbox image, but still apply custom font/color to numeric labels if available
-            if (isNumeric && (textboxCustomFont.getHeight() > 0.0f || textboxFontColor.isNotEmpty()))
+            if (isNumeric && (textboxFontFilename.isNotEmpty() || textboxFontColor.isNotEmpty()))
             {
                 auto bounds = label.getLocalBounds();
 
-                if (textboxCustomFont.getHeight() > 0.0f)
+                if (textboxFontFilename.isNotEmpty())
                     g.setFont(textboxCustomFont);
                 else
                     g.setFont(label.getFont());
@@ -387,7 +387,7 @@ public:
             }
 
             // Return custom font if available
-            if (textboxCustomFont.getHeight() > 0.0f)
+            if (textboxFontFilename.isNotEmpty())
             {
                 return textboxCustomFont;
             }
