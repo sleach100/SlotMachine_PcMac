@@ -938,17 +938,24 @@ private:
                                       .getChildFile(textboxFontFilename);
             if (fontFile.existsAsFile())
             {
-                juce::Typeface::Ptr typeface = juce::Typeface::createSystemTypefaceFor(fontFile.loadFileAsData().getData(),
-                                                                                        fontFile.loadFileAsData().getSize());
-                if (typeface != nullptr)
+                juce::MemoryBlock fontData;
+                if (fontFile.loadFileAsData(fontData))
                 {
-                    float fontSize = textboxFontSize > 0 ? (float)textboxFontSize : 14.0f;
-                    textboxCustomFont = juce::Font(typeface).withHeight(fontSize);
-                    DBG("Successfully loaded custom font: " + fontFile.getFullPathName());
+                    juce::Typeface::Ptr typeface = juce::Typeface::createSystemTypefaceFor(fontData.getData(), fontData.getSize());
+                    if (typeface != nullptr)
+                    {
+                        float fontSize = textboxFontSize > 0 ? (float)textboxFontSize : 14.0f;
+                        textboxCustomFont = juce::Font(typeface).withHeight(fontSize);
+                        DBG("Successfully loaded custom font: " + fontFile.getFullPathName());
+                    }
+                    else
+                    {
+                        DBG("Failed to create typeface from font file: " + fontFile.getFullPathName());
+                    }
                 }
                 else
                 {
-                    DBG("Failed to load custom font: " + fontFile.getFullPathName());
+                    DBG("Failed to load font file data: " + fontFile.getFullPathName());
                 }
             }
             else
