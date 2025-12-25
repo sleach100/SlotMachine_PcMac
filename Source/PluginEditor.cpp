@@ -2531,6 +2531,13 @@ namespace Opt
             (juce::uint8)(rgb & 0xFF));
         return c.withAlpha(juce::jlimit(0.0f, 1.0f, alpha));
     }
+    static inline juce::String getString(APVTS& apvts, const juce::String& id, const juce::String& def)
+    {
+        auto& state = apvts.state;
+        if (state.hasProperty(id))
+            return state.getProperty(id).toString();
+        return def;
+    }
 }
 
 class SlotMachineAudioProcessorEditor::VisualizerWindow : public juce::DocumentWindow
@@ -2951,6 +2958,16 @@ public:
         }
         slotScaleCombo.onChange = [this]() { handleSlotScaleSelection(); };
 
+        // skin selector
+        skinLabel.setText("Skin", juce::dontSendNotification);
+        skinLabel.setColour(juce::Label::textColourId, juce::Colours::white);
+        addAndMakeVisible(skinLabel);
+
+        addAndMakeVisible(skinCombo);
+        skinCombo.setJustificationType(juce::Justification::centredLeft);
+        populateSkinCombo();
+        skinCombo.onChange = [this]() { handleSkinSelection(); };
+
         // colour selectors
         addAndMakeVisible(glowColourSel);
         glowColourSel.setColour(juce::ColourSelector::backgroundColourId, juce::Colours::black);
@@ -3026,6 +3043,10 @@ public:
         slotScaleLabel.setBounds(scaleRow.removeFromLeft(getWidth() / 2 - 16));
         slotScaleCombo.setBounds(scaleRow.removeFromLeft(180).reduced(0, 8));
 
+        auto skinRow = a.removeFromTop(48);
+        skinLabel.setBounds(skinRow.removeFromLeft(getWidth() / 2 - 16));
+        skinCombo.setBounds(skinRow.removeFromLeft(220).reduced(0, 8));
+
         a.removeFromTop(6);
 
         auto row1 = a.removeFromTop(210);
@@ -3076,6 +3097,9 @@ private:
 
     juce::Label slotScaleLabel;
     juce::ComboBox slotScaleCombo;
+
+    juce::Label skinLabel;
+    juce::ComboBox skinCombo;
 
     juce::Label glowLabel, pulseLabel;
     juce::ColourSelector glowColourSel{ juce::ColourSelector::showColourAtTop
@@ -3192,6 +3216,17 @@ private:
         slotScaleCombo.setSelectedId(bestId, juce::dontSendNotification);
         blockSlotScaleUpdate = false;
 
+        // skin folder
+        const juce::String currentSkin = Opt::getString(apvts, "optSkinFolder", "Classic");
+        for (int i = 0; i < skinCombo.getNumItems(); ++i)
+        {
+            if (skinCombo.getItemText(i) == currentSkin)
+            {
+                skinCombo.setSelectedId(i + 1, juce::dontSendNotification);
+                break;
+            }
+        }
+
         // colours
         glowColourSel.setCurrentColour(Opt::rgbParam(apvts, "optGlowColor", 0x6994FC, 1.0f));
         pulseColourSel.setCurrentColour(Opt::rgbParam(apvts, "optPulseColor", 0xD5CFEE, 1.0f));
@@ -3285,6 +3320,60 @@ private:
         setIntParam("optTimingMode", value);
     }
 
+    void populateSkinCombo()
+    {
+        skinCombo.clear();
+
+        // Get the Skins directory
+        juce::File skinsDir = juce::File::getCurrentWorkingDirectory().getChildFile("Skins");
+
+        if (!skinsDir.exists() || !skinsDir.isDirectory())
+        {
+            skinCombo.addItem("Classic", 1);
+            skinCombo.setSelectedId(1, juce::dontSendNotification);
+            return;
+        }
+
+        // Get all subdirectories
+        juce::Array<juce::File> skinFolders = skinsDir.findChildFiles(juce::File::findDirectories, false);
+
+        // Add each folder as an item
+        int itemId = 1;
+        for (const auto& folder : skinFolders)
+        {
+            skinCombo.addItem(folder.getFileName(), itemId++);
+        }
+
+        // If no folders found, add Classic as default
+        if (skinCombo.getNumItems() == 0)
+        {
+            skinCombo.addItem("Classic", 1);
+        }
+    }
+
+    void handleSkinSelection()
+    {
+        const int id = skinCombo.getSelectedId();
+        if (id <= 0 || id > skinCombo.getNumItems())
+            return;
+
+        const juce::String skinName = skinCombo.getItemText(id - 1);
+        setStringParam("optSkinFolder", skinName);
+
+        // Reload the skin with the new folder
+        if (auto* editor = findParentComponentOfClass<SlotMachineAudioProcessorEditor>())
+        {
+            editor->appLF.setSkinFolder(skinName);
+            editor->appLF.reloadSkin();
+            editor->logoImage = editor->appLF.getLogoImage().isValid()
+                ? editor->appLF.getLogoImage()
+                : juce::ImageCache::getFromMemory(BinaryData::SM5_png, BinaryData::SM5_pngSize);
+            editor->updateMuteSoloButtonImages();
+            editor->resized();
+            editor->repaint();
+        }
+    }
+
     void resetToDefaultOptions()
     {
         constexpr float kDefaultSlotScale = 0.80f;
@@ -3312,6 +3401,7 @@ private:
         setIntParam("optPulseColor", kDefaultPulseRGB);
         setFloatParam("optPulseAlpha", kDefaultPulseAlpha);
         setFloatParam("optPulseWidth", kDefaultPulseWidth);
+        setStringParam("optSkinFolder", "Classic");
 
         refreshFromState();
 
@@ -3343,6 +3433,11 @@ private:
             fp->beginChangeGesture(); *fp = v; fp->endChangeGesture();
             saveOptionsToDisk(apvts);
         }
+    }
+    void setStringParam(const juce::String& id, const juce::String& v)
+    {
+        apvts.state.setProperty(id, v, nullptr);
+        saveOptionsToDisk(apvts);
     }
 
 };
@@ -3488,6 +3583,11 @@ SlotMachineAudioProcessorEditor::SlotMachineAudioProcessorEditor(SlotMachineAudi
 {
     setLookAndFeel(&appLF);
     appLF.setCornerRadius(6.0f);
+
+    // Initialize skin folder from saved options
+    const juce::String savedSkinFolder = Opt::getString(apvts, "optSkinFolder", "Classic");
+    appLF.setSkinFolder(savedSkinFolder);
+    appLF.reloadSkin();
 
     setWantsKeyboardFocus(true);
 

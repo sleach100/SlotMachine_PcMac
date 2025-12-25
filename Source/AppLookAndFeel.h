@@ -479,6 +479,15 @@ public:
     // Get logo image from skin
     const juce::Image& getLogoImage() const { return logoImage; }
 
+    // Set skin folder name (default is "Classic")
+    void setSkinFolder(const juce::String& folderName)
+    {
+        skinFolderName = folderName.isEmpty() ? "Classic" : folderName;
+    }
+
+    // Get current skin folder name
+    juce::String getSkinFolder() const { return skinFolderName; }
+
     // Reload skin from SkinDef.txt
     void reloadSkin()
     {
@@ -520,7 +529,7 @@ private:
 
         juce::File skinDefFile = juce::File::getCurrentWorkingDirectory()
                                     .getChildFile("Skins")
-                                    .getChildFile("Default")
+                                    .getChildFile(skinFolderName)
                                     .getChildFile("SkinDef.txt");
 
         if (!skinDefFile.existsAsFile())
@@ -689,7 +698,7 @@ private:
 
         juce::File knobFile = juce::File::getCurrentWorkingDirectory()
                                 .getChildFile("Skins")
-                                .getChildFile("Default")
+                                .getChildFile(skinFolderName)
                                 .getChildFile(knobFilename);
 
         if (!knobFile.existsAsFile())
@@ -738,7 +747,7 @@ private:
         {
             juce::File bgFile = juce::File::getCurrentWorkingDirectory()
                                    .getChildFile("Skins")
-                                   .getChildFile("Default")
+                                   .getChildFile(skinFolderName)
                                    .getChildFile(backgroundFilename);
 
             if (bgFile.existsAsFile())
@@ -760,7 +769,7 @@ private:
         {
             juce::File bgFlashFile = juce::File::getCurrentWorkingDirectory()
                                          .getChildFile("Skins")
-                                         .getChildFile("Default")
+                                         .getChildFile(skinFolderName)
                                          .getChildFile(backgroundFlashFilename);
 
             if (bgFlashFile.existsAsFile())
@@ -782,7 +791,7 @@ private:
         {
             juce::File bgSampleLoadedFile = juce::File::getCurrentWorkingDirectory()
                                                 .getChildFile("Skins")
-                                                .getChildFile("Default")
+                                                .getChildFile(skinFolderName)
                                                 .getChildFile(backgroundSampleLoadedFilename);
 
             if (bgSampleLoadedFile.existsAsFile())
@@ -804,7 +813,7 @@ private:
         {
             juce::File textboxFile = juce::File::getCurrentWorkingDirectory()
                                          .getChildFile("Skins")
-                                         .getChildFile("Default")
+                                         .getChildFile(skinFolderName)
                                          .getChildFile(textboxFilename);
 
             if (textboxFile.existsAsFile())
@@ -826,7 +835,7 @@ private:
         {
             juce::File buttonFile = juce::File::getCurrentWorkingDirectory()
                                         .getChildFile("Skins")
-                                        .getChildFile("Default")
+                                        .getChildFile(skinFolderName)
                                         .getChildFile(buttonFilename);
 
             if (buttonFile.existsAsFile())
@@ -847,7 +856,7 @@ private:
         {
             juce::File buttonHoverFile = juce::File::getCurrentWorkingDirectory()
                                              .getChildFile("Skins")
-                                             .getChildFile("Default")
+                                             .getChildFile(skinFolderName)
                                              .getChildFile(buttonHoverFilename);
 
             if (buttonHoverFile.existsAsFile())
@@ -868,7 +877,7 @@ private:
         {
             juce::File buttonClickedFile = juce::File::getCurrentWorkingDirectory()
                                                .getChildFile("Skins")
-                                               .getChildFile("Default")
+                                               .getChildFile(skinFolderName)
                                                .getChildFile(buttonClickedFilename);
 
             if (buttonClickedFile.existsAsFile())
@@ -890,7 +899,7 @@ private:
         {
             juce::File sliderThumbFile = juce::File::getCurrentWorkingDirectory()
                                              .getChildFile("Skins")
-                                             .getChildFile("Default")
+                                             .getChildFile(skinFolderName)
                                              .getChildFile(sliderThumbFilename);
 
             if (sliderThumbFile.existsAsFile())
@@ -912,7 +921,7 @@ private:
         {
             juce::File tabSelectedFile = juce::File::getCurrentWorkingDirectory()
                                              .getChildFile("Skins")
-                                             .getChildFile("Default")
+                                             .getChildFile(skinFolderName)
                                              .getChildFile(tabSelectedFilename);
 
             if (tabSelectedFile.existsAsFile())
@@ -934,7 +943,7 @@ private:
         {
             juce::File muteOnFile = juce::File::getCurrentWorkingDirectory()
                                         .getChildFile("Skins")
-                                        .getChildFile("Default")
+                                        .getChildFile(skinFolderName)
                                         .getChildFile(muteOnFilename);
             if (muteOnFile.existsAsFile())
             {
@@ -952,7 +961,7 @@ private:
         {
             juce::File muteOffFile = juce::File::getCurrentWorkingDirectory()
                                          .getChildFile("Skins")
-                                         .getChildFile("Default")
+                                         .getChildFile(skinFolderName)
                                          .getChildFile(muteOffFilename);
             if (muteOffFile.existsAsFile())
             {
@@ -970,7 +979,7 @@ private:
         {
             juce::File soloOnFile = juce::File::getCurrentWorkingDirectory()
                                         .getChildFile("Skins")
-                                        .getChildFile("Default")
+                                        .getChildFile(skinFolderName)
                                         .getChildFile(soloOnFilename);
             if (soloOnFile.existsAsFile())
             {
@@ -988,7 +997,7 @@ private:
         {
             juce::File soloOffFile = juce::File::getCurrentWorkingDirectory()
                                          .getChildFile("Skins")
-                                         .getChildFile("Default")
+                                         .getChildFile(skinFolderName)
                                          .getChildFile(soloOffFilename);
             if (soloOffFile.existsAsFile())
             {
@@ -1007,7 +1016,7 @@ private:
         {
             juce::File logoFile = juce::File::getCurrentWorkingDirectory()
                                       .getChildFile("Skins")
-                                      .getChildFile("Default")
+                                      .getChildFile(skinFolderName)
                                       .getChildFile(logoFilename);
             if (logoFile.existsAsFile())
             {
@@ -1026,7 +1035,7 @@ private:
         {
             juce::File fontFile = juce::File::getCurrentWorkingDirectory()
                                       .getChildFile("Skins")
-                                      .getChildFile("Default")
+                                      .getChildFile(skinFolderName)
                                       .getChildFile(textboxFontFilename);
             if (fontFile.existsAsFile())
             {
@@ -1161,6 +1170,7 @@ private:
     juce::String filmstripErrorMessage;
 
     // Skin definition parameters
+    juce::String skinFolderName = "Classic";  // Default skin folder
     juce::String knobFilename;
     int knobFrameCount = 50;
     juce::String knobOrientation = "Vertical";
