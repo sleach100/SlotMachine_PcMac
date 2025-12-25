@@ -42,6 +42,8 @@ public:
     // Standalone helper used to ensure the UI starts in a clean state.
     void resetUiToDefaultStateForStandalone();
 
+    // Reload skin with a specific folder name
+    void reloadSkinWithFolder(const juce::String& skinFolderName);
 
 private:
     // VST3-specific behavior
@@ -468,7 +470,6 @@ private:
     void doLoadPreset();
     void doResetAll(bool persistOptions = true);
     void updateMuteSoloButtonImages();
-    void reloadSkinWithFolder(const juce::String& skinFolderName);
     void resetLoopTransport();
     void resetProgressVisuals();
     void showOptionsDialog();
