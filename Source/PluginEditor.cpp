@@ -2906,8 +2906,10 @@ class OptionsComponent : public juce::Component,
     private juce::Slider::Listener
 {
 public:
-    explicit OptionsComponent(APVTS& s, std::function<void(float)> slotScaleChangedCallback = {})
-        : apvts(s), slotScaleChanged(slotScaleChangedCallback)
+    explicit OptionsComponent(APVTS& s,
+                              std::function<void(float)> slotScaleChangedCallback = {},
+                              std::function<void(const juce::String&)> skinChangedCallback = {})
+        : apvts(s), slotScaleChanged(slotScaleChangedCallback), skinChanged(skinChangedCallback)
     {
         // toggles
         addAndMakeVisible(showMasterBar);
@@ -3122,6 +3124,7 @@ private:
     static constexpr int sliderVerticalPadding = 8;
 
     std::function<void(float)> slotScaleChanged;
+    std::function<void(const juce::String&)> skinChanged;
     std::array<int, 2>   sampleRateValues{ { 48000, 44100 } };
     std::array<int, 2>   timingModeValues{ { 0, 1 } };
     bool blockSampleRateUpdate = false;
@@ -3360,11 +3363,9 @@ private:
         const juce::String skinName = skinCombo.getItemText(id - 1);
         setStringParam("optSkinFolder", skinName);
 
-        // Reload the skin with the new folder
-        if (auto* editor = findParentComponentOfClass<SlotMachineAudioProcessorEditor>())
-        {
-            editor->reloadSkinWithFolder(skinName);
-        }
+        // Reload the skin with the new folder via callback
+        if (skinChanged)
+            skinChanged(skinName);
     }
 
     void resetToDefaultOptions()
@@ -7031,9 +7032,14 @@ void SlotMachineAudioProcessorEditor::buttonClicked(juce::Button* b)
 
 void SlotMachineAudioProcessorEditor::showOptionsDialog()
 {
-    auto content = std::make_unique<OptionsComponent>(apvts, [this](float newScale)
+    auto content = std::make_unique<OptionsComponent>(apvts,
+        [this](float newScale)
         {
             applySlotScale(newScale);
+        },
+        [this](const juce::String& skinName)
+        {
+            reloadSkinWithFolder(skinName);
         });
     content->setSize(640, 720);
 
