@@ -468,6 +468,7 @@ private:
     void doLoadPreset();
     void doResetAll(bool persistOptions = true);
     void updateMuteSoloButtonImages();
+    void reloadSkinWithFolder(const juce::String& skinFolderName);
     void resetLoopTransport();
     void resetProgressVisuals();
     void showOptionsDialog();

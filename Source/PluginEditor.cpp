@@ -3363,14 +3363,7 @@ private:
         // Reload the skin with the new folder
         if (auto* editor = findParentComponentOfClass<SlotMachineAudioProcessorEditor>())
         {
-            editor->appLF.setSkinFolder(skinName);
-            editor->appLF.reloadSkin();
-            editor->logoImage = editor->appLF.getLogoImage().isValid()
-                ? editor->appLF.getLogoImage()
-                : juce::ImageCache::getFromMemory(BinaryData::SM5_png, BinaryData::SM5_pngSize);
-            editor->updateMuteSoloButtonImages();
-            editor->resized();
-            editor->repaint();
+            editor->reloadSkinWithFolder(skinName);
         }
     }
 
@@ -7815,6 +7808,18 @@ void SlotMachineAudioProcessorEditor::updateMuteSoloButtonImages()
                 soloSource, 1.0f, juce::Colours::transparentBlack);
         }
     }
+}
+
+void SlotMachineAudioProcessorEditor::reloadSkinWithFolder(const juce::String& skinFolderName)
+{
+    appLF.setSkinFolder(skinFolderName);
+    appLF.reloadSkin();
+    logoImage = appLF.getLogoImage().isValid()
+        ? appLF.getLogoImage()
+        : juce::ImageCache::getFromMemory(BinaryData::SM5_png, BinaryData::SM5_pngSize);
+    updateMuteSoloButtonImages();
+    resized();
+    repaint();
 }
 
 void SlotMachineAudioProcessorEditor::resetLoopTransport()
