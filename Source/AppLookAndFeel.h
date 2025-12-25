@@ -464,6 +464,9 @@ public:
     // Get progress bar width from skin (0 = use default full width)
     int getProgressBarWidth() const { return progressBarWidth; }
 
+    // Check if progress bar should be hidden (true = always hide)
+    bool shouldHideProgressBar() const { return hideProgressBar.equalsIgnoreCase("True"); }
+
     // Get mute/solo button images from skin
     const juce::Image& getMuteOnImage() const { return muteOnImage; }
     const juce::Image& getMuteOffImage() const { return muteOffImage; }
@@ -509,6 +512,7 @@ private:
         textboxFontSize = 0; // 0 = use default
         textboxFontColor = ""; // Empty = use default
         progressBarWidth = 0; // 0 = use default full width
+        hideProgressBar = ""; // Empty = use default behavior
 
         juce::File skinDefFile = juce::File::getCurrentWorkingDirectory()
                                     .getChildFile("Skins")
@@ -657,6 +661,11 @@ private:
                 {
                     progressBarWidth = value.getIntValue();
                     DBG("Skin: ProgressBarWidth = " + juce::String(progressBarWidth));
+                }
+                else if (key.equalsIgnoreCase("HideProgressBar"))
+                {
+                    hideProgressBar = value;
+                    DBG("Skin: HideProgressBar = " + hideProgressBar);
                 }
             }
         }
@@ -1146,6 +1155,7 @@ private:
     int textboxFontSize = 0; // 0 = use default
     juce::String textboxFontColor; // Hex RGB color (e.g., "#D0D0D0")
     int progressBarWidth = 0; // 0 = use default full width
+    juce::String hideProgressBar; // "True" = always hide, empty = use default behavior
 
     // Loaded skin images
     juce::Image backgroundImage;

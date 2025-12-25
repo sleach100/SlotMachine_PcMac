@@ -4836,7 +4836,12 @@ void SlotMachineAudioProcessorEditor::paintOverChildren(juce::Graphics& g)
     }
 
     // Per-slot progress bars
-    if (showSlotBars)
+    // Check if skin wants to hide progress bars
+    bool hideProgressBars = false;
+    if (auto* lf = dynamic_cast<AppLookAndFeel*>(&getLookAndFeel()))
+        hideProgressBars = lf->shouldHideProgressBar();
+
+    if (showSlotBars && !hideProgressBars)
     {
         for (int i = 0; i < kNumSlots; ++i)
         {
