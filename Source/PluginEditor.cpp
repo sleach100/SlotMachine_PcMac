@@ -5138,7 +5138,15 @@ void SlotMachineAudioProcessorEditor::resized()
         const int buttonH = slotScaled(22);
         const int labelHeight = slotScaled(16);
         const int labelGapY = slotScaled(2);
-        const int midiComboW = scaleDimensionWithMax(80, 0.95f);
+
+        // Use custom MIDI list width if specified in skin, otherwise use default
+        int midiComboW = scaleDimensionWithMax(80, 0.95f);
+        if (auto* lf = dynamic_cast<AppLookAndFeel*>(&getLookAndFeel()))
+        {
+            int customWidth = lf->getMidiListWidth();
+            if (customWidth > 0)
+                midiComboW = customWidth;
+        }
         const int midiComboH = scaleDimensionWithMax(22, 0.95f);
         const int controlBlockHeight = juce::jmax(midiComboH, buttonH + labelGapY + labelHeight);
 

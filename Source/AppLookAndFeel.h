@@ -467,6 +467,9 @@ public:
     // Check if progress bar should be hidden (true = always hide)
     bool shouldHideProgressBar() const { return hideProgressBar.equalsIgnoreCase("True"); }
 
+    // Get MIDI list width from skin (0 = use default width)
+    int getMidiListWidth() const { return midiListWidth; }
+
     // Get mute/solo button images from skin
     const juce::Image& getMuteOnImage() const { return muteOnImage; }
     const juce::Image& getMuteOffImage() const { return muteOffImage; }
@@ -513,6 +516,7 @@ private:
         textboxFontColor = ""; // Empty = use default
         progressBarWidth = 0; // 0 = use default full width
         hideProgressBar = ""; // Empty = use default behavior
+        midiListWidth = 0; // 0 = use default width
 
         juce::File skinDefFile = juce::File::getCurrentWorkingDirectory()
                                     .getChildFile("Skins")
@@ -666,6 +670,11 @@ private:
                 {
                     hideProgressBar = value;
                     DBG("Skin: HideProgressBar = " + hideProgressBar);
+                }
+                else if (key.equalsIgnoreCase("MIDI_ListWidth"))
+                {
+                    midiListWidth = value.getIntValue();
+                    DBG("Skin: MIDI_ListWidth = " + juce::String(midiListWidth));
                 }
             }
         }
@@ -1156,6 +1165,7 @@ private:
     juce::String textboxFontColor; // Hex RGB color (e.g., "#D0D0D0")
     int progressBarWidth = 0; // 0 = use default full width
     juce::String hideProgressBar; // "True" = always hide, empty = use default behavior
+    int midiListWidth = 0; // 0 = use default width
 
     // Loaded skin images
     juce::Image backgroundImage;
