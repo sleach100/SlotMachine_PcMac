@@ -46,6 +46,8 @@ public:
     void reloadSkinWithFolder(const juce::String& skinFolderName);
 
 private:
+    // Apply button font color from skin to all relevant components
+    void updateButtonFontColors();
     // VST3-specific behavior
     bool isRunningAsVST3() const;
     void showVST3LockOverlayIfNeeded();
@@ -96,6 +98,8 @@ private:
         void onTabSelected(std::function<void(int)> handler) { tabSelected = std::move(handler); }
         void onTabBarRightClick(std::function<void(const juce::MouseEvent&)> handler) { rightClick = std::move(handler); }
         void onTabReordered(std::function<void(int, int)> handler) { tabReordered = std::move(handler); }
+
+        void updateTabColors(juce::Colour textColorOff, juce::Colour textColorOn);
 
         void paint(juce::Graphics& g) override;
         void resized() override;

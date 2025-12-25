@@ -479,6 +479,10 @@ public:
     // Get logo image from skin
     const juce::Image& getLogoImage() const { return logoImage; }
 
+    // Get button font color from skin
+    juce::Colour getButtonFontColor() const { return buttonCustomColor; }
+    bool hasButtonFontColor() const { return buttonFontColor.isNotEmpty(); }
+
     // Set skin folder name (default is "Classic")
     void setSkinFolder(const juce::String& folderName)
     {
@@ -526,6 +530,7 @@ private:
         progressBarWidth = 0; // 0 = use default full width
         hideProgressBar = ""; // Empty = use default behavior
         midiListWidth = 0; // 0 = use default width
+        buttonFontColor = ""; // Empty = use default
 
         juce::File skinDefFile = juce::File::getCurrentWorkingDirectory()
                                     .getChildFile("Skins")
@@ -684,6 +689,11 @@ private:
                 {
                     midiListWidth = value.getIntValue();
                     DBG("Skin: MIDI_ListWidth = " + juce::String(midiListWidth));
+                }
+                else if (key.equalsIgnoreCase("ButtonFontColor"))
+                {
+                    buttonFontColor = value;
+                    DBG("Skin: ButtonFontColor = " + buttonFontColor);
                 }
             }
         }
@@ -1098,6 +1108,40 @@ private:
                 DBG("Invalid color format: " + textboxFontColor + " (expected #RRGGBB)");
             }
         }
+
+        // Parse button font color
+        if (buttonFontColor.isNotEmpty())
+        {
+            juce::String colorStr = buttonFontColor.trim();
+
+            // Remove '#' prefix if present
+            if (colorStr.startsWithChar('#'))
+                colorStr = colorStr.substring(1);
+
+            // Parse hex color (RGB or RRGGBB format)
+            if (colorStr.length() == 6 || colorStr.length() == 3)
+            {
+                // Convert to full RRGGBB if using shorthand RGB
+                if (colorStr.length() == 3)
+                {
+                    juce::String r = colorStr.substring(0, 1);
+                    juce::String g = colorStr.substring(1, 2);
+                    juce::String b = colorStr.substring(2, 3);
+                    colorStr = r + r + g + g + b + b;
+                }
+
+                // Parse the hex string as RRGGBB
+                int rgb = colorStr.getHexValue32();
+                buttonCustomColor = juce::Colour((juce::uint8)((rgb >> 16) & 0xFF),
+                                                  (juce::uint8)((rgb >> 8) & 0xFF),
+                                                  (juce::uint8)(rgb & 0xFF));
+                DBG("Button font color set to: #" + colorStr + " = " + buttonCustomColor.toString());
+            }
+            else
+            {
+                DBG("Invalid color format: " + buttonFontColor + " (expected #RRGGBB)");
+            }
+        }
     }
 
     bool useFilmstripForSlider(juce::Slider& slider) const
@@ -1197,6 +1241,7 @@ private:
     int progressBarWidth = 0; // 0 = use default full width
     juce::String hideProgressBar; // "True" = always hide, empty = use default behavior
     int midiListWidth = 0; // 0 = use default width
+    juce::String buttonFontColor; // Hex RGB color for buttons, tabs, and labels (e.g., "#FFFFFF")
 
     // Loaded skin images
     juce::Image backgroundImage;
@@ -1217,4 +1262,7 @@ private:
     // Custom font for numeric textboxes
     juce::Font textboxCustomFont;
     juce::Colour textboxCustomColor;
+
+    // Custom color for buttons, tabs, and labels
+    juce::Colour buttonCustomColor;
 };

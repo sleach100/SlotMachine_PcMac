@@ -1194,6 +1194,18 @@ void SlotMachineAudioProcessorEditor::PatternTabs::setReorderingEnabled(bool sho
         resetDragState();
 }
 
+void SlotMachineAudioProcessorEditor::PatternTabs::updateTabColors(juce::Colour textColorOff, juce::Colour textColorOn)
+{
+    for (auto* button : buttons)
+    {
+        if (button != nullptr)
+        {
+            button->setColour(juce::TextButton::textColourOffId, textColorOff);
+            button->setColour(juce::TextButton::textColourOnId, textColorOn);
+        }
+    }
+}
+
 void SlotMachineAudioProcessorEditor::PatternTabs::setCurrentIndex(int index, bool notify)
 {
     if (buttons.isEmpty())
@@ -3626,12 +3638,13 @@ SlotMachineAudioProcessorEditor::SlotMachineAudioProcessorEditor(SlotMachineAudi
 
     masterRunA = std::make_unique<APVTS::ButtonAttachment>(apvts, "masterRun", startToggle);
 
-    auto beautify = [](juce::TextButton& b)
+    auto beautify = [this](juce::TextButton& b)
         {
             b.setClickingTogglesState(false);
             b.setColour(juce::TextButton::buttonColourId, juce::Colours::transparentBlack);
-            b.setColour(juce::TextButton::textColourOnId, juce::Colours::white);
-            b.setColour(juce::TextButton::textColourOffId, juce::Colours::white);
+            const auto textColor = appLF.hasButtonFontColor() ? appLF.getButtonFontColor() : juce::Colours::white;
+            b.setColour(juce::TextButton::textColourOnId, textColor);
+            b.setColour(juce::TextButton::textColourOffId, textColor);
             b.setColour(juce::TextButton::buttonOnColourId, juce::Colours::grey);
         };
 
@@ -3900,6 +3913,7 @@ SlotMachineAudioProcessorEditor::SlotMachineAudioProcessorEditor(SlotMachineAudi
     updateStartButtonVisuals(lastStartToggleState, cachedStartGlowColour,
         cachedStartPulseColour, cachedStartGlowAlpha, cachedStartGlowWidth);
     updateSliderKnobColours(cachedStartPulseColour);
+    updateButtonFontColors();
 
     resized();
     repaint();
@@ -7824,8 +7838,62 @@ void SlotMachineAudioProcessorEditor::reloadSkinWithFolder(const juce::String& s
         ? appLF.getLogoImage()
         : juce::ImageCache::getFromMemory(BinaryData::SM5_png, BinaryData::SM5_pngSize);
     updateMuteSoloButtonImages();
+    updateButtonFontColors();
     resized();
     repaint();
+}
+
+void SlotMachineAudioProcessorEditor::updateButtonFontColors()
+{
+    if (!appLF.hasButtonFontColor())
+        return;
+
+    const auto textColor = appLF.getButtonFontColor();
+
+    // Update master row buttons (except Start)
+    btnSave.setColour(juce::TextButton::textColourOnId, textColor);
+    btnSave.setColour(juce::TextButton::textColourOffId, textColor);
+    btnLoad.setColour(juce::TextButton::textColourOnId, textColor);
+    btnLoad.setColour(juce::TextButton::textColourOffId, textColor);
+    btnResetLoop.setColour(juce::TextButton::textColourOnId, textColor);
+    btnResetLoop.setColour(juce::TextButton::textColourOffId, textColor);
+    btnReset.setColour(juce::TextButton::textColourOnId, textColor);
+    btnReset.setColour(juce::TextButton::textColourOffId, textColor);
+    btnInitialize.setColour(juce::TextButton::textColourOnId, textColor);
+    btnInitialize.setColour(juce::TextButton::textColourOffId, textColor);
+    btnOptions.setColour(juce::TextButton::textColourOnId, textColor);
+    btnOptions.setColour(juce::TextButton::textColourOffId, textColor);
+    btnExportMidi.setColour(juce::TextButton::textColourOnId, textColor);
+    btnExportMidi.setColour(juce::TextButton::textColourOffId, textColor);
+    btnExportAudio.setColour(juce::TextButton::textColourOnId, textColor);
+    btnExportAudio.setColour(juce::TextButton::textColourOffId, textColor);
+    btnVisualizer.setColour(juce::TextButton::textColourOnId, textColor);
+    btnVisualizer.setColour(juce::TextButton::textColourOffId, textColor);
+
+    // Update pattern tabs
+    patternTabs.updateTabColors(juce::Colours::whitesmoke.overlaidWith(textColor.withAlpha(0.8f)), textColor);
+
+    // Update Master BPM slider text
+    masterBPM.setColour(juce::Slider::textBoxTextColourId, textColor);
+
+    // Update slot components
+    for (int i = 0; i < kNumSlots; ++i)
+    {
+        if (slots[(size_t)i])
+        {
+            auto& slot = *slots[(size_t)i];
+
+            // Update slot clearBtn (X button)
+            slot.clearBtn.setColour(juce::TextButton::textColourOffId, textColor.withAlpha(0.85f));
+
+            // Update MIDI channel ComboBox
+            slot.midiChannel.setColour(juce::ComboBox::textColourId, textColor);
+
+            // Update Mute and Solo labels
+            slot.muteLabel.setColour(juce::Label::textColourId, textColor);
+            slot.soloLabel.setColour(juce::Label::textColourId, textColor);
+        }
+    }
 }
 
 void SlotMachineAudioProcessorEditor::resetLoopTransport()
