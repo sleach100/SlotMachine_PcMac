@@ -684,6 +684,9 @@ private:
 
     void loadKnobFilmstrip()
     {
+        // Clear filmstrip first to ensure proper reset
+        knobFilmstrip = juce::Image();
+
         juce::File knobFile = juce::File::getCurrentWorkingDirectory()
                                 .getChildFile("Skins")
                                 .getChildFile("Default")
@@ -712,6 +715,24 @@ private:
 
     void loadBackgroundImages()
     {
+        // Clear all images first to ensure proper reset when SkinDef.txt is removed or parameters are missing
+        backgroundImage = juce::Image();
+        backgroundFlashImage = juce::Image();
+        backgroundSampleLoadedImage = juce::Image();
+        textboxImage = juce::Image();
+        buttonImage = juce::Image();
+        buttonHoverImage = juce::Image();
+        buttonClickedImage = juce::Image();
+        sliderThumbImage = juce::Image();
+        tabSelectedImage = juce::Image();
+        muteOnImage = juce::Image();
+        muteOffImage = juce::Image();
+        soloOnImage = juce::Image();
+        soloOffImage = juce::Image();
+        logoImage = juce::Image();
+        textboxCustomFont = juce::Font();
+        textboxCustomColor = juce::Colour();
+
         // Load normal background image
         if (backgroundFilename.isNotEmpty())
         {

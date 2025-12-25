@@ -6506,6 +6506,7 @@ void SlotMachineAudioProcessorEditor::buttonClicked(juce::Button* b)
                     editor->logoImage = editor->appLF.getLogoImage().isValid()
                         ? editor->appLF.getLogoImage()
                         : juce::ImageCache::getFromMemory(BinaryData::SM5_png, BinaryData::SM5_pngSize);
+                    editor->updateMuteSoloButtonImages();
                     editor->repaint();
                 }
             });
@@ -6532,6 +6533,7 @@ void SlotMachineAudioProcessorEditor::buttonClicked(juce::Button* b)
                     editor->logoImage = editor->appLF.getLogoImage().isValid()
                         ? editor->appLF.getLogoImage()
                         : juce::ImageCache::getFromMemory(BinaryData::SM5_png, BinaryData::SM5_pngSize);
+                    editor->updateMuteSoloButtonImages();
                     editor->repaint();
                 }
             });
@@ -7670,6 +7672,47 @@ void SlotMachineAudioProcessorEditor::doResetAll(bool persistOptions)
         saveOptionsToDisk(apvts);
 
     saveCurrentPattern();
+}
+
+void SlotMachineAudioProcessorEditor::updateMuteSoloButtonImages()
+{
+    // Reload mute/solo button images from skin
+    const juce::Image muteOffImage = appLF.getMuteOffImage().isValid()
+        ? appLF.getMuteOffImage()
+        : juce::ImageCache::getFromMemory(BinaryData::MuteOFF_png, BinaryData::MuteOFF_pngSize);
+    const juce::Image muteOnImage = appLF.getMuteOnImage().isValid()
+        ? appLF.getMuteOnImage()
+        : juce::ImageCache::getFromMemory(BinaryData::MuteON_png, BinaryData::MuteON_pngSize);
+    const juce::Image soloOffImage = appLF.getSoloOffImage().isValid()
+        ? appLF.getSoloOffImage()
+        : juce::ImageCache::getFromMemory(BinaryData::SoloOFF_png, BinaryData::SoloOFF_pngSize);
+    const juce::Image soloOnImage = appLF.getSoloOnImage().isValid()
+        ? appLF.getSoloOnImage()
+        : juce::ImageCache::getFromMemory(BinaryData::SoloON_png, BinaryData::SoloON_pngSize);
+
+    // Update all slot mute/solo buttons
+    for (int i = 0; i < kNumSlots; ++i)
+    {
+        if (slots[(size_t)i])
+        {
+            auto& muteBtn = slots[(size_t)i]->muteBtn;
+            auto& soloBtn = slots[(size_t)i]->soloBtn;
+
+            // Update mute button images
+            const auto& muteSource = muteBtn.getToggleState() ? muteOnImage : muteOffImage;
+            muteBtn.setImages(false, true, true,
+                muteSource, 1.0f, juce::Colours::transparentBlack,
+                muteSource, 1.0f, juce::Colours::transparentBlack,
+                muteSource, 1.0f, juce::Colours::transparentBlack);
+
+            // Update solo button images
+            const auto& soloSource = soloBtn.getToggleState() ? soloOnImage : soloOffImage;
+            soloBtn.setImages(false, true, true,
+                soloSource, 1.0f, juce::Colours::transparentBlack,
+                soloSource, 1.0f, juce::Colours::transparentBlack,
+                soloSource, 1.0f, juce::Colours::transparentBlack);
+        }
+    }
 }
 
 void SlotMachineAudioProcessorEditor::resetLoopTransport()

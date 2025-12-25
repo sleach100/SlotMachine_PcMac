@@ -467,6 +467,7 @@ private:
     void doSavePreset();
     void doLoadPreset();
     void doResetAll(bool persistOptions = true);
+    void updateMuteSoloButtonImages();
     void resetLoopTransport();
     void resetProgressVisuals();
     void showOptionsDialog();
