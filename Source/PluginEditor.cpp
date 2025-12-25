@@ -4846,8 +4846,19 @@ void SlotMachineAudioProcessorEditor::paintOverChildren(juce::Graphics& g)
             const auto boundsF = ui->group.getBounds().toFloat();
             const float barH = 8.0f;
             auto inner = boundsF.reduced(8.0f, 8.0f);
-            auto bar = juce::Rectangle<float>(inner.getX(), inner.getBottom() - barH,
-                inner.getWidth(), barH);
+
+            // Use custom progress bar width if specified, otherwise use full width
+            float barWidth = inner.getWidth();
+            if (auto* lf = dynamic_cast<AppLookAndFeel*>(&getLookAndFeel()))
+            {
+                int customWidth = lf->getProgressBarWidth();
+                if (customWidth > 0)
+                    barWidth = (float)customWidth;
+            }
+
+            // Center the progress bar horizontally
+            float barX = inner.getX() + (inner.getWidth() - barWidth) * 0.5f;
+            auto bar = juce::Rectangle<float>(barX, inner.getBottom() - barH, barWidth, barH);
 
             g.setColour(barBack);
             g.fillRoundedRectangle(bar, 3.0f);

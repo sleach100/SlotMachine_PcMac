@@ -461,6 +461,9 @@ public:
     // Get load button width from skin (0 = auto/default 110px scaled)
     int getLoadButtonWidth() const { return loadButtonWidth; }
 
+    // Get progress bar width from skin (0 = use default full width)
+    int getProgressBarWidth() const { return progressBarWidth; }
+
     // Get mute/solo button images from skin
     const juce::Image& getMuteOnImage() const { return muteOnImage; }
     const juce::Image& getMuteOffImage() const { return muteOffImage; }
@@ -505,6 +508,7 @@ private:
         textboxFontFilename = "";
         textboxFontSize = 0; // 0 = use default
         textboxFontColor = ""; // Empty = use default
+        progressBarWidth = 0; // 0 = use default full width
 
         juce::File skinDefFile = juce::File::getCurrentWorkingDirectory()
                                     .getChildFile("Skins")
@@ -648,6 +652,11 @@ private:
                 {
                     textboxFontColor = value;
                     DBG("Skin: TextBoxFontColor = " + textboxFontColor);
+                }
+                else if (key.equalsIgnoreCase("ProgressBarWidth"))
+                {
+                    progressBarWidth = value.getIntValue();
+                    DBG("Skin: ProgressBarWidth = " + juce::String(progressBarWidth));
                 }
             }
         }
@@ -1136,6 +1145,7 @@ private:
     juce::String textboxFontFilename;
     int textboxFontSize = 0; // 0 = use default
     juce::String textboxFontColor; // Hex RGB color (e.g., "#D0D0D0")
+    int progressBarWidth = 0; // 0 = use default full width
 
     // Loaded skin images
     juce::Image backgroundImage;
