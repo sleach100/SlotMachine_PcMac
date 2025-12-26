@@ -46583,13 +46583,13 @@ const char* getNamedResource (const char* resourceNameUTF8, int& numBytes)
         case 0x721a4662:  numBytes = 2701; return SpeakerIcon_png;
         case 0xf61e4ab8:  numBytes = 878; return LockIcon2_png;
         case 0x4f3bc308:  numBytes = 331159; return LonePearLogic_png;
-        case 0x67ba4ae0:  numBytes = 9443; return MuteOFF_png;
-        case 0xb9825b42:  numBytes = 9965; return MuteON_png;
-        case 0x0983c030:  numBytes = 681413; return SlotMachineUserManual_html;
+        case 0x67ba4ae0:  numBytes = 9791; return MuteOFF_png;
+        case 0xb9825b42:  numBytes = 11116; return MuteON_png;
+        case 0x0983c030:  numBytes = 681418; return SlotMachineUserManual_html;
         case 0xa971799f:  numBytes = 4286; return SlotMachine_ico;
         case 0xad221d05:  numBytes = 50997; return SM5_png;
-        case 0x98061d5a:  numBytes = 9443; return SoloOFF_png;
-        case 0xcb955188:  numBytes = 9950; return SoloON_png;
+        case 0x98061d5a:  numBytes = 9791; return SoloOFF_png;
+        case 0xcb955188:  numBytes = 11112; return SoloON_png;
         default: break;
     }
 

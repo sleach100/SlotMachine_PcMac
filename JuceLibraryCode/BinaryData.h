@@ -165,13 +165,13 @@ namespace BinaryData
     const int            LonePearLogic_pngSize = 331159;
 
     extern const char*   MuteOFF_png;
-    const int            MuteOFF_pngSize = 9443;
+    const int            MuteOFF_pngSize = 9791;
 
     extern const char*   MuteON_png;
-    const int            MuteON_pngSize = 9965;
+    const int            MuteON_pngSize = 11116;
 
     extern const char*   SlotMachineUserManual_html;
-    const int            SlotMachineUserManual_htmlSize = 681413;
+    const int            SlotMachineUserManual_htmlSize = 681418;
 
     extern const char*   SlotMachine_ico;
     const int            SlotMachine_icoSize = 4286;
@@ -180,10 +180,10 @@ namespace BinaryData
     const int            SM5_pngSize = 50997;
 
     extern const char*   SoloOFF_png;
-    const int            SoloOFF_pngSize = 9443;
+    const int            SoloOFF_pngSize = 9791;
 
     extern const char*   SoloON_png;
-    const int            SoloON_pngSize = 9950;
+    const int            SoloON_pngSize = 11112;
 
     // Number of elements in the namedResourceList and originalFileNames arrays.
     const int namedResourceListSize = 59;
