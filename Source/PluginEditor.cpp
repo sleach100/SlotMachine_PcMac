@@ -7874,10 +7874,8 @@ void SlotMachineAudioProcessorEditor::reloadSkinWithFolder(const juce::String& s
 
 void SlotMachineAudioProcessorEditor::updateButtonFontColors()
 {
-    if (!appLF.hasButtonFontColor())
-        return;
-
-    const auto textColor = appLF.getButtonFontColor();
+    // Use custom color if specified, otherwise use default white
+    const auto textColor = appLF.hasButtonFontColor() ? appLF.getButtonFontColor() : juce::Colours::white;
 
     // Update master row buttons (except Start)
     btnSave.setColour(juce::TextButton::textColourOnId, textColor);
@@ -7898,6 +7896,18 @@ void SlotMachineAudioProcessorEditor::updateButtonFontColors()
     btnExportAudio.setColour(juce::TextButton::textColourOffId, textColor);
     btnVisualizer.setColour(juce::TextButton::textColourOnId, textColor);
     btnVisualizer.setColour(juce::TextButton::textColourOffId, textColor);
+
+    // Update second row buttons
+    btnTutorial.setColour(juce::TextButton::textColourOnId, textColor);
+    btnTutorial.setColour(juce::TextButton::textColourOffId, textColor);
+    btnUserManual.setColour(juce::TextButton::textColourOnId, textColor);
+    btnUserManual.setColour(juce::TextButton::textColourOffId, textColor);
+    btnAbout.setColour(juce::TextButton::textColourOnId, textColor);
+    btnAbout.setColour(juce::TextButton::textColourOffId, textColor);
+    btnLock.setColour(juce::TextButton::textColourOnId, textColor);
+    btnLock.setColour(juce::TextButton::textColourOffId, textColor);
+    btnUnlock.setColour(juce::TextButton::textColourOnId, textColor);
+    btnUnlock.setColour(juce::TextButton::textColourOffId, textColor);
 
     // Update pattern tabs
     patternTabs.updateTabColors(juce::Colours::whitesmoke.overlaidWith(textColor.withAlpha(0.8f)), textColor);
