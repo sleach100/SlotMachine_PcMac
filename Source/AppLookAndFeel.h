@@ -435,6 +435,9 @@ public:
         // Falls back to default JUCE rendering (not TextBox) to avoid vertical distortion
         if (midiListPanelBackgroundImage.isValid())
         {
+            // Clear with transparent background first to allow image transparency to show through
+            g.fillAll(juce::Colours::transparentBlack);
+
             // Draw the MIDI list panel background image stretched to fit the popup menu bounds
             g.drawImage(midiListPanelBackgroundImage,
                        0, 0, width, height,
@@ -447,6 +450,7 @@ public:
             juce::LookAndFeel_V4::drawPopupMenuBackground(g, width, height);
         }
     }
+
 
     void drawPopupMenuItem(juce::Graphics& g, const juce::Rectangle<int>& area,
                           bool isSeparator, bool isActive, bool isHighlighted,
@@ -879,7 +883,11 @@ private:
             {
                 midiListPanelBackgroundImage = juce::ImageFileFormat::loadFrom(midiListPanelBgFile);
                 if (midiListPanelBackgroundImage.isValid())
+                {
                     DBG("Successfully loaded MIDI list panel background: " + midiListPanelBgFile.getFullPathName());
+                    // Set popup menu background to transparent to preserve image transparency
+                    setColour(juce::PopupMenu::backgroundColourId, juce::Colours::transparentBlack);
+                }
                 else
                     DBG("Failed to load MIDI list panel background: " + midiListPanelBgFile.getFullPathName());
             }
@@ -887,6 +895,11 @@ private:
             {
                 DBG("MIDI list panel background file not found: " + midiListPanelBgFile.getFullPathName());
             }
+        }
+        else
+        {
+            // No custom MIDI list panel background - restore default popup menu background colour
+            setColour(juce::PopupMenu::backgroundColourId, juce::Colour(0xff1a1a1a));
         }
 
         // Load button images
