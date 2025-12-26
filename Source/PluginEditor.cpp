@@ -3824,8 +3824,6 @@ SlotMachineAudioProcessorEditor::SlotMachineAudioProcessorEditor(SlotMachineAudi
         ui->midiChannel.setColour(juce::ComboBox::textColourId, juce::Colours::white);
         ui->midiChannel.setColour(juce::ComboBox::arrowColourId, juce::Colours::white);
         ui->midiChannel.setColour(juce::ComboBox::buttonColourId, juce::Colours::transparentBlack);
-        ui->midiChannel.setColour(juce::PopupMenu::textColourId, juce::Colours::white);
-        ui->midiChannel.setColour(juce::PopupMenu::highlightedTextColourId, juce::Colours::white);
 
         ui->muteBtn.setName("MuteButton" + juce::String(idx));
         configureToggleImageButton(ui->muteBtn, muteOffImage, muteOnImage);
@@ -7910,15 +7908,10 @@ void SlotMachineAudioProcessorEditor::updateButtonFontColors()
             // Update slot clearBtn (X button)
             slot.clearBtn.setColour(juce::TextButton::textColourOffId, textColor.withAlpha(0.85f));
 
-            // Update MIDI channel ComboBox (text, arrow, and popup menu)
+            // Update MIDI channel ComboBox (text and arrow)
             slot.midiChannel.setColour(juce::ComboBox::textColourId, textColor);
             slot.midiChannel.setColour(juce::ComboBox::arrowColourId, textColor);
             slot.midiChannel.setColour(juce::ComboBox::buttonColourId, juce::Colours::transparentBlack);
-
-            // Update MIDI channel popup menu colors
-            auto& popupMenu = slot.midiChannel.getLookAndFeel();
-            slot.midiChannel.setColour(juce::PopupMenu::textColourId, textColor);
-            slot.midiChannel.setColour(juce::PopupMenu::highlightedTextColourId, textColor);
 
             // Update Mute and Solo labels
             slot.muteLabel.setColour(juce::Label::textColourId, textColor);

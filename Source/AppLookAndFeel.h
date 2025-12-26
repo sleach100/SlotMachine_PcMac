@@ -446,6 +446,24 @@ public:
         }
     }
 
+    void drawPopupMenuItem(juce::Graphics& g, const juce::Rectangle<int>& area,
+                          bool isSeparator, bool isActive, bool isHighlighted,
+                          bool isTicked, bool hasSubMenu,
+                          const juce::String& text,
+                          const juce::String& shortcutKeyText,
+                          const juce::Drawable* icon,
+                          const juce::Colour* textColourToUse) override
+    {
+        // Use custom button font color if available
+        juce::Colour textColour = textColourToUse != nullptr ? *textColourToUse
+                                 : (buttonFontColor.isNotEmpty() ? buttonCustomColor : findColour(juce::PopupMenu::textColourId));
+
+        // Pass the custom color to the base implementation
+        juce::LookAndFeel_V4::drawPopupMenuItem(g, area, isSeparator, isActive, isHighlighted,
+                                                isTicked, hasSubMenu, text, shortcutKeyText,
+                                                icon, &textColour);
+    }
+
     bool hasKnobFilmstrip() const { return knobFilmstrip.isValid(); }
     juce::String getKnobFilmstripError() const { return filmstripErrorMessage; }
 
