@@ -52,16 +52,16 @@ static const juce::Identifier kLastMidiExportPlaythroughProperty("lastMidiExport
 static int ensurePatternRepeatProperty(juce::ValueTree pattern)
 {
     if (!pattern.isValid())
-        return 0;
+        return 1;
 
     const auto valueVar = pattern.getProperty(kPatternRepeatProperty);
     if (valueVar.isVoid())
     {
-        pattern.setProperty(kPatternRepeatProperty, 0, nullptr);
-        return 0;
+        pattern.setProperty(kPatternRepeatProperty, 1, nullptr);
+        return 1;
     }
 
-    const int repeat = juce::jmax(0, valueVar.toString().getIntValue());
+    const int repeat = juce::jmax(1, valueVar.toString().getIntValue());
     pattern.setProperty(kPatternRepeatProperty, repeat, nullptr);
     return repeat;
 }
@@ -69,7 +69,7 @@ static int ensurePatternRepeatProperty(juce::ValueTree pattern)
 static int computePatternPlayThroughCycles(juce::ValueTree pattern)
 {
     const int repeat = ensurePatternRepeatProperty(pattern);
-    return juce::jmax(1, 1 + repeat);
+    return juce::jmax(1, repeat);
 }
 
 constexpr float kPlayThroughWrapGuardThreshold = 0.02f;
@@ -1772,7 +1772,7 @@ SlotMachineAudioProcessorEditor::EditPatternRepeatComponent::EditPatternRepeatCo
 
     editor.setSelectAllWhenFocused(true);
     editor.setInputRestrictions(0, "0123456789");
-    editor.setText(juce::String(juce::jmax(0, currentRepeat)), juce::dontSendNotification);
+    editor.setText(juce::String(juce::jmax(1, currentRepeat)), juce::dontSendNotification);
     editor.addListener(this);
     addAndMakeVisible(editor);
 
@@ -6223,7 +6223,7 @@ void SlotMachineAudioProcessorEditor::editCurrentPatternRepeat()
             if (!accepted)
                 return;
 
-            newRepeat = juce::jmax(0, newRepeat);
+            newRepeat = juce::jmax(1, newRepeat);
             pattern.setProperty(kPatternRepeatProperty, newRepeat, nullptr);
         });
 
@@ -7801,12 +7801,12 @@ void SlotMachineAudioProcessorEditor::doResetAll(bool persistOptions)
 
     resetProgressVisuals();
 
-    // Reset Tab A's Repeat value to 0
+    // Reset Tab A's Repeat value to 1
     if (patternsTree.isValid() && patternsTree.getNumChildren() > 0)
     {
         auto tabA = patternsTree.getChild(0);
         if (tabA.isValid())
-            tabA.setProperty(kPatternRepeatProperty, 0, nullptr);
+            tabA.setProperty(kPatternRepeatProperty, 1, nullptr);
     }
 
     // Persist options (Standalone fallback)
