@@ -430,18 +430,20 @@ public:
 
     void drawPopupMenuBackground (juce::Graphics& g, int width, int height) override
     {
-        // Draw custom textbox image if available, otherwise use default rendering
-        if (textboxImage.isValid())
+        // Draw custom MIDI list panel background image if available
+        // This is used for the MIDI Channel Selector dropdown list
+        // Falls back to default JUCE rendering (not TextBox) to avoid vertical distortion
+        if (midiListPanelBackgroundImage.isValid())
         {
-            // Draw the textbox image stretched to fit the popup menu bounds
-            g.drawImage(textboxImage,
+            // Draw the MIDI list panel background image stretched to fit the popup menu bounds
+            g.drawImage(midiListPanelBackgroundImage,
                        0, 0, width, height,
-                       0, 0, textboxImage.getWidth(), textboxImage.getHeight(),
+                       0, 0, midiListPanelBackgroundImage.getWidth(), midiListPanelBackgroundImage.getHeight(),
                        false);
         }
         else
         {
-            // Fall back to default JUCE popup menu background
+            // Fall back to default JUCE popup menu background (not TextBox)
             juce::LookAndFeel_V4::drawPopupMenuBackground(g, width, height);
         }
     }
@@ -529,6 +531,7 @@ private:
         backgroundFlashFilename = "";
         backgroundSampleLoadedFilename = "";
         textboxFilename = "";
+        midiListPanelBackgroundFilename = "";
         fileNameWidth = 0; // 0 = auto/dynamic width
         loadButtonWidth = 0; // 0 = auto/default width (110px scaled)
         buttonFilename = "";
@@ -612,6 +615,11 @@ private:
                 {
                     textboxFilename = value;
                     DBG("Skin: TextBox = " + textboxFilename);
+                }
+                else if (key.equalsIgnoreCase("MIDI_ListPanelBackground"))
+                {
+                    midiListPanelBackgroundFilename = value;
+                    DBG("Skin: MIDI_ListPanelBackground = " + midiListPanelBackgroundFilename);
                 }
                 else if (key.equalsIgnoreCase("FileNameWidth"))
                 {
@@ -757,6 +765,7 @@ private:
         backgroundFlashImage = juce::Image();
         backgroundSampleLoadedImage = juce::Image();
         textboxImage = juce::Image();
+        midiListPanelBackgroundImage = juce::Image();
         buttonImage = juce::Image();
         buttonHoverImage = juce::Image();
         buttonClickedImage = juce::Image();
@@ -855,6 +864,28 @@ private:
             else
             {
                 DBG("Textbox file not found: " + textboxFile.getFullPathName());
+            }
+        }
+
+        // Load MIDI list panel background image
+        if (midiListPanelBackgroundFilename.isNotEmpty())
+        {
+            juce::File midiListPanelBgFile = juce::File::getCurrentWorkingDirectory()
+                                                 .getChildFile("Skins")
+                                                 .getChildFile(skinFolderName)
+                                                 .getChildFile(midiListPanelBackgroundFilename);
+
+            if (midiListPanelBgFile.existsAsFile())
+            {
+                midiListPanelBackgroundImage = juce::ImageFileFormat::loadFrom(midiListPanelBgFile);
+                if (midiListPanelBackgroundImage.isValid())
+                    DBG("Successfully loaded MIDI list panel background: " + midiListPanelBgFile.getFullPathName());
+                else
+                    DBG("Failed to load MIDI list panel background: " + midiListPanelBgFile.getFullPathName());
+            }
+            else
+            {
+                DBG("MIDI list panel background file not found: " + midiListPanelBgFile.getFullPathName());
             }
         }
 
@@ -1240,6 +1271,7 @@ private:
     juce::String backgroundFlashFilename;
     juce::String backgroundSampleLoadedFilename;
     juce::String textboxFilename;
+    juce::String midiListPanelBackgroundFilename;
     int fileNameWidth = 0;
     int loadButtonWidth = 0;
     juce::String buttonFilename;
@@ -1266,6 +1298,7 @@ private:
     juce::Image backgroundFlashImage;
     juce::Image backgroundSampleLoadedImage;
     juce::Image textboxImage;
+    juce::Image midiListPanelBackgroundImage;
     juce::Image buttonImage;
     juce::Image buttonHoverImage;
     juce::Image buttonClickedImage;
