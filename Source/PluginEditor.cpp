@@ -3732,26 +3732,24 @@ SlotMachineAudioProcessorEditor::SlotMachineAudioProcessorEditor(SlotMachineAudi
     patternWarningLabel.setFont(createBoldFont(13.0f));
 
     // Slots
-    // Use custom mute/solo images from skin if available, otherwise use embedded images
-    const juce::Image muteOffImage = appLF.getMuteOffImage().isValid()
-        ? appLF.getMuteOffImage()
-        : juce::ImageCache::getFromMemory(BinaryData::MuteOFF_png, BinaryData::MuteOFF_pngSize);
-    const juce::Image muteOnImage = appLF.getMuteOnImage().isValid()
-        ? appLF.getMuteOnImage()
-        : juce::ImageCache::getFromMemory(BinaryData::MuteON_png, BinaryData::MuteON_pngSize);
-    const juce::Image soloOffImage = appLF.getSoloOffImage().isValid()
-        ? appLF.getSoloOffImage()
-        : juce::ImageCache::getFromMemory(BinaryData::SoloOFF_png, BinaryData::SoloOFF_pngSize);
-    const juce::Image soloOnImage = appLF.getSoloOnImage().isValid()
-        ? appLF.getSoloOnImage()
-        : juce::ImageCache::getFromMemory(BinaryData::SoloON_png, BinaryData::SoloON_pngSize);
-
-    const auto configureToggleImageButton = [](juce::ImageButton& button,
-                                               const juce::Image& offImage,
-                                               const juce::Image& onImage)
+    // Lambda to configure toggle image buttons with dynamic skin image fetching
+    const auto configureToggleImageButton = [this](juce::ImageButton& button, bool isMuteButton)
     {
-        auto updateImages = [offImage, onImage, &button]()
+        auto updateImages = [this, &button, isMuteButton]()
         {
+            // Get current skin images dynamically
+            const juce::Image offImage = isMuteButton
+                ? (appLF.getMuteOffImage().isValid() ? appLF.getMuteOffImage()
+                    : juce::ImageCache::getFromMemory(BinaryData::MuteOFF_png, BinaryData::MuteOFF_pngSize))
+                : (appLF.getSoloOffImage().isValid() ? appLF.getSoloOffImage()
+                    : juce::ImageCache::getFromMemory(BinaryData::SoloOFF_png, BinaryData::SoloOFF_pngSize));
+
+            const juce::Image onImage = isMuteButton
+                ? (appLF.getMuteOnImage().isValid() ? appLF.getMuteOnImage()
+                    : juce::ImageCache::getFromMemory(BinaryData::MuteON_png, BinaryData::MuteON_pngSize))
+                : (appLF.getSoloOnImage().isValid() ? appLF.getSoloOnImage()
+                    : juce::ImageCache::getFromMemory(BinaryData::SoloON_png, BinaryData::SoloON_pngSize));
+
             const auto& source = button.getToggleState() ? onImage : offImage;
 
             button.setImages(false, true, true,
@@ -3827,10 +3825,10 @@ SlotMachineAudioProcessorEditor::SlotMachineAudioProcessorEditor(SlotMachineAudi
         ui->midiChannel.setColour(juce::ComboBox::buttonColourId, juce::Colours::transparentBlack);
 
         ui->muteBtn.setName("MuteButton" + juce::String(idx));
-        configureToggleImageButton(ui->muteBtn, muteOffImage, muteOnImage);
+        configureToggleImageButton(ui->muteBtn, true);  // true = mute button
 
         ui->soloBtn.setName("SoloButton" + juce::String(idx));
-        configureToggleImageButton(ui->soloBtn, soloOffImage, soloOnImage);
+        configureToggleImageButton(ui->soloBtn, false); // false = solo button
 
         ui->muteLabel.setText("Mute", juce::dontSendNotification);
         ui->muteLabel.setJustificationType(juce::Justification::centred);
