@@ -887,11 +887,7 @@ private:
             {
                 midiListPanelBackgroundImage = juce::ImageFileFormat::loadFrom(midiListPanelBgFile);
                 if (midiListPanelBackgroundImage.isValid())
-                {
                     DBG("Successfully loaded MIDI list panel background: " + midiListPanelBgFile.getFullPathName());
-                    // Set popup menu background to transparent to preserve image transparency
-                    setColour(juce::PopupMenu::backgroundColourId, juce::Colours::transparentBlack);
-                }
                 else
                     DBG("Failed to load MIDI list panel background: " + midiListPanelBgFile.getFullPathName());
             }
@@ -899,11 +895,6 @@ private:
             {
                 DBG("MIDI list panel background file not found: " + midiListPanelBgFile.getFullPathName());
             }
-        }
-        else
-        {
-            // No custom MIDI list panel background - restore default popup menu background colour
-            setColour(juce::PopupMenu::backgroundColourId, juce::Colour(0xff1a1a1a));
         }
 
         // Load button images
