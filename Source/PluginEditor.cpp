@@ -7204,55 +7204,28 @@ void SlotMachineAudioProcessorEditor::beginAudioExportWithCycles(int cyclesReque
             if (!file.hasFileExtension(".wav"))
                 file = file.withFileExtension(".wav");
 
-            // Lambda to perform the actual export
-            auto performExport = [this, file, cyclesRequested, exportPlaythrough]()
+            // Perform the export (automatically overwrite if file exists)
+            juce::String error;
+            const bool ok = exportPlaythrough
+                ? processor.exportAudioPlaythroughCycles(file, cyclesRequested, error)
+                : processor.exportAudioCycles(file, cyclesRequested, error);
+
+            if (ok)
             {
-                juce::String error;
-                const bool ok = exportPlaythrough
-                    ? processor.exportAudioPlaythroughCycles(file, cyclesRequested, error)
-                    : processor.exportAudioCycles(file, cyclesRequested, error);
-
-                if (ok)
-                {
-                    juce::AlertWindow::showMessageBoxAsync(
-                        juce::AlertWindow::InfoIcon,
-                        "Export Audio",
-                        "Saved: " + file.getFullPathName());
-                }
-                else
-                {
-                    if (error.isEmpty())
-                        error = "Unable to export audio.";
-
-                    juce::AlertWindow::showMessageBoxAsync(
-                        juce::AlertWindow::WarningIcon,
-                        "Export Audio",
-                        error);
-                }
-            };
-
-            // Check if file exists and ask user if they want to overwrite
-            if (file.exists())
-            {
-                auto options = juce::MessageBoxOptions()
-                    .withIconType(juce::MessageBoxIconType::QuestionIcon)
-                    .withTitle("File Already Exists")
-                    .withMessage("The file \"" + file.getFileName() + "\" already exists. Do you want to overwrite it?")
-                    .withButton("Overwrite")
-                    .withButton("Cancel");
-
-                juce::AlertWindow::showAsync(options,
-                    juce::ModalCallbackFunction::create([performExport](int result)
-                    {
-                        if (result == 1) // User clicked "Overwrite"
-                            performExport();
-                        // Otherwise user clicked "Cancel" or closed dialog - do nothing
-                    }));
+                juce::AlertWindow::showMessageBoxAsync(
+                    juce::AlertWindow::InfoIcon,
+                    "Export Audio",
+                    "Saved: " + file.getFullPathName());
             }
             else
             {
-                // File doesn't exist, proceed with export
-                performExport();
+                if (error.isEmpty())
+                    error = "Unable to export audio.";
+
+                juce::AlertWindow::showMessageBoxAsync(
+                    juce::AlertWindow::WarningIcon,
+                    "Export Audio",
+                    error);
             }
         });
 }
