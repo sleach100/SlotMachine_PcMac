@@ -3922,7 +3922,7 @@ SlotMachineAudioProcessorEditor::SlotMachineAudioProcessorEditor(SlotMachineAudi
 
     lastStartToggleState = startToggle.getToggleState();
     cachedStartGlowColour = Opt::rgbParam(apvts, "optGlowColor", 0x6994FC, 1.0f);
-    cachedStartPulseColour = Opt::rgbParam(apvts, "optPulseColor", 0xD5CFEE, 1.0f);
+    cachedStartPulseColour = getPulseColour();
     cachedStartGlowAlpha = Opt::getFloat(apvts, "optGlowAlpha", 0.431f);
     cachedStartGlowWidth = Opt::getFloat(apvts, "optGlowWidth", 1.34f);
     updateStartButtonVisuals(lastStartToggleState, cachedStartGlowColour,
@@ -4838,7 +4838,7 @@ void SlotMachineAudioProcessorEditor::paint(juce::Graphics& g)
     const float pulseWidthPx = Opt::getFloat(apvts, "optPulseWidth", 4.0f);
 
     const juce::Colour glowColour = Opt::rgbParam(apvts, "optGlowColor", 0x6994FC, glowAlpha);
-    const juce::Colour pulseColour = Opt::rgbParam(apvts, "optPulseColor", 0xD5CFEE, pulseAlpha);
+    const juce::Colour pulseColour = getPulseColour();
 
     // Slots
     for (int i = 0; i < kNumSlots; ++i)
@@ -4909,7 +4909,7 @@ void SlotMachineAudioProcessorEditor::paintOverChildren(juce::Graphics& g)
 
     const auto barBack = juce::Colours::black.withAlpha(0.55f);
     const float pulseAlpha = Opt::getFloat(apvts, "optPulseAlpha", 1.0f);
-    const juce::Colour pulseColour = Opt::rgbParam(apvts, "optPulseColor", 0xD5CFEE, pulseAlpha);
+    const juce::Colour pulseColour = getPulseColour();
     const auto barFill = pulseColour.withAlpha(0.92f);
 
     // Master progress bar
@@ -7488,7 +7488,7 @@ void SlotMachineAudioProcessorEditor::setMasterRun(bool shouldRun)
     patternTabs.setReorderingEnabled(!shouldRun);
 
     const auto glowColour = Opt::rgbParam(apvts, "optGlowColor", 0x6994FC, 1.0f);
-    const auto pulseColour = Opt::rgbParam(apvts, "optPulseColor", 0xD5CFEE, 1.0f);
+    const auto pulseColour = getPulseColour();
     const float glowAlpha = Opt::getFloat(apvts, "optGlowAlpha", 0.431f);
     const float glowWidth = Opt::getFloat(apvts, "optGlowWidth", 1.34f);
 
@@ -7937,6 +7937,17 @@ void SlotMachineAudioProcessorEditor::updateButtonFontColors()
     }
 }
 
+juce::Colour SlotMachineAudioProcessorEditor::getPulseColour() const
+{
+    // If ButtonFontColor is specified in skin, use it for pulse color
+    if (appLF.hasButtonFontColor())
+        return appLF.getButtonFontColor();
+
+    // Otherwise use the option setting
+    const float pulseAlpha = Opt::getFloat(apvts, "optPulseAlpha", 1.0f);
+    return Opt::rgbParam(apvts, "optPulseColor", 0xD5CFEE, pulseAlpha);
+}
+
 void SlotMachineAudioProcessorEditor::resetLoopTransport()
 {
     processor.resetAllPhases(true);
@@ -8151,7 +8162,7 @@ void SlotMachineAudioProcessorEditor::timerCallback()
 
     const bool isRunning = startToggle.getToggleState();
     const auto glowColour = Opt::rgbParam(apvts, "optGlowColor", 0x6994FC, 1.0f);
-    const auto pulseColour = Opt::rgbParam(apvts, "optPulseColor", 0xD5CFEE, 1.0f);
+    const auto pulseColour = getPulseColour();
     const float glowAlpha = Opt::getFloat(apvts, "optGlowAlpha", 0.431f);
     const float glowWidth = Opt::getFloat(apvts, "optGlowWidth", 1.34f);
 

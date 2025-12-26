@@ -48,6 +48,10 @@ public:
 private:
     // Apply button font color from skin to all relevant components
     void updateButtonFontColors();
+
+    // Get pulse color - uses ButtonFontColor if available, otherwise uses option setting
+    juce::Colour getPulseColour() const;
+
     // VST3-specific behavior
     bool isRunningAsVST3() const;
     void showVST3LockOverlayIfNeeded();
