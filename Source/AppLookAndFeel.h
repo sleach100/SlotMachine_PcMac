@@ -904,6 +904,11 @@ private:
                 DBG("MIDI list panel background file not found: " + midiListPanelBgFile.getFullPathName());
             }
         }
+        else
+        {
+            // No custom MIDI list panel background - restore default popup menu background colour
+            setColour(juce::PopupMenu::backgroundColourId, juce::Colour(0xff1a1a1a));
+        }
 
         // Load button images
         if (buttonFilename.isNotEmpty())
