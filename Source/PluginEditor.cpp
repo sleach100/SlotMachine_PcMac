@@ -3795,6 +3795,7 @@ SlotMachineAudioProcessorEditor::SlotMachineAudioProcessorEditor(SlotMachineAudi
         ui->fileLabel.setName("SlotFileLabel");
         ui->fileLabel.setText("", juce::dontSendNotification);
         ui->fileLabel.setJustificationType(juce::Justification::centredLeft);
+        ui->fileLabel.setColour(juce::Label::textColourId, juce::Colours::white);
         ui->fileLabel.setInterceptsMouseClicks(false, false); // Allow clicks to pass through for sample trigger/drag
         ui->fileBtn.addListener(this);
         ui->fileBtn.addMouseListener(this, false);
@@ -5754,11 +5755,14 @@ void SlotMachineAudioProcessorEditor::refreshSlotFileLabels(const juce::Array<in
         ui->hasFile = hasSample;
         ui->fileLabel.setText(label, juce::dontSendNotification);
 
-        // Set color to red for failed samples, default color otherwise
+        // Set color to red for failed samples, custom button color otherwise
         if (isFailed)
             ui->fileLabel.setColour(juce::Label::textColourId, juce::Colours::red);
         else
-            ui->fileLabel.setColour(juce::Label::textColourId, juce::Label().findColour(juce::Label::textColourId));
+        {
+            const auto textColor = appLF.hasButtonFontColor() ? appLF.getButtonFontColor() : juce::Colours::white;
+            ui->fileLabel.setColour(juce::Label::textColourId, textColor);
+        }
     }
 }
 
@@ -6980,7 +6984,8 @@ void SlotMachineAudioProcessorEditor::buttonClicked(juce::Button* b)
             embeddedSlotResourceNames[(size_t)i].clear();
             ui->hasFile = false;
             ui->fileLabel.setText("", juce::dontSendNotification);
-            ui->fileLabel.setColour(juce::Label::textColourId, juce::Label().findColour(juce::Label::textColourId));
+            const auto textColor = appLF.hasButtonFontColor() ? appLF.getButtonFontColor() : juce::Colours::white;
+            ui->fileLabel.setColour(juce::Label::textColourId, textColor);
             ui->glow = 0.0f;
             ui->phase = 0.0f;
             ui->lastHitCounter = 0;
@@ -7907,6 +7912,11 @@ void SlotMachineAudioProcessorEditor::updateButtonFontColors()
 
             // Update slot clearBtn (X button)
             slot.clearBtn.setColour(juce::TextButton::textColourOffId, textColor.withAlpha(0.85f));
+
+            // Update slot file label (only if not red - red indicates failed sample)
+            const auto currentLabelColor = slot.fileLabel.findColour(juce::Label::textColourId);
+            if (currentLabelColor != juce::Colours::red)
+                slot.fileLabel.setColour(juce::Label::textColourId, textColor);
 
             // Update MIDI channel ComboBox (text and arrow)
             slot.midiChannel.setColour(juce::ComboBox::textColourId, textColor);
