@@ -887,7 +887,11 @@ private:
             {
                 midiListPanelBackgroundImage = juce::ImageFileFormat::loadFrom(midiListPanelBgFile);
                 if (midiListPanelBackgroundImage.isValid())
+                {
                     DBG("Successfully loaded MIDI list panel background: " + midiListPanelBgFile.getFullPathName());
+                    // Set popup menu background to transparent so desktop shows through transparent image corners
+                    setColour(juce::PopupMenu::backgroundColourId, juce::Colours::transparentBlack);
+                }
                 else
                     DBG("Failed to load MIDI list panel background: " + midiListPanelBgFile.getFullPathName());
             }
