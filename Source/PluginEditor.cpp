@@ -7932,10 +7932,8 @@ void SlotMachineAudioProcessorEditor::updateButtonFontColors()
             // Update slot clearBtn (X button)
             slot.clearBtn.setColour(juce::TextButton::textColourOffId, textColor.withAlpha(0.85f));
 
-            // Update slot file label (only if not red - red indicates failed sample)
-            const auto currentLabelColor = slot.fileLabel.findColour(juce::Label::textColourId);
-            if (currentLabelColor != juce::Colours::red)
-                slot.fileLabel.setColour(juce::Label::textColourId, textColor);
+            // Update slot file label (red is preserved in refreshSlotFileLabels for failed samples)
+            slot.fileLabel.setColour(juce::Label::textColourId, textColor);
 
             // Update MIDI channel ComboBox (text and arrow)
             slot.midiChannel.setColour(juce::ComboBox::textColourId, textColor);
