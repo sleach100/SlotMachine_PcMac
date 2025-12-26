@@ -20,7 +20,8 @@ public:
 
     BeatsQuickPickGrid(Options opts,
                        std::function<void(int)> onPick,
-                       int currentValue);
+                       int currentValue,
+                       juce::Colour textColor = juce::Colours::white);
     ~BeatsQuickPickGrid() override = default;
 
     void resized() override;
@@ -36,6 +37,7 @@ private:
     std::unique_ptr<juce::TextButton> expandToggle;
     int current = 1;
     bool expanded = false;
+    juce::Colour customTextColor;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(BeatsQuickPickGrid)
 };

@@ -31,6 +31,7 @@ public:
     ~SlotMachineAudioProcessorEditor() override;
 
     void paint(juce::Graphics&) override;
+    void paintOverChildren(juce::Graphics& g) override;
     void resized() override;
     void parentHierarchyChanged() override;
     void mouseDown(const juce::MouseEvent& e) override;
@@ -41,8 +42,16 @@ public:
     // Standalone helper used to ensure the UI starts in a clean state.
     void resetUiToDefaultStateForStandalone();
 
+    // Reload skin with a specific folder name
+    void reloadSkinWithFolder(const juce::String& skinFolderName);
 
 private:
+    // Apply button font color from skin to all relevant components
+    void updateButtonFontColors();
+
+    // Get pulse color - uses ButtonFontColor if available, otherwise uses option setting
+    juce::Colour getPulseColour() const;
+
     // VST3-specific behavior
     bool isRunningAsVST3() const;
     void showVST3LockOverlayIfNeeded();
@@ -93,6 +102,8 @@ private:
         void onTabSelected(std::function<void(int)> handler) { tabSelected = std::move(handler); }
         void onTabBarRightClick(std::function<void(const juce::MouseEvent&)> handler) { rightClick = std::move(handler); }
         void onTabReordered(std::function<void(int, int)> handler) { tabReordered = std::move(handler); }
+
+        void updateTabColors(juce::Colour textColorOff, juce::Colour textColorOn);
 
         void paint(juce::Graphics& g) override;
         void resized() override;
@@ -294,6 +305,24 @@ private:
     // ===== Slot UI =====
     struct SlotUI
     {
+        // Custom GroupComponent that tracks flash state for skinning
+        struct SlotGroupComponent : juce::GroupComponent
+        {
+            void setFlashState(float flashAmount)
+            {
+                if (flashState != flashAmount)
+                {
+                    flashState = flashAmount;
+                    repaint();
+                }
+            }
+
+            float getFlashState() const { return flashState; }
+
+        private:
+            float flashState = 0.0f;
+        };
+
         struct ToggleLabel : juce::Label
         {
             ToggleLabel()
@@ -384,7 +413,7 @@ private:
             }
         };
 
-        juce::GroupComponent group;
+        SlotGroupComponent group;
         FileButton        fileBtn;
         juce::TextButton  clearBtn{ "X" };      // NEW: Clear sample
         juce::Label       fileLabel;
@@ -448,6 +477,7 @@ private:
     void doSavePreset();
     void doLoadPreset();
     void doResetAll(bool persistOptions = true);
+    void updateMuteSoloButtonImages();
     void resetLoopTransport();
     void resetProgressVisuals();
     void showOptionsDialog();

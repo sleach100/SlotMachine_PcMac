@@ -9,8 +9,9 @@ namespace
 
 BeatsQuickPickGrid::BeatsQuickPickGrid(Options opts,
                                        std::function<void(int)> onPick,
-                                       int currentValue)
-    : options(opts), pickCallback(std::move(onPick)), current(currentValue)
+                                       int currentValue,
+                                       juce::Colour textColor)
+    : options(opts), pickCallback(std::move(onPick)), current(currentValue), customTextColor(textColor)
 {
     expanded = options.maxBeat > 32;
     buildButtons();
@@ -19,6 +20,8 @@ BeatsQuickPickGrid::BeatsQuickPickGrid(Options opts,
     {
         const auto* toggleText = expanded ? "Show 1–32" : "Show 33–64";
         expandToggle = std::make_unique<juce::TextButton>(toggleText);
+        expandToggle->setColour(juce::TextButton::textColourOffId, customTextColor);
+        expandToggle->setColour(juce::TextButton::textColourOnId, customTextColor);
         expandToggle->onClick = [this]()
         {
             expanded = !expanded;
@@ -41,6 +44,9 @@ void BeatsQuickPickGrid::buildButtons()
         auto* button = new juce::TextButton(juce::String(value));
         if (value == current)
             button->setColour(juce::TextButton::buttonColourId, kHighlightColour);
+
+        button->setColour(juce::TextButton::textColourOffId, customTextColor);
+        button->setColour(juce::TextButton::textColourOnId, customTextColor);
 
         button->addListener(this);
         addAndMakeVisible(button);
