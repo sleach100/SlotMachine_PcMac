@@ -435,8 +435,13 @@ public:
         // Falls back to default JUCE rendering (not TextBox) to avoid vertical distortion
         if (midiListPanelBackgroundImage.isValid())
         {
-            // Draw the MIDI list panel background image stretched to fit the popup menu bounds
-            // The transparent background colour set during image loading ensures transparency works
+            DBG("drawPopupMenuBackground: Drawing custom MIDI list panel image ("
+                + juce::String(midiListPanelBackgroundImage.getWidth()) + "x"
+                + juce::String(midiListPanelBackgroundImage.getHeight()) + ") into "
+                + juce::String(width) + "x" + juce::String(height));
+
+            // Just draw the custom image - no background fill
+            // This preserves image transparency
             g.drawImage(midiListPanelBackgroundImage,
                        0, 0, width, height,
                        0, 0, midiListPanelBackgroundImage.getWidth(), midiListPanelBackgroundImage.getHeight(),
@@ -444,6 +449,7 @@ public:
         }
         else
         {
+            DBG("drawPopupMenuBackground: No custom image, using default");
             // Fall back to default JUCE popup menu background (not TextBox)
             juce::LookAndFeel_V4::drawPopupMenuBackground(g, width, height);
         }
