@@ -1194,6 +1194,18 @@ void SlotMachineAudioProcessorEditor::PatternTabs::setReorderingEnabled(bool sho
         resetDragState();
 }
 
+void SlotMachineAudioProcessorEditor::PatternTabs::updateTabColors(juce::Colour textColorOff, juce::Colour textColorOn)
+{
+    for (auto* button : buttons)
+    {
+        if (button != nullptr)
+        {
+            button->setColour(juce::TextButton::textColourOffId, textColorOff);
+            button->setColour(juce::TextButton::textColourOnId, textColorOn);
+        }
+    }
+}
+
 void SlotMachineAudioProcessorEditor::PatternTabs::setCurrentIndex(int index, bool notify)
 {
     if (buttons.isEmpty())
@@ -1916,7 +1928,8 @@ static juce::Slider& setupKnob(juce::Slider& s,
 class SlotMachineAudioProcessorEditor::EmbeddedSampleSelector : public juce::Component
 {
 public:
-    EmbeddedSampleSelector(const EmbeddedCatalog& catalog)
+    EmbeddedSampleSelector(const EmbeddedCatalog& catalog, juce::Colour textColor = juce::Colours::whitesmoke)
+        : customTextColor(textColor)
     {
         content = std::make_unique<ListContent>(*this, catalog);
         viewport.setViewedComponent(content.get(), false);
@@ -1934,6 +1947,7 @@ public:
 
     std::function<void(const juce::String&)> onPick;
     std::function<void(const juce::String&)> onPreview;
+    juce::Colour customTextColor;
 
     void resized() override
     {
@@ -2104,7 +2118,11 @@ private:
                     g.setColour(background);
                     g.fillRect(area);
 
-                    g.setColour(juce::Colours::whitesmoke);
+                    // Use custom text color from EmbeddedSampleSelector
+                    if (auto* row = findParentComponentOfClass<Row>())
+                        g.setColour(row->owner.customTextColor);
+                    else
+                        g.setColour(juce::Colours::whitesmoke);
                     g.setFont(juce::Font{ juce::FontOptions(14.0f) });
                     g.drawText(getButtonText(), area.reduced(10, 0), juce::Justification::centredLeft, true);
                 }
@@ -2339,7 +2357,8 @@ void SlotMachineAudioProcessorEditor::openEmbeddedSampleSelectorForSlot(int slot
     if (embeddedCatalog.empty())
         return;
 
-    auto selector = std::make_unique<EmbeddedSampleSelector>(embeddedCatalog);
+    const auto textColor = appLF.hasButtonFontColor() ? appLF.getButtonFontColor() : juce::Colours::whitesmoke;
+    auto selector = std::make_unique<EmbeddedSampleSelector>(embeddedCatalog, textColor);
 
     selector->onPreview = [this](const juce::String& resource)
     {
@@ -2530,6 +2549,13 @@ namespace Opt
             (juce::uint8)((rgb >> 8) & 0xFF),
             (juce::uint8)(rgb & 0xFF));
         return c.withAlpha(juce::jlimit(0.0f, 1.0f, alpha));
+    }
+    static inline juce::String getString(APVTS& apvts, const juce::String& id, const juce::String& def)
+    {
+        auto& state = apvts.state;
+        if (state.hasProperty(id))
+            return state.getProperty(id).toString();
+        return def;
     }
 }
 
@@ -2899,8 +2925,10 @@ class OptionsComponent : public juce::Component,
     private juce::Slider::Listener
 {
 public:
-    explicit OptionsComponent(APVTS& s, std::function<void(float)> slotScaleChangedCallback = {})
-        : apvts(s), slotScaleChanged(slotScaleChangedCallback)
+    explicit OptionsComponent(APVTS& s,
+                              std::function<void(float)> slotScaleChangedCallback = {},
+                              std::function<void(const juce::String&)> skinChangedCallback = {})
+        : apvts(s), slotScaleChanged(slotScaleChangedCallback), skinChanged(skinChangedCallback)
     {
         // toggles
         addAndMakeVisible(showMasterBar);
@@ -2950,6 +2978,16 @@ public:
             slotScaleCombo.addItem(label, i + 1);
         }
         slotScaleCombo.onChange = [this]() { handleSlotScaleSelection(); };
+
+        // skin selector
+        skinLabel.setText("Skin", juce::dontSendNotification);
+        skinLabel.setColour(juce::Label::textColourId, juce::Colours::white);
+        addAndMakeVisible(skinLabel);
+
+        addAndMakeVisible(skinCombo);
+        skinCombo.setJustificationType(juce::Justification::centredLeft);
+        populateSkinCombo();
+        skinCombo.onChange = [this]() { handleSkinSelection(); };
 
         // colour selectors
         addAndMakeVisible(glowColourSel);
@@ -3026,6 +3064,10 @@ public:
         slotScaleLabel.setBounds(scaleRow.removeFromLeft(getWidth() / 2 - 16));
         slotScaleCombo.setBounds(scaleRow.removeFromLeft(180).reduced(0, 8));
 
+        auto skinRow = a.removeFromTop(48);
+        skinLabel.setBounds(skinRow.removeFromLeft(getWidth() / 2 - 16));
+        skinCombo.setBounds(skinRow.removeFromLeft(220).reduced(0, 8));
+
         a.removeFromTop(6);
 
         auto row1 = a.removeFromTop(210);
@@ -3077,6 +3119,9 @@ private:
     juce::Label slotScaleLabel;
     juce::ComboBox slotScaleCombo;
 
+    juce::Label skinLabel;
+    juce::ComboBox skinCombo;
+
     juce::Label glowLabel, pulseLabel;
     juce::ColourSelector glowColourSel{ juce::ColourSelector::showColourAtTop
                                        | juce::ColourSelector::showSliders
@@ -3098,6 +3143,7 @@ private:
     static constexpr int sliderVerticalPadding = 8;
 
     std::function<void(float)> slotScaleChanged;
+    std::function<void(const juce::String&)> skinChanged;
     std::array<int, 2>   sampleRateValues{ { 48000, 44100 } };
     std::array<int, 2>   timingModeValues{ { 0, 1 } };
     bool blockSampleRateUpdate = false;
@@ -3192,6 +3238,17 @@ private:
         slotScaleCombo.setSelectedId(bestId, juce::dontSendNotification);
         blockSlotScaleUpdate = false;
 
+        // skin folder
+        const juce::String currentSkin = Opt::getString(apvts, "optSkinFolder", "Classic");
+        for (int i = 0; i < skinCombo.getNumItems(); ++i)
+        {
+            if (skinCombo.getItemText(i) == currentSkin)
+            {
+                skinCombo.setSelectedId(i + 1, juce::dontSendNotification);
+                break;
+            }
+        }
+
         // colours
         glowColourSel.setCurrentColour(Opt::rgbParam(apvts, "optGlowColor", 0x6994FC, 1.0f));
         pulseColourSel.setCurrentColour(Opt::rgbParam(apvts, "optPulseColor", 0xD5CFEE, 1.0f));
@@ -3285,6 +3342,51 @@ private:
         setIntParam("optTimingMode", value);
     }
 
+    void populateSkinCombo()
+    {
+        skinCombo.clear();
+
+        // Get the Skins directory
+        juce::File skinsDir = juce::File::getCurrentWorkingDirectory().getChildFile("Skins");
+
+        if (!skinsDir.exists() || !skinsDir.isDirectory())
+        {
+            skinCombo.addItem("Classic", 1);
+            skinCombo.setSelectedId(1, juce::dontSendNotification);
+            return;
+        }
+
+        // Get all subdirectories
+        juce::Array<juce::File> skinFolders = skinsDir.findChildFiles(juce::File::findDirectories, false);
+
+        // Add each folder as an item
+        int itemId = 1;
+        for (const auto& folder : skinFolders)
+        {
+            skinCombo.addItem(folder.getFileName(), itemId++);
+        }
+
+        // If no folders found, add Classic as default
+        if (skinCombo.getNumItems() == 0)
+        {
+            skinCombo.addItem("Classic", 1);
+        }
+    }
+
+    void handleSkinSelection()
+    {
+        const int id = skinCombo.getSelectedId();
+        if (id <= 0 || id > skinCombo.getNumItems())
+            return;
+
+        const juce::String skinName = skinCombo.getItemText(id - 1);
+        setStringParam("optSkinFolder", skinName);
+
+        // Reload the skin with the new folder via callback
+        if (skinChanged)
+            skinChanged(skinName);
+    }
+
     void resetToDefaultOptions()
     {
         constexpr float kDefaultSlotScale = 0.80f;
@@ -3312,6 +3414,7 @@ private:
         setIntParam("optPulseColor", kDefaultPulseRGB);
         setFloatParam("optPulseAlpha", kDefaultPulseAlpha);
         setFloatParam("optPulseWidth", kDefaultPulseWidth);
+        setStringParam("optSkinFolder", "Classic");
 
         refreshFromState();
 
@@ -3343,6 +3446,11 @@ private:
             fp->beginChangeGesture(); *fp = v; fp->endChangeGesture();
             saveOptionsToDisk(apvts);
         }
+    }
+    void setStringParam(const juce::String& id, const juce::String& v)
+    {
+        apvts.state.setProperty(id, v, nullptr);
+        saveOptionsToDisk(apvts);
     }
 
 };
@@ -3489,9 +3597,17 @@ SlotMachineAudioProcessorEditor::SlotMachineAudioProcessorEditor(SlotMachineAudi
     setLookAndFeel(&appLF);
     appLF.setCornerRadius(6.0f);
 
+    // Initialize skin folder from saved options
+    const juce::String savedSkinFolder = Opt::getString(apvts, "optSkinFolder", "Classic");
+    appLF.setSkinFolder(savedSkinFolder);
+    appLF.reloadSkin();
+
     setWantsKeyboardFocus(true);
 
-    logoImage = juce::ImageCache::getFromMemory(BinaryData::SM5_png, BinaryData::SM5_pngSize);
+    // Use custom logo from skin if available, otherwise use embedded image
+    logoImage = appLF.getLogoImage().isValid()
+        ? appLF.getLogoImage()
+        : juce::ImageCache::getFromMemory(BinaryData::SM5_png, BinaryData::SM5_pngSize);
 
     slotScale = juce::jlimit(0.75f, 1.0f, Opt::getFloat(apvts, "optSlotScale", 0.8f));
     const int initialTimingMode = Opt::getInt(apvts, "optTimingMode", 1);
@@ -3529,12 +3645,13 @@ SlotMachineAudioProcessorEditor::SlotMachineAudioProcessorEditor(SlotMachineAudi
 
     masterRunA = std::make_unique<APVTS::ButtonAttachment>(apvts, "masterRun", startToggle);
 
-    auto beautify = [](juce::TextButton& b)
+    auto beautify = [this](juce::TextButton& b)
         {
             b.setClickingTogglesState(false);
             b.setColour(juce::TextButton::buttonColourId, juce::Colours::transparentBlack);
-            b.setColour(juce::TextButton::textColourOnId, juce::Colours::white);
-            b.setColour(juce::TextButton::textColourOffId, juce::Colours::white);
+            const auto textColor = appLF.hasButtonFontColor() ? appLF.getButtonFontColor() : juce::Colours::white;
+            b.setColour(juce::TextButton::textColourOnId, textColor);
+            b.setColour(juce::TextButton::textColourOffId, textColor);
             b.setColour(juce::TextButton::buttonOnColourId, juce::Colours::grey);
         };
 
@@ -3615,17 +3732,24 @@ SlotMachineAudioProcessorEditor::SlotMachineAudioProcessorEditor(SlotMachineAudi
     patternWarningLabel.setFont(createBoldFont(13.0f));
 
     // Slots
-    const juce::Image muteOffImage = juce::ImageCache::getFromMemory(BinaryData::MuteOFF_png, BinaryData::MuteOFF_pngSize);
-    const juce::Image muteOnImage  = juce::ImageCache::getFromMemory(BinaryData::MuteON_png,  BinaryData::MuteON_pngSize);
-    const juce::Image soloOffImage = juce::ImageCache::getFromMemory(BinaryData::SoloOFF_png, BinaryData::SoloOFF_pngSize);
-    const juce::Image soloOnImage  = juce::ImageCache::getFromMemory(BinaryData::SoloON_png,  BinaryData::SoloON_pngSize);
-
-    const auto configureToggleImageButton = [](juce::ImageButton& button,
-                                               const juce::Image& offImage,
-                                               const juce::Image& onImage)
+    // Lambda to configure toggle image buttons with dynamic skin image fetching
+    const auto configureToggleImageButton = [this](juce::ImageButton& button, bool isMuteButton)
     {
-        auto updateImages = [offImage, onImage, &button]()
+        auto updateImages = [this, &button, isMuteButton]()
         {
+            // Get current skin images dynamically
+            const juce::Image offImage = isMuteButton
+                ? (appLF.getMuteOffImage().isValid() ? appLF.getMuteOffImage()
+                    : juce::ImageCache::getFromMemory(BinaryData::MuteOFF_png, BinaryData::MuteOFF_pngSize))
+                : (appLF.getSoloOffImage().isValid() ? appLF.getSoloOffImage()
+                    : juce::ImageCache::getFromMemory(BinaryData::SoloOFF_png, BinaryData::SoloOFF_pngSize));
+
+            const juce::Image onImage = isMuteButton
+                ? (appLF.getMuteOnImage().isValid() ? appLF.getMuteOnImage()
+                    : juce::ImageCache::getFromMemory(BinaryData::MuteON_png, BinaryData::MuteON_pngSize))
+                : (appLF.getSoloOnImage().isValid() ? appLF.getSoloOnImage()
+                    : juce::ImageCache::getFromMemory(BinaryData::SoloON_png, BinaryData::SoloON_pngSize));
+
             const auto& source = button.getToggleState() ? onImage : offImage;
 
             button.setImages(false, true, true,
@@ -3653,6 +3777,10 @@ SlotMachineAudioProcessorEditor::SlotMachineAudioProcessorEditor(SlotMachineAudi
 
 
         addAndMakeVisible(ui->fileBtn);
+        ui->fileBtn.setColour(juce::TextButton::buttonColourId, juce::Colours::transparentBlack);
+        ui->fileBtn.setColour(juce::TextButton::textColourOffId, juce::Colours::white);
+        ui->fileBtn.setColour(juce::TextButton::textColourOnId, juce::Colours::white);
+
         addAndMakeVisible(ui->clearBtn);                // NEW
         ui->clearBtn.setTooltip("Clear sample");        // NEW
         ui->clearBtn.addListener(this);                 // NEW
@@ -3662,8 +3790,10 @@ SlotMachineAudioProcessorEditor::SlotMachineAudioProcessorEditor(SlotMachineAudi
         ui->clearBtn.setConnectedEdges(juce::Button::ConnectedOnLeft); // makes it look attached to Load
 
         addAndMakeVisible(ui->fileLabel);
-        ui->fileLabel.setText("No file", juce::dontSendNotification);
+        ui->fileLabel.setName("SlotFileLabel");
+        ui->fileLabel.setText("", juce::dontSendNotification);
         ui->fileLabel.setJustificationType(juce::Justification::centredLeft);
+        ui->fileLabel.setColour(juce::Label::textColourId, juce::Colours::white);
         ui->fileLabel.setInterceptsMouseClicks(false, false); // Allow clicks to pass through for sample trigger/drag
         ui->fileBtn.addListener(this);
         ui->fileBtn.addMouseListener(this, false);
@@ -3690,12 +3820,15 @@ SlotMachineAudioProcessorEditor::SlotMachineAudioProcessorEditor(SlotMachineAudi
         ui->midiChannel.setTextWhenNothingSelected("Ch " + juce::String(idx));
         for (int ch = 1; ch <= 16; ++ch)
             ui->midiChannel.addItem("Ch " + juce::String(ch), ch);
+        ui->midiChannel.setColour(juce::ComboBox::textColourId, juce::Colours::white);
+        ui->midiChannel.setColour(juce::ComboBox::arrowColourId, juce::Colours::white);
+        ui->midiChannel.setColour(juce::ComboBox::buttonColourId, juce::Colours::transparentBlack);
 
         ui->muteBtn.setName("MuteButton" + juce::String(idx));
-        configureToggleImageButton(ui->muteBtn, muteOffImage, muteOnImage);
+        configureToggleImageButton(ui->muteBtn, true);  // true = mute button
 
         ui->soloBtn.setName("SoloButton" + juce::String(idx));
-        configureToggleImageButton(ui->soloBtn, soloOffImage, soloOnImage);
+        configureToggleImageButton(ui->soloBtn, false); // false = solo button
 
         ui->muteLabel.setText("Mute", juce::dontSendNotification);
         ui->muteLabel.setJustificationType(juce::Justification::centred);
@@ -3787,12 +3920,13 @@ SlotMachineAudioProcessorEditor::SlotMachineAudioProcessorEditor(SlotMachineAudi
 
     lastStartToggleState = startToggle.getToggleState();
     cachedStartGlowColour = Opt::rgbParam(apvts, "optGlowColor", 0x6994FC, 1.0f);
-    cachedStartPulseColour = Opt::rgbParam(apvts, "optPulseColor", 0xD5CFEE, 1.0f);
+    cachedStartPulseColour = getPulseColour();
     cachedStartGlowAlpha = Opt::getFloat(apvts, "optGlowAlpha", 0.431f);
     cachedStartGlowWidth = Opt::getFloat(apvts, "optGlowWidth", 1.34f);
     updateStartButtonVisuals(lastStartToggleState, cachedStartGlowColour,
         cachedStartPulseColour, cachedStartGlowAlpha, cachedStartGlowWidth);
     updateSliderKnobColours(cachedStartPulseColour);
+    updateButtonFontColors();
 
     resized();
     repaint();
@@ -4573,7 +4707,8 @@ void SlotMachineAudioProcessorEditor::mouseDown(const juce::MouseEvent& e)
                         slot->count.setValue(picked, juce::sendNotificationSync);
                     };
 
-                    auto grid = std::make_unique<BeatsQuickPickGrid>(opts, std::move(pickHandler), currentValue);
+                    const auto textColor = appLF.hasButtonFontColor() ? appLF.getButtonFontColor() : juce::Colours::white;
+                    auto grid = std::make_unique<BeatsQuickPickGrid>(opts, std::move(pickHandler), currentValue, textColor);
 
                     const auto screenPos = e.getScreenPosition().roundToInt();
                     const auto calloutBounds = juce::Rectangle<int>(screenPos.x, screenPos.y, 1, 1);
@@ -4701,60 +4836,7 @@ void SlotMachineAudioProcessorEditor::paint(juce::Graphics& g)
     const float pulseWidthPx = Opt::getFloat(apvts, "optPulseWidth", 4.0f);
 
     const juce::Colour glowColour = Opt::rgbParam(apvts, "optGlowColor", 0x6994FC, glowAlpha);
-    const juce::Colour pulseColour = Opt::rgbParam(apvts, "optPulseColor", 0xD5CFEE, pulseAlpha);
-
-    const auto barBack = juce::Colours::white.withAlpha(0.18f);
-    const auto barFill = pulseColour.withAlpha(0.92f);
-
-    // Master progress bar
-    if (showMasterBar)
-    {
-        float masterButtonCornerRadius = 6.0f;
-        if (auto* lf = dynamic_cast<AppLookAndFeel*>(&getLookAndFeel()))
-            masterButtonCornerRadius = lf->getCornerRadius();
-
-        g.setColour(barBack);
-        g.fillRoundedRectangle(masterBarBounds.toFloat(), masterButtonCornerRadius);
-
-        paintMasterWaveform(g, masterBarBounds);
-
-        const float clampedPhase = juce::jlimit(0.0f, 1.0f, masterPhase);
-        const float w = masterBarBounds.getWidth() * clampedPhase;
-        if (w > 1.0f)
-        {
-            auto filled = juce::Rectangle<float>((float)masterBarBounds.getX(),
-                (float)masterBarBounds.getY(),
-                w,
-                (float)masterBarBounds.getHeight());
-            g.setColour(barFill.withAlpha(0.7f));
-            g.fillRoundedRectangle(filled, masterButtonCornerRadius);
-        }
-
-        if (masterBarBounds.getWidth() > 0)
-        {
-            const float widthMinusOne = (float) juce::jmax(1, masterBarBounds.getWidth() - 1);
-            const float playheadX = (float) masterBarBounds.getX() + clampedPhase * widthMinusOne;
-            g.setColour(juce::Colours::white.withAlpha(0.85f));
-            g.drawLine(playheadX, (float) masterBarBounds.getY(), playheadX, (float) masterBarBounds.getBottom(), 2.0f);
-        }
-
-        // Flash overlay on cycle wrap, using the selected pulse colour/alpha
-        if (cycleFlash > 0.001f)
-        {
-            // use the same 'pulseColour' and its alpha you already read from Options
-            const float flashA = juce::jlimit(0.0f, 1.0f, cycleFlash);
-            auto flashCol = pulseColour.withAlpha(pulseColour.getFloatAlpha() * flashA);
-
-            // subtle full-bar glow
-            g.setColour(flashCol);
-            g.fillRoundedRectangle(masterBarBounds.toFloat(), masterButtonCornerRadius);
-
-            // crisp highlight line at bar start (downbeat tick)
-            g.setColour(juce::Colours::white.withAlpha(0.25f * flashA));
-            auto tick = masterBarBounds.toFloat().removeFromLeft(3.0f);
-            g.fillRoundedRectangle(tick, juce::jmin(masterButtonCornerRadius, 2.0f));
-        }
-    }
+    const juce::Colour pulseColour = getPulseColour();
 
     // Slots
     for (int i = 0; i < kNumSlots; ++i)
@@ -4764,7 +4846,8 @@ void SlotMachineAudioProcessorEditor::paint(juce::Graphics& g)
 
         const auto boundsF = ui->group.getBounds().toFloat();
 
-        // 1) Glow + pulse frame
+        // 1) Glow + pulse frame (only if no background images from skin)
+        if (!appLF.hasSlotBackgroundImages())
         {
             auto frame = boundsF.reduced(1.5f, 1.5f);
             const bool  selected = ui->hasFile;
@@ -4778,29 +4861,7 @@ void SlotMachineAudioProcessorEditor::paint(juce::Graphics& g)
                 pulseColour, pulseWidthPx, pulse);
         }
 
-        // 2) Per-slot progress bar
-        if (showSlotBars)
-        {
-            const float barH = 8.0f;
-            auto inner = boundsF.reduced(8.0f, 8.0f);
-            auto bar = juce::Rectangle<float>(inner.getX(), inner.getBottom() - barH,
-                inner.getWidth(), barH);
-
-            g.setColour(barBack);
-            g.fillRoundedRectangle(bar, 3.0f);
-
-            if (ui->hasFile)
-            {
-                const float w = bar.getWidth() * juce::jlimit(0.0f, 1.0f, ui->phase);
-                if (w > 1.0f)
-                {
-                    g.setColour(pulseColour);
-                    g.fillRoundedRectangle(juce::Rectangle<float>(bar.getX(), bar.getY(), w, barH), 3.0f);
-                }
-            }
-        }
-
-        // 3) Knob labels
+        // 2) Knob labels
         auto drawKnobLabel = [&g](juce::Slider& slider, const juce::String& text)
             {
                 auto layout = slider.getLookAndFeel().getSliderLayout(slider);
@@ -4835,6 +4896,110 @@ void SlotMachineAudioProcessorEditor::paint(juce::Graphics& g)
             drawKnobLabel(ui->rate, "RATE");
         drawKnobLabel(ui->gain, "VOL");
         drawKnobLabel(ui->decay, "DECAY");
+    }
+}
+
+void SlotMachineAudioProcessorEditor::paintOverChildren(juce::Graphics& g)
+{
+    // Draw progress bars on top of all components including skin backgrounds
+    const bool showMasterBar = Opt::getBool(apvts, "optShowMasterBar", true);
+    const bool showSlotBars = Opt::getBool(apvts, "optShowSlotBars", true);
+
+    const auto barBack = juce::Colours::black.withAlpha(0.55f);
+    const float pulseAlpha = Opt::getFloat(apvts, "optPulseAlpha", 1.0f);
+    const juce::Colour pulseColour = getPulseColour();
+    const auto barFill = pulseColour.withAlpha(0.92f);
+
+    // Master progress bar
+    if (showMasterBar)
+    {
+        float masterButtonCornerRadius = 6.0f;
+        if (auto* lf = dynamic_cast<AppLookAndFeel*>(&getLookAndFeel()))
+            masterButtonCornerRadius = lf->getCornerRadius();
+
+        g.setColour(barBack);
+        g.fillRoundedRectangle(masterBarBounds.toFloat(), masterButtonCornerRadius);
+
+        paintMasterWaveform(g, masterBarBounds);
+
+        const float clampedPhase = juce::jlimit(0.0f, 1.0f, masterPhase);
+        const float w = masterBarBounds.getWidth() * clampedPhase;
+        if (w > 1.0f)
+        {
+            auto filled = juce::Rectangle<float>((float)masterBarBounds.getX(),
+                (float)masterBarBounds.getY(),
+                w,
+                (float)masterBarBounds.getHeight());
+            g.setColour(barFill.withAlpha(0.7f));
+            g.fillRoundedRectangle(filled, masterButtonCornerRadius);
+        }
+
+        if (masterBarBounds.getWidth() > 0)
+        {
+            const float widthMinusOne = (float) juce::jmax(1, masterBarBounds.getWidth() - 1);
+            const float playheadX = (float) masterBarBounds.getX() + clampedPhase * widthMinusOne;
+            g.setColour(juce::Colours::white.withAlpha(0.85f));
+            g.drawLine(playheadX, (float) masterBarBounds.getY(), playheadX, (float) masterBarBounds.getBottom(), 2.0f);
+        }
+
+        // Flash overlay on cycle wrap
+        if (cycleFlash > 0.001f)
+        {
+            const float flashA = juce::jlimit(0.0f, 1.0f, cycleFlash);
+            auto flashCol = pulseColour.withAlpha(pulseColour.getFloatAlpha() * flashA);
+
+            g.setColour(flashCol);
+            g.fillRoundedRectangle(masterBarBounds.toFloat(), masterButtonCornerRadius);
+
+            g.setColour(juce::Colours::white.withAlpha(0.25f * flashA));
+            auto tick = masterBarBounds.toFloat().removeFromLeft(3.0f);
+            g.fillRoundedRectangle(tick, juce::jmin(masterButtonCornerRadius, 2.0f));
+        }
+    }
+
+    // Per-slot progress bars
+    // Check if skin wants to hide progress bars
+    bool hideProgressBars = false;
+    if (auto* lf = dynamic_cast<AppLookAndFeel*>(&getLookAndFeel()))
+        hideProgressBars = lf->shouldHideProgressBar();
+
+    if (showSlotBars && !hideProgressBars)
+    {
+        for (int i = 0; i < kNumSlots; ++i)
+        {
+            auto* ui = slots[(size_t)i].get();
+            if (!ui) continue;
+
+            const auto boundsF = ui->group.getBounds().toFloat();
+            const float barH = 8.0f;
+            auto inner = boundsF.reduced(8.0f, 8.0f);
+
+            // Use custom progress bar width if specified, otherwise use full width
+            float barWidth = inner.getWidth();
+            if (auto* lf = dynamic_cast<AppLookAndFeel*>(&getLookAndFeel()))
+            {
+                int customWidth = lf->getProgressBarWidth();
+                if (customWidth > 0)
+                    barWidth = (float)customWidth;
+            }
+
+            // Center the progress bar horizontally
+            float barX = inner.getX() + (inner.getWidth() - barWidth) * 0.5f;
+            auto bar = juce::Rectangle<float>(barX, inner.getBottom() - barH, barWidth, barH);
+
+            g.setColour(barBack);
+            g.fillRoundedRectangle(bar, 3.0f);
+
+            if (ui->hasFile)
+            {
+                const float w = bar.getWidth() * juce::jlimit(0.0f, 1.0f, ui->phase);
+                if (w > 1.0f)
+                {
+                    g.setColour(pulseColour);
+                    g.fillRoundedRectangle(juce::Rectangle<float>(bar.getX(), bar.getY(), w, barH), 3.0f);
+                }
+            }
+        }
     }
 }
 
@@ -5052,16 +5217,25 @@ void SlotMachineAudioProcessorEditor::resized()
         const int iw = w - 2 * innerPad;
 
         const int fileRowH = slotScaled(28);
-        const int loadW = scaleDimension(110);  // your existing Load width
-        const int clearW = scaleDimension(24);   // tiny X button
+        const int defaultLoadW = scaleDimension(110);  // default Load button width
+        const int clearW = scaleDimension(24);         // tiny X button
         const int gap = slotScaled(4);
 
-        ui.fileBtn.setBounds(ix, iy, loadW, fileRowH);
-        ui.clearBtn.setBounds(ix + loadW + gap, iy, clearW, fileRowH);
+        // Load button: use custom width from skin if set, anchor right edge
+        const int skinLoadW = appLF.getLoadButtonWidth();
+        const int loadW = (skinLoadW > 0) ? skinLoadW : defaultLoadW;
 
-        // filename label fills the rest
-        const int labelX = ix + loadW + gap + clearW + gap;
-        const int labelW = juce::jmax(0, iw - (labelX - ix));
+        // Anchor right edge at default position, adjust left edge based on width
+        const int loadRightEdge = ix + defaultLoadW;
+        const int loadX = juce::jmax(ix, loadRightEdge - loadW);  // Don't extend past left edge
+
+        ui.fileBtn.setBounds(loadX, iy, loadW, fileRowH);
+        ui.clearBtn.setBounds(loadX + loadW + gap, iy, clearW, fileRowH);
+
+        // filename label: use custom width from skin if set, otherwise fills the rest
+        const int labelX = loadX + loadW + gap + clearW + gap;
+        const int skinFileNameWidth = appLF.getFileNameWidth();
+        const int labelW = (skinFileNameWidth > 0) ? skinFileNameWidth : juce::jmax(0, iw - (labelX - ix));
         ui.fileLabel.setBounds(labelX, iy, labelW, fileRowH);
 
 
@@ -5086,7 +5260,15 @@ void SlotMachineAudioProcessorEditor::resized()
         const int buttonH = slotScaled(22);
         const int labelHeight = slotScaled(16);
         const int labelGapY = slotScaled(2);
-        const int midiComboW = scaleDimensionWithMax(80, 0.95f);
+
+        // Use custom MIDI list width if specified in skin, otherwise use default
+        int midiComboW = scaleDimensionWithMax(80, 0.95f);
+        if (auto* lf = dynamic_cast<AppLookAndFeel*>(&getLookAndFeel()))
+        {
+            int customWidth = lf->getMidiListWidth();
+            if (customWidth > 0)
+                midiComboW = customWidth;
+        }
         const int midiComboH = scaleDimensionWithMax(22, 0.95f);
         const int controlBlockHeight = juce::jmax(midiComboH, buttonH + labelGapY + labelHeight);
 
@@ -5270,7 +5452,7 @@ void SlotMachineAudioProcessorEditor::copySlotData(int fromSlot, int toSlot)
         // Update the UI directly since this isn't a "failed" case
         if (auto* destSlot = slots[(size_t)toSlot].get())
         {
-            destSlot->fileLabel.setText("No file", juce::dontSendNotification);
+            destSlot->fileLabel.setText("", juce::dontSendNotification);
             destSlot->hasFile = false;
         }
     }
@@ -5402,6 +5584,13 @@ void SlotMachineAudioProcessorEditor::refreshPatternTabs()
 
     patternTabs.setTabs(names);
     patternTabs.setCurrentIndex(currentPatternIndex);
+
+    // Apply custom button font color to tabs
+    if (appLF.hasButtonFontColor())
+    {
+        const auto textColor = appLF.getButtonFontColor();
+        patternTabs.updateTabColors(juce::Colours::whitesmoke.overlaidWith(textColor.withAlpha(0.8f)), textColor);
+    }
 }
 
 void SlotMachineAudioProcessorEditor::applyPatternTreeNow(const juce::ValueTree& pattern, bool allowTailRelease)
@@ -5507,7 +5696,7 @@ void SlotMachineAudioProcessorEditor::refreshSlotFileLabels(const juce::Array<in
         if (!hasSample)
             embeddedSlotResourceNames[(size_t)i].clear();
 
-        juce::String label = "No file";
+        juce::String label = "";
         juce::String embeddedResource = embeddedSlotResourceNames[(size_t)i];
 
         if (embeddedResource.isEmpty() && path.isNotEmpty())
@@ -5571,11 +5760,14 @@ void SlotMachineAudioProcessorEditor::refreshSlotFileLabels(const juce::Array<in
         ui->hasFile = hasSample;
         ui->fileLabel.setText(label, juce::dontSendNotification);
 
-        // Set color to red for failed samples, default color otherwise
+        // Set color to red for failed samples, custom button color otherwise
         if (isFailed)
             ui->fileLabel.setColour(juce::Label::textColourId, juce::Colours::red);
         else
-            ui->fileLabel.setColour(juce::Label::textColourId, juce::Label().findColour(juce::Label::textColourId));
+        {
+            const auto textColor = appLF.hasButtonFontColor() ? appLF.getButtonFontColor() : juce::Colours::white;
+            ui->fileLabel.setColour(juce::Label::textColourId, textColor);
+        }
     }
 }
 
@@ -6440,6 +6632,16 @@ void SlotMachineAudioProcessorEditor::buttonClicked(juce::Button* b)
                     // Only reset Loop Playthrough if there is only 1 tab open
                     if (editor->patternsTree.getNumChildren() <= 1)
                         editor->setLoopPlaythroughEnabled(false);
+
+                    // Reload skin
+                    editor->appLF.reloadSkin();
+                    editor->logoImage = editor->appLF.getLogoImage().isValid()
+                        ? editor->appLF.getLogoImage()
+                        : juce::ImageCache::getFromMemory(BinaryData::SM5_png, BinaryData::SM5_pngSize);
+                    editor->updateMuteSoloButtonImages();
+                    editor->updateButtonFontColors();
+                    editor->resized();  // Recalculate layout with new skin parameters
+                    editor->repaint();
                 }
             });
 
@@ -6459,6 +6661,16 @@ void SlotMachineAudioProcessorEditor::buttonClicked(juce::Button* b)
                     editor->resetPatternsToSingleDefault();
                     editor->doResetAll();
                     editor->setLoopPlaythroughEnabled(false);
+
+                    // Reload skin
+                    editor->appLF.reloadSkin();
+                    editor->logoImage = editor->appLF.getLogoImage().isValid()
+                        ? editor->appLF.getLogoImage()
+                        : juce::ImageCache::getFromMemory(BinaryData::SM5_png, BinaryData::SM5_pngSize);
+                    editor->updateMuteSoloButtonImages();
+                    editor->updateButtonFontColors();
+                    editor->resized();  // Recalculate layout with new skin parameters
+                    editor->repaint();
                 }
             });
 
@@ -6778,8 +6990,9 @@ void SlotMachineAudioProcessorEditor::buttonClicked(juce::Button* b)
             processor.resetSlotParametersToDefault(i);
             embeddedSlotResourceNames[(size_t)i].clear();
             ui->hasFile = false;
-            ui->fileLabel.setText("No file", juce::dontSendNotification);
-            ui->fileLabel.setColour(juce::Label::textColourId, juce::Label().findColour(juce::Label::textColourId));
+            ui->fileLabel.setText("", juce::dontSendNotification);
+            const auto textColor = appLF.hasButtonFontColor() ? appLF.getButtonFontColor() : juce::Colours::white;
+            ui->fileLabel.setColour(juce::Label::textColourId, textColor);
             ui->glow = 0.0f;
             ui->phase = 0.0f;
             ui->lastHitCounter = 0;
@@ -6860,9 +7073,14 @@ void SlotMachineAudioProcessorEditor::buttonClicked(juce::Button* b)
 
 void SlotMachineAudioProcessorEditor::showOptionsDialog()
 {
-    auto content = std::make_unique<OptionsComponent>(apvts, [this](float newScale)
+    auto content = std::make_unique<OptionsComponent>(apvts,
+        [this](float newScale)
         {
             applySlotScale(newScale);
+        },
+        [this](const juce::String& skinName)
+        {
+            reloadSkinWithFolder(skinName);
         });
     content->setSize(640, 720);
 
@@ -7270,7 +7488,7 @@ void SlotMachineAudioProcessorEditor::setMasterRun(bool shouldRun)
     patternTabs.setReorderingEnabled(!shouldRun);
 
     const auto glowColour = Opt::rgbParam(apvts, "optGlowColor", 0x6994FC, 1.0f);
-    const auto pulseColour = Opt::rgbParam(apvts, "optPulseColor", 0xD5CFEE, 1.0f);
+    const auto pulseColour = getPulseColour();
     const float glowAlpha = Opt::getFloat(apvts, "optGlowAlpha", 0.431f);
     const float glowWidth = Opt::getFloat(apvts, "optGlowWidth", 1.34f);
 
@@ -7571,7 +7789,7 @@ void SlotMachineAudioProcessorEditor::doResetAll(bool persistOptions)
         if (slots[(size_t)i])
         {
             slots[(size_t)i]->hasFile = false;
-            slots[(size_t)i]->fileLabel.setText("No file", juce::dontSendNotification);
+            slots[(size_t)i]->fileLabel.setText("", juce::dontSendNotification);
             slots[(size_t)i]->glow = 0.0f;
             slots[(size_t)i]->phase = 0.0f;
             slots[(size_t)i]->lastHitCounter = 0;
@@ -7596,6 +7814,146 @@ void SlotMachineAudioProcessorEditor::doResetAll(bool persistOptions)
         saveOptionsToDisk(apvts);
 
     saveCurrentPattern();
+}
+
+void SlotMachineAudioProcessorEditor::updateMuteSoloButtonImages()
+{
+    // Reload mute/solo button images from skin
+    const juce::Image muteOffImage = appLF.getMuteOffImage().isValid()
+        ? appLF.getMuteOffImage()
+        : juce::ImageCache::getFromMemory(BinaryData::MuteOFF_png, BinaryData::MuteOFF_pngSize);
+    const juce::Image muteOnImage = appLF.getMuteOnImage().isValid()
+        ? appLF.getMuteOnImage()
+        : juce::ImageCache::getFromMemory(BinaryData::MuteON_png, BinaryData::MuteON_pngSize);
+    const juce::Image soloOffImage = appLF.getSoloOffImage().isValid()
+        ? appLF.getSoloOffImage()
+        : juce::ImageCache::getFromMemory(BinaryData::SoloOFF_png, BinaryData::SoloOFF_pngSize);
+    const juce::Image soloOnImage = appLF.getSoloOnImage().isValid()
+        ? appLF.getSoloOnImage()
+        : juce::ImageCache::getFromMemory(BinaryData::SoloON_png, BinaryData::SoloON_pngSize);
+
+    // Update all slot mute/solo buttons
+    for (int i = 0; i < kNumSlots; ++i)
+    {
+        if (slots[(size_t)i])
+        {
+            auto& muteBtn = slots[(size_t)i]->muteBtn;
+            auto& soloBtn = slots[(size_t)i]->soloBtn;
+
+            // Update mute button images
+            const auto& muteSource = muteBtn.getToggleState() ? muteOnImage : muteOffImage;
+            muteBtn.setImages(false, true, true,
+                muteSource, 1.0f, juce::Colours::transparentBlack,
+                muteSource, 1.0f, juce::Colours::transparentBlack,
+                muteSource, 1.0f, juce::Colours::transparentBlack);
+
+            // Update solo button images
+            const auto& soloSource = soloBtn.getToggleState() ? soloOnImage : soloOffImage;
+            soloBtn.setImages(false, true, true,
+                soloSource, 1.0f, juce::Colours::transparentBlack,
+                soloSource, 1.0f, juce::Colours::transparentBlack,
+                soloSource, 1.0f, juce::Colours::transparentBlack);
+        }
+    }
+}
+
+void SlotMachineAudioProcessorEditor::reloadSkinWithFolder(const juce::String& skinFolderName)
+{
+    appLF.setSkinFolder(skinFolderName);
+    appLF.reloadSkin();
+    logoImage = appLF.getLogoImage().isValid()
+        ? appLF.getLogoImage()
+        : juce::ImageCache::getFromMemory(BinaryData::SM5_png, BinaryData::SM5_pngSize);
+    updateMuteSoloButtonImages();
+    updateButtonFontColors();
+    resized();
+    repaint();
+}
+
+void SlotMachineAudioProcessorEditor::updateButtonFontColors()
+{
+    // Use custom color if specified, otherwise use default white
+    const auto textColor = appLF.hasButtonFontColor() ? appLF.getButtonFontColor() : juce::Colours::white;
+
+    // Update master row buttons (except Start)
+    btnSave.setColour(juce::TextButton::textColourOnId, textColor);
+    btnSave.setColour(juce::TextButton::textColourOffId, textColor);
+    btnLoad.setColour(juce::TextButton::textColourOnId, textColor);
+    btnLoad.setColour(juce::TextButton::textColourOffId, textColor);
+    btnResetLoop.setColour(juce::TextButton::textColourOnId, textColor);
+    btnResetLoop.setColour(juce::TextButton::textColourOffId, textColor);
+    btnReset.setColour(juce::TextButton::textColourOnId, textColor);
+    btnReset.setColour(juce::TextButton::textColourOffId, textColor);
+    btnInitialize.setColour(juce::TextButton::textColourOnId, textColor);
+    btnInitialize.setColour(juce::TextButton::textColourOffId, textColor);
+    btnOptions.setColour(juce::TextButton::textColourOnId, textColor);
+    btnOptions.setColour(juce::TextButton::textColourOffId, textColor);
+    btnExportMidi.setColour(juce::TextButton::textColourOnId, textColor);
+    btnExportMidi.setColour(juce::TextButton::textColourOffId, textColor);
+    btnExportAudio.setColour(juce::TextButton::textColourOnId, textColor);
+    btnExportAudio.setColour(juce::TextButton::textColourOffId, textColor);
+    btnVisualizer.setColour(juce::TextButton::textColourOnId, textColor);
+    btnVisualizer.setColour(juce::TextButton::textColourOffId, textColor);
+
+    // Update second row buttons
+    btnTutorial.setColour(juce::TextButton::textColourOnId, textColor);
+    btnTutorial.setColour(juce::TextButton::textColourOffId, textColor);
+    btnUserManual.setColour(juce::TextButton::textColourOnId, textColor);
+    btnUserManual.setColour(juce::TextButton::textColourOffId, textColor);
+    btnAbout.setColour(juce::TextButton::textColourOnId, textColor);
+    btnAbout.setColour(juce::TextButton::textColourOffId, textColor);
+    btnLock.setColour(juce::TextButton::textColourOnId, textColor);
+    btnLock.setColour(juce::TextButton::textColourOffId, textColor);
+    btnUnlock.setColour(juce::TextButton::textColourOnId, textColor);
+    btnUnlock.setColour(juce::TextButton::textColourOffId, textColor);
+
+    // Update pattern tabs
+    patternTabs.updateTabColors(juce::Colours::whitesmoke.overlaidWith(textColor.withAlpha(0.8f)), textColor);
+
+    // Update Master BPM label
+    masterLabel.setColour(juce::Label::textColourId, textColor);
+
+    // Update Master BPM slider text
+    masterBPM.setColour(juce::Slider::textBoxTextColourId, textColor);
+
+    // Update slot components
+    for (int i = 0; i < kNumSlots; ++i)
+    {
+        if (slots[(size_t)i])
+        {
+            auto& slot = *slots[(size_t)i];
+
+            // Update slot Load button
+            slot.fileBtn.setColour(juce::TextButton::textColourOffId, textColor);
+            slot.fileBtn.setColour(juce::TextButton::textColourOnId, textColor);
+
+            // Update slot clearBtn (X button)
+            slot.clearBtn.setColour(juce::TextButton::textColourOffId, textColor.withAlpha(0.85f));
+
+            // Update slot file label (red is preserved in refreshSlotFileLabels for failed samples)
+            slot.fileLabel.setColour(juce::Label::textColourId, textColor);
+
+            // Update MIDI channel ComboBox (text and arrow)
+            slot.midiChannel.setColour(juce::ComboBox::textColourId, textColor);
+            slot.midiChannel.setColour(juce::ComboBox::arrowColourId, textColor);
+            slot.midiChannel.setColour(juce::ComboBox::buttonColourId, juce::Colours::transparentBlack);
+
+            // Update Mute and Solo labels
+            slot.muteLabel.setColour(juce::Label::textColourId, textColor);
+            slot.soloLabel.setColour(juce::Label::textColourId, textColor);
+        }
+    }
+}
+
+juce::Colour SlotMachineAudioProcessorEditor::getPulseColour() const
+{
+    // If ButtonFontColor is specified in skin, use it for pulse color
+    if (appLF.hasButtonFontColor())
+        return appLF.getButtonFontColor();
+
+    // Otherwise use the option setting
+    const float pulseAlpha = Opt::getFloat(apvts, "optPulseAlpha", 1.0f);
+    return Opt::rgbParam(apvts, "optPulseColor", 0xD5CFEE, pulseAlpha);
 }
 
 void SlotMachineAudioProcessorEditor::resetLoopTransport()
@@ -7812,7 +8170,7 @@ void SlotMachineAudioProcessorEditor::timerCallback()
 
     const bool isRunning = startToggle.getToggleState();
     const auto glowColour = Opt::rgbParam(apvts, "optGlowColor", 0x6994FC, 1.0f);
-    const auto pulseColour = Opt::rgbParam(apvts, "optPulseColor", 0xD5CFEE, 1.0f);
+    const auto pulseColour = getPulseColour();
     const float glowAlpha = Opt::getFloat(apvts, "optGlowAlpha", 0.431f);
     const float glowWidth = Opt::getFloat(apvts, "optGlowWidth", 1.34f);
 
@@ -8059,9 +8417,22 @@ void SlotMachineAudioProcessorEditor::timerCallback()
             ui->glow = 1.0f; // pulse on hit
         }
 
-        // simple glow decay
-        ui->glow = juce::jmax(0.0f, ui->glow - 0.06f);
+        // Variable glow decay based on count value (higher count = faster decay = shorter flash)
+        // Get the count parameter for this slot
+        int count = 4; // default
+        if (auto* countParam = apvts.getRawParameterValue("slot" + juce::String(i + 1) + "_Count"))
+            count = juce::jlimit(1, 64, (int)std::round(countParam->load()));
+
+        // Calculate decay rate: base * sqrt(count) for proportional scaling
+        // count=1: 0.03, count=4: 0.06, count=16: 0.12, count=64: 0.24
+        const float decayRate = 0.03f * std::sqrt((float)count);
+        ui->glow = juce::jmax(0.0f, ui->glow - decayRate);
+
+        // Update group component flash state for skinning
+        ui->group.getProperties().set("flashState", ui->glow);
+
         ui->hasFile = processor.slotHasSample(i);
+        ui->group.getProperties().set("hasFile", ui->hasFile);
 
         const bool beatsPerCycleMode = (timingMode == 1);
         const bool countEnabled = beatsPerCycleMode && !playThroughActive;
