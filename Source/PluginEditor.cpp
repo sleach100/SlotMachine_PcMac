@@ -7204,28 +7204,55 @@ void SlotMachineAudioProcessorEditor::beginAudioExportWithCycles(int cyclesReque
             if (!file.hasFileExtension(".wav"))
                 file = file.withFileExtension(".wav");
 
-            // Perform the export (automatically overwrite if file exists)
-            juce::String error;
-            const bool ok = exportPlaythrough
-                ? processor.exportAudioPlaythroughCycles(file, cyclesRequested, error)
-                : processor.exportAudioCycles(file, cyclesRequested, error);
-
-            if (ok)
+            // Lambda to perform the actual export
+            auto performExport = [this, file, cyclesRequested, exportPlaythrough]()
             {
-                juce::AlertWindow::showMessageBoxAsync(
-                    juce::AlertWindow::InfoIcon,
-                    "Export Audio",
-                    "Saved: " + file.getFullPathName());
+                juce::String error;
+                const bool ok = exportPlaythrough
+                    ? processor.exportAudioPlaythroughCycles(file, cyclesRequested, error)
+                    : processor.exportAudioCycles(file, cyclesRequested, error);
+
+                if (ok)
+                {
+                    juce::AlertWindow::showMessageBoxAsync(
+                        juce::AlertWindow::InfoIcon,
+                        "Export Audio",
+                        "Saved: " + file.getFullPathName());
+                }
+                else
+                {
+                    if (error.isEmpty())
+                        error = "Unable to export audio.";
+
+                    juce::AlertWindow::showMessageBoxAsync(
+                        juce::AlertWindow::WarningIcon,
+                        "Export Audio",
+                        error);
+                }
+            };
+
+            // Check if file exists and ask user if they want to overwrite
+            if (file.exists())
+            {
+                auto options = juce::MessageBoxOptions()
+                    .withIconType(juce::MessageBoxIconType::QuestionIcon)
+                    .withTitle("File Already Exists")
+                    .withMessage("The file \"" + file.getFileName() + "\" already exists. Do you want to overwrite it?")
+                    .withButton("Overwrite")
+                    .withButton("Cancel");
+
+                juce::AlertWindow::showAsync(options,
+                    juce::ModalCallbackFunction::create([performExport](int result)
+                    {
+                        if (result == 1) // User clicked "Overwrite"
+                            performExport();
+                        // Otherwise user clicked "Cancel" or closed dialog - do nothing
+                    }));
             }
             else
             {
-                if (error.isEmpty())
-                    error = "Unable to export audio.";
-
-                juce::AlertWindow::showMessageBoxAsync(
-                    juce::AlertWindow::WarningIcon,
-                    "Export Audio",
-                    error);
+                // File doesn't exist, proceed with export
+                performExport();
             }
         });
 }
@@ -7274,28 +7301,55 @@ void SlotMachineAudioProcessorEditor::beginMidiExportWithCycles(int cyclesReques
             if (!file.hasFileExtension(".mid"))
                 file = file.withFileExtension(".mid");
 
-            // Perform the export (automatically overwrite if file exists)
-            juce::String error;
-            const bool ok = exportPlaythrough
-                ? processor.exportMidiPlaythroughCycles(file, cyclesRequested, useFixedNoteLength, error)
-                : processor.exportMidiCycles(file, cyclesRequested, useFixedNoteLength, error);
-
-            if (ok)
+            // Lambda to perform the actual export
+            auto performExport = [this, file, cyclesRequested, exportPlaythrough, useFixedNoteLength]()
             {
-                juce::AlertWindow::showMessageBoxAsync(
-                    juce::AlertWindow::InfoIcon,
-                    "Export MIDI",
-                    "Saved: " + file.getFullPathName());
+                juce::String error;
+                const bool ok = exportPlaythrough
+                    ? processor.exportMidiPlaythroughCycles(file, cyclesRequested, useFixedNoteLength, error)
+                    : processor.exportMidiCycles(file, cyclesRequested, useFixedNoteLength, error);
+
+                if (ok)
+                {
+                    juce::AlertWindow::showMessageBoxAsync(
+                        juce::AlertWindow::InfoIcon,
+                        "Export MIDI",
+                        "Saved: " + file.getFullPathName());
+                }
+                else
+                {
+                    if (error.isEmpty())
+                        error = "Unable to export MIDI.";
+
+                    juce::AlertWindow::showMessageBoxAsync(
+                        juce::AlertWindow::WarningIcon,
+                        "Export MIDI",
+                        error);
+                }
+            };
+
+            // Check if file exists and ask user if they want to overwrite
+            if (file.exists())
+            {
+                auto options = juce::MessageBoxOptions()
+                    .withIconType(juce::MessageBoxIconType::QuestionIcon)
+                    .withTitle("File Already Exists")
+                    .withMessage("The file \"" + file.getFileName() + "\" already exists. Do you want to overwrite it?")
+                    .withButton("Overwrite")
+                    .withButton("Cancel");
+
+                juce::AlertWindow::showAsync(options,
+                    juce::ModalCallbackFunction::create([performExport](int result)
+                    {
+                        if (result == 1) // User clicked "Overwrite"
+                            performExport();
+                        // Otherwise user clicked "Cancel" or closed dialog - do nothing
+                    }));
             }
             else
             {
-                if (error.isEmpty())
-                    error = "Unable to export MIDI.";
-
-                juce::AlertWindow::showMessageBoxAsync(
-                    juce::AlertWindow::WarningIcon,
-                    "Export MIDI",
-                    error);
+                // File doesn't exist, proceed with export
+                performExport();
             }
         });
 }
