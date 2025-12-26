@@ -5586,6 +5586,13 @@ void SlotMachineAudioProcessorEditor::refreshPatternTabs()
 
     patternTabs.setTabs(names);
     patternTabs.setCurrentIndex(currentPatternIndex);
+
+    // Apply custom button font color to tabs
+    if (appLF.hasButtonFontColor())
+    {
+        const auto textColor = appLF.getButtonFontColor();
+        patternTabs.updateTabColors(juce::Colours::whitesmoke.overlaidWith(textColor.withAlpha(0.8f)), textColor);
+    }
 }
 
 void SlotMachineAudioProcessorEditor::applyPatternTreeNow(const juce::ValueTree& pattern, bool allowTailRelease)
