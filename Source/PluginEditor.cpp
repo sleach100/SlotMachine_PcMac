@@ -6641,6 +6641,7 @@ void SlotMachineAudioProcessorEditor::buttonClicked(juce::Button* b)
                         ? editor->appLF.getLogoImage()
                         : juce::ImageCache::getFromMemory(BinaryData::SM5_png, BinaryData::SM5_pngSize);
                     editor->updateMuteSoloButtonImages();
+                    editor->updateButtonFontColors();
                     editor->resized();  // Recalculate layout with new skin parameters
                     editor->repaint();
                 }
@@ -6669,6 +6670,7 @@ void SlotMachineAudioProcessorEditor::buttonClicked(juce::Button* b)
                         ? editor->appLF.getLogoImage()
                         : juce::ImageCache::getFromMemory(BinaryData::SM5_png, BinaryData::SM5_pngSize);
                     editor->updateMuteSoloButtonImages();
+                    editor->updateButtonFontColors();
                     editor->resized();  // Recalculate layout with new skin parameters
                     editor->repaint();
                 }
