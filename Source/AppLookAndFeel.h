@@ -440,8 +440,12 @@ public:
                 + juce::String(midiListPanelBackgroundImage.getHeight()) + ") into "
                 + juce::String(width) + "x" + juce::String(height));
 
-            // Just draw the custom image - no background fill
-            // This preserves image transparency
+            // First, fill the entire background with transparent to enable window transparency
+            g.fillAll(juce::Colours::transparentBlack);
+
+            // Then draw the custom image on top, scaled to fit
+            // The image's opaque pixels will show, transparent pixels will show desktop
+            g.setOpacity(1.0f);
             g.drawImage(midiListPanelBackgroundImage,
                        0, 0, width, height,
                        0, 0, midiListPanelBackgroundImage.getWidth(), midiListPanelBackgroundImage.getHeight(),
