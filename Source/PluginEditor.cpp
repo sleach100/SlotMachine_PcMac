@@ -1928,7 +1928,8 @@ static juce::Slider& setupKnob(juce::Slider& s,
 class SlotMachineAudioProcessorEditor::EmbeddedSampleSelector : public juce::Component
 {
 public:
-    EmbeddedSampleSelector(const EmbeddedCatalog& catalog)
+    EmbeddedSampleSelector(const EmbeddedCatalog& catalog, juce::Colour textColor = juce::Colours::whitesmoke)
+        : customTextColor(textColor)
     {
         content = std::make_unique<ListContent>(*this, catalog);
         viewport.setViewedComponent(content.get(), false);
@@ -1946,6 +1947,7 @@ public:
 
     std::function<void(const juce::String&)> onPick;
     std::function<void(const juce::String&)> onPreview;
+    juce::Colour customTextColor;
 
     void resized() override
     {
@@ -2116,7 +2118,11 @@ private:
                     g.setColour(background);
                     g.fillRect(area);
 
-                    g.setColour(juce::Colours::whitesmoke);
+                    // Use custom text color from EmbeddedSampleSelector
+                    if (auto* row = findParentComponentOfClass<Row>())
+                        g.setColour(row->owner.customTextColor);
+                    else
+                        g.setColour(juce::Colours::whitesmoke);
                     g.setFont(juce::Font{ juce::FontOptions(14.0f) });
                     g.drawText(getButtonText(), area.reduced(10, 0), juce::Justification::centredLeft, true);
                 }
@@ -2351,7 +2357,8 @@ void SlotMachineAudioProcessorEditor::openEmbeddedSampleSelectorForSlot(int slot
     if (embeddedCatalog.empty())
         return;
 
-    auto selector = std::make_unique<EmbeddedSampleSelector>(embeddedCatalog);
+    const auto textColor = appLF.hasButtonFontColor() ? appLF.getButtonFontColor() : juce::Colours::whitesmoke;
+    auto selector = std::make_unique<EmbeddedSampleSelector>(embeddedCatalog, textColor);
 
     selector->onPreview = [this](const juce::String& resource)
     {
@@ -4703,7 +4710,8 @@ void SlotMachineAudioProcessorEditor::mouseDown(const juce::MouseEvent& e)
                         slot->count.setValue(picked, juce::sendNotificationSync);
                     };
 
-                    auto grid = std::make_unique<BeatsQuickPickGrid>(opts, std::move(pickHandler), currentValue);
+                    const auto textColor = appLF.hasButtonFontColor() ? appLF.getButtonFontColor() : juce::Colours::white;
+                    auto grid = std::make_unique<BeatsQuickPickGrid>(opts, std::move(pickHandler), currentValue, textColor);
 
                     const auto screenPos = e.getScreenPosition().roundToInt();
                     const auto calloutBounds = juce::Rectangle<int>(screenPos.x, screenPos.y, 1, 1);
@@ -7881,6 +7889,9 @@ void SlotMachineAudioProcessorEditor::updateButtonFontColors()
 
     // Update pattern tabs
     patternTabs.updateTabColors(juce::Colours::whitesmoke.overlaidWith(textColor.withAlpha(0.8f)), textColor);
+
+    // Update Master BPM label
+    masterLabel.setColour(juce::Label::textColourId, textColor);
 
     // Update Master BPM slider text
     masterBPM.setColour(juce::Slider::textBoxTextColourId, textColor);
