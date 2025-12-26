@@ -435,10 +435,8 @@ public:
         // Falls back to default JUCE rendering (not TextBox) to avoid vertical distortion
         if (midiListPanelBackgroundImage.isValid())
         {
-            // Clear with transparent background first to allow image transparency to show through
-            g.fillAll(juce::Colours::transparentBlack);
-
             // Draw the MIDI list panel background image stretched to fit the popup menu bounds
+            // The transparent background colour set during image loading ensures transparency works
             g.drawImage(midiListPanelBackgroundImage,
                        0, 0, width, height,
                        0, 0, midiListPanelBackgroundImage.getWidth(), midiListPanelBackgroundImage.getHeight(),
