@@ -429,8 +429,8 @@ static OfflinePatternData createOfflinePatternDataFromValueTree(SlotMachineAudio
 static int computePatternPlaythroughCycles(const juce::ValueTree& pattern)
 {
     const auto repeatVar = pattern.getProperty(kPatternRepeatProperty);
-    const int repeat = juce::jmax(0, varToInt(repeatVar, 0));
-    return juce::jmax(1, 1 + repeat);
+    const int repeat = juce::jmax(1, varToInt(repeatVar, 1));
+    return juce::jmax(1, repeat);
 }
 
 static bool writeAudioFile(const juce::File& destination,
@@ -3174,7 +3174,7 @@ juce::ValueTree SlotMachineAudioProcessor::createDefaultPatternTree(const juce::
 {
     juce::ValueTree pattern(kPatternNodeType);
     pattern.setProperty(kPatternNameProperty, name, nullptr);
-    pattern.setProperty(kPatternRepeatProperty, 0, nullptr);
+    pattern.setProperty(kPatternRepeatProperty, 1, nullptr);
 
     if (auto* masterParam = dynamic_cast<juce::AudioParameterFloat*>(apvts.getParameter("masterBPM")))
     {
