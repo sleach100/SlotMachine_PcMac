@@ -177,7 +177,7 @@ public:
             const int scaledH = (int)(imgH * scale);
 
             // Calculate thumb position - sliderPos is the center X position of the thumb
-            auto thumbX = (int)(sliderPos - scaledW * 0.5f);
+            auto thumbX = juce::roundToInt(sliderPos - scaledW * 0.5f);
             auto thumbY = y + (height - scaledH) / 2;
 
             // Draw the thumb image at scaled size
