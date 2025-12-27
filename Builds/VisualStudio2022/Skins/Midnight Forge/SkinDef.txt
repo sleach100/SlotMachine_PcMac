@@ -6,12 +6,13 @@
    BackgroundSampleLoaded=Background-SampleLoaded.png
 
 ;--- File / Text ---
-   ;Default FileNameWidth=142
-   FileNameWidth=155
-   TextBox=TextBox.png
+   FileNameWidth=155  ;Default FileNameWidth=142
+   TextBox=TextBox.png   ; Image used for Text boxes Count/Rate, Vol, Decay, MIDI channel selector, Midi Channel Selector Dropdown, Master BPM slider value
    TextBoxFont=LED.ttf
    TextBoxFontSize=18
-   TextBoxFontColor=#FFFF33
+   MIDI_ListPanelBackground=MIDIback.png
+   TextBoxFontColor=#FFFF33  ; Yellow
+   MidiSelectorColor=#FF0000 ; RED - Applies to:  MIDI channel selector, Midi Channel Selector Dropdown, Sample Selector Font
 
 ;--- Buttons ---
    LoadButtonWidth=75
@@ -21,13 +22,12 @@
    ;TabSelected= Image to use for the Tab when there are multiple tabs.  Distinguishes active tab from inactive tabs.  Only used when there are multiple tabs.
    TabSelected=Button3clicked.png
    MIDI_ListWidth=64
-   ;  will apply to all the master row buttons (except Start/Stop), Tabs, Master BPM label, Slot buttons(Load and X), MIDI channel selector, Midi Channel Selector Dropdown, Mute label and Solo Label
-   ButtonFontColor=#FF0000
+   ;Will apply to all the master row buttons (except Start/Stop), Tabs, Master BPM label, Slot buttons(Load and X), Mute label and Solo Label
+   ButtonFontColor=#FF0000  ; RED
 
 ;--- Sliders ---
    SliderThumb=Slider_Knob-Grey2.png
-   ;SliderThumbScale=size percentage of original image (1-100)
-   SliderThumbScale=7
+   SliderThumbScale=7  ;size percentage of original image (1-100)
 
 ;--- Toggles / LEDs ---
    MuteON=MuteON.png  ;RedLED.png
@@ -39,7 +39,7 @@
    Logo=SM5-Metal.png
 
 ;--- Audio Knobs (Filmstrip) ---
-;knob = filename, KnobFrames = number of frames in the filmstrip, KnobFilmstripOrientation=Vertical or Horizontal
+   ;knob = filename, KnobFrames = number of frames in the filmstrip, KnobFilmstripOrientation=Vertical or Horizontal
    Knobs=large_knob_135frames.png
    KnobFrames=135
    KnobFilmstripOrientation=Vertical

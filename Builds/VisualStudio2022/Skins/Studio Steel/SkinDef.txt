@@ -9,21 +9,23 @@
    ;Default FileNameWidth=142
    FileNameWidth=155
    TextBox=TextBox-Metal2.png
-   MIDI_ListPanelBackground=TexBoxVerticalThin.png
+   MIDI_ListPanelBackground=TextBox-Metal3.png   ;TexBoxVerticalThin.png
+   MasterBPM_Image=Tempo.png
    TextBoxFont=LED.ttf
    TextBoxFontSize=18
    TextBoxFontColor=#FFFF33
 
 ;--- Buttons ---
    LoadButtonWidth=75
-   Button=Button-Nickel1.png
-   ButtonHover=Button3Hover.png
-   ButtonClicked=ButtonClicked.png
+   Button=Button-Nickel.png
+   ButtonHover=ButtonHover.png  ;ButtonHover.png
+   ButtonClicked=ButtonClicked.png  ;ButtonClicked.png
    ;TabSelected= Image to use for the Tab when there are multiple tabs.  Distinguishes active tab from inactive tabs.  Only used when there are multiple tabs.
    TabSelected=ButtonClicked.png
    MIDI_ListWidth=64
    ;  will apply to all the master row buttons (except Start/Stop), Tabs, Master BPM label, Slot buttons(Load and X), MIDI channel selector, Midi Channel Selector Dropdown, Mute label and Solo Label
-   ButtonFontColor=#00FF00
+   ButtonFontColor=#303030
+     ;#00FF00
 
 ;--- Sliders ---
    SliderTrack=SliderTrack-ThinMetal.png
