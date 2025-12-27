@@ -124,10 +124,25 @@ public:
             if (sliderTrackImage.isValid())
             {
                 DBG("Drawing custom slider track for: " + slider.getName());
-                // Draw the custom slider track image stretched to fit the slider bounds
+                // Draw the custom slider track image scaled to fit while maintaining aspect ratio
+                const int imgW = sliderTrackImage.getWidth();
+                const int imgH = sliderTrackImage.getHeight();
+
+                // Calculate scaling to fit within bounds while maintaining aspect ratio
+                const float scaleW = (float)width / (float)imgW;
+                const float scaleH = (float)height / (float)imgH;
+                const float scale = juce::jmin(scaleW, scaleH);
+
+                const int scaledW = (int)(imgW * scale);
+                const int scaledH = (int)(imgH * scale);
+
+                // Center the image within the slider bounds
+                const int drawX = x + (width - scaledW) / 2;
+                const int drawY = y + (height - scaledH) / 2;
+
                 g.drawImage(sliderTrackImage,
-                           x, y, width, height,
-                           0, 0, sliderTrackImage.getWidth(), sliderTrackImage.getHeight(),
+                           drawX, drawY, scaledW, scaledH,
+                           0, 0, imgW, imgH,
                            false);
             }
             else
