@@ -1,4 +1,4 @@
-; SKIN: Midnight Forge
+; SKIN: Studio Steel
 
 ; --- Panel / Slot Backgrounds ---
    Background=BrushedNickelBackground_LED_OFF.png
@@ -9,6 +9,7 @@
    ;Default FileNameWidth=142
    FileNameWidth=155
    TextBox=TextBox-Metal2.png
+   MIDI_ListPanelBackground=TexBoxVerticalThin.png
    TextBoxFont=LED.ttf
    TextBoxFontSize=18
    TextBoxFontColor=#FFFF33
@@ -17,17 +18,18 @@
    LoadButtonWidth=75
    Button=Button-Nickel1.png
    ButtonHover=Button3Hover.png
-   ButtonClicked=Button3clicked.png
+   ButtonClicked=ButtonClicked.png
    ;TabSelected= Image to use for the Tab when there are multiple tabs.  Distinguishes active tab from inactive tabs.  Only used when there are multiple tabs.
-   TabSelected=Button3clicked.png
+   TabSelected=ButtonClicked.png
    MIDI_ListWidth=64
    ;  will apply to all the master row buttons (except Start/Stop), Tabs, Master BPM label, Slot buttons(Load and X), MIDI channel selector, Midi Channel Selector Dropdown, Mute label and Solo Label
    ButtonFontColor=#00FF00
 
 ;--- Sliders ---
+   SliderTrack=SliderTrack-ThinMetal.png
    SliderThumb=SliderThumbSilver.png
    ;SliderThumbScale=size percentage of original image (1-100)
-   SliderThumbScale=7
+   SliderThumbScale=8
 
 ;--- Toggles / LEDs ---
    MuteON=Red_LED3.png
