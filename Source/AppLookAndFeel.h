@@ -317,10 +317,20 @@ public:
 
     void drawLabel (juce::Graphics& g, juce::Label& label) override
     {
-        // Skip TextBox image for Mute, Solo, Master BPM labels, and file labels - leave them unaltered
+        // Skip TextBox image for Mute, Solo, Master BPM labels, file labels, and ComboBox labels
         auto labelText = label.getText();
         auto labelName = label.getName();
         bool isExcluded = labelText == "Mute" || labelText == "Solo" || labelText == "Master BPM" || labelName == "SlotFileLabel";
+
+        // Check if this label is inside a ComboBox - if so, exclude it from TextBox background
+        // The ComboBox already draws its own TextBox background via drawComboBox
+        if (!isExcluded && label.getParentComponent() != nullptr)
+        {
+            if (dynamic_cast<juce::ComboBox*>(label.getParentComponent()) != nullptr)
+            {
+                isExcluded = true;
+            }
+        }
 
         // Check if this is a numeric label (count, volume, decay, Master BPM slider)
         // Numeric labels contain only digits, decimal points, minus signs, and spaces
