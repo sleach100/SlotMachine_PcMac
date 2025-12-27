@@ -4170,29 +4170,70 @@ void SlotMachineAudioProcessorEditor::initialiseLicenseState()
                 }
                 else if (onlineResult.rawJsonResponse.isNotEmpty())
                 {
-                    // We got a definitive response from the server saying the license is invalid
-                    // This means the license was deactivated remotely - re-lock the app
-                    juce::MessageManager::callAsync([this]()
+                    // We got a response from the server - check if it's a permanent failure
+                    // Only re-lock and notify user for permanent license status changes
+                    bool isPermanentFailure = false;
+                    juce::String userMessage;
+                    juce::String messageTitle;
+
+                    // Check the license status to determine the type of failure
+                    if (onlineResult.licenseStatus == "disabled")
                     {
-                        DBG("License no longer valid on server - re-locking app");
+                        // License was explicitly disabled - this is a permanent failure
+                        isPermanentFailure = true;
+                        messageTitle = "License Disabled";
+                        userMessage = "Your license has been disabled. Please contact support or re-enter your license key.";
+                        DBG("License disabled by administrator - re-locking app");
+                    }
+                    else if (onlineResult.licenseStatus == "expired")
+                    {
+                        // License/subscription has expired - this is a permanent failure
+                        isPermanentFailure = true;
+                        messageTitle = "License Expired";
+                        userMessage = "Your license has expired. Please renew your subscription or re-enter your license key.";
+                        DBG("License expired - re-locking app");
+                    }
+                    else if (onlineResult.licenseStatus == "inactive")
+                    {
+                        // License was never properly activated - this is a permanent failure
+                        isPermanentFailure = true;
+                        messageTitle = "License Inactive";
+                        userMessage = "Your license is inactive. Please activate it in your Lemon Squeezy account or re-enter your license key.";
+                        DBG("License inactive - re-locking app");
+                    }
+                    else
+                    {
+                        // Other validation failures (network errors, parsing errors, API errors)
+                        // These are likely transient - keep using the cached license (offline mode)
+                        DBG("License validation failed but not a permanent status change (status: " +
+                            onlineResult.licenseStatus + ", error: " + onlineResult.errorMessage +
+                            ") - keeping cache");
+                        isPermanentFailure = false;
+                    }
 
-                        // Clear the cached license
-                        LemonSqueezyCache::clearLicenseCache();
+                    // Only re-lock and notify user for permanent failures
+                    if (isPermanentFailure)
+                    {
+                        juce::MessageManager::callAsync([this, messageTitle, userMessage]()
+                        {
+                            // Clear the cached license
+                            LemonSqueezyCache::clearLicenseCache();
 
-                        // Clear stored credentials
-                        storedFirstName.clear();
-                        storedLastName.clear();
-                        storedEmail.clear();
-                        storedLicenseKey.clear();
+                            // Clear stored credentials
+                            storedFirstName.clear();
+                            storedLastName.clear();
+                            storedEmail.clear();
+                            storedLicenseKey.clear();
 
-                        // Re-lock the app
-                        setUnlocked(false);
+                            // Re-lock the app
+                            setUnlocked(false);
 
-                        // Notify user
-                        juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
-                            "License Deactivated",
-                            "Your license has been deactivated. Please re-enter your license key to continue using the full version.");
-                    });
+                            // Notify user with specific message
+                            juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
+                                messageTitle,
+                                userMessage);
+                        });
+                    }
                 }
                 // If rawJsonResponse is empty, it was a network error - keep using cache (offline mode)
             });
