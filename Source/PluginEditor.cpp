@@ -4718,7 +4718,11 @@ void SlotMachineAudioProcessorEditor::mouseDown(const juce::MouseEvent& e)
                         slot->count.setValue(picked, juce::sendNotificationSync);
                     };
 
-                    const auto textColor = appLF.hasButtonFontColor() ? appLF.getButtonFontColor() : juce::Colours::white;
+                    // Priority: MidiSelectorColor > TextBoxFontColor > ButtonFontColor
+                    const auto textColor = appLF.hasMidiSelectorFontColor() ? appLF.getMidiSelectorFontColor()
+                                         : appLF.hasTextBoxFontColor() ? appLF.getTextBoxFontColor()
+                                         : appLF.hasButtonFontColor() ? appLF.getButtonFontColor()
+                                         : juce::Colours::white;
                     auto grid = std::make_unique<BeatsQuickPickGrid>(opts, std::move(pickHandler), currentValue, textColor);
 
                     const auto screenPos = e.getScreenPosition().roundToInt();
