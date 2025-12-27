@@ -589,6 +589,9 @@ public:
     // Get logo image from skin
     const juce::Image& getLogoImage() const { return logoImage; }
 
+    // Get Master BPM label image from skin
+    const juce::Image& getMasterBpmImage() const { return masterBpmImage; }
+
     // Get button font color from skin
     juce::Colour getButtonFontColor() const { return buttonCustomColor; }
     bool hasButtonFontColor() const { return buttonFontColor.isNotEmpty(); }
@@ -644,6 +647,7 @@ private:
         soloOnFilename = "";
         soloOffFilename = "";
         logoFilename = "";
+        masterBpmImageFilename = "";
         textboxFontFilename = "";
         textboxFontSize = 0; // 0 = use default
         textboxFontColor = ""; // Empty = use default
@@ -800,6 +804,11 @@ private:
                     logoFilename = value;
                     DBG("Skin: Logo = " + logoFilename);
                 }
+                else if (key.equalsIgnoreCase("MasterBPM_Image"))
+                {
+                    masterBpmImageFilename = value;
+                    DBG("Skin: MasterBPM_Image = " + masterBpmImageFilename);
+                }
                 else if (key.equalsIgnoreCase("TextBoxFont"))
                 {
                     textboxFontFilename = value;
@@ -896,6 +905,7 @@ private:
         soloOnImage = juce::Image();
         soloOffImage = juce::Image();
         logoImage = juce::Image();
+        masterBpmImage = juce::Image();
         textboxCustomFont = juce::Font();
         textboxCustomColor = juce::Colour();
         midiSelectorCustomColor = juce::Colour();
@@ -1241,6 +1251,25 @@ private:
                 DBG("Logo file not found: " + logoFile.getFullPathName());
         }
 
+        // Load Master BPM label image
+        if (masterBpmImageFilename.isNotEmpty())
+        {
+            juce::File masterBpmFile = juce::File::getCurrentWorkingDirectory()
+                                           .getChildFile("Skins")
+                                           .getChildFile(skinFolderName)
+                                           .getChildFile(masterBpmImageFilename);
+            if (masterBpmFile.existsAsFile())
+            {
+                masterBpmImage = juce::ImageFileFormat::loadFrom(masterBpmFile);
+                if (masterBpmImage.isValid())
+                    DBG("Successfully loaded Master BPM image: " + masterBpmFile.getFullPathName());
+                else
+                    DBG("Failed to load Master BPM image: " + masterBpmFile.getFullPathName());
+            }
+            else
+                DBG("Master BPM image file not found: " + masterBpmFile.getFullPathName());
+        }
+
         // Load custom font for numeric textboxes
         if (textboxFontFilename.isNotEmpty())
         {
@@ -1472,6 +1501,7 @@ private:
     juce::String soloOnFilename;
     juce::String soloOffFilename;
     juce::String logoFilename;
+    juce::String masterBpmImageFilename;
     juce::String textboxFontFilename;
     int textboxFontSize = 0; // 0 = use default
     juce::String textboxFontColor; // Hex RGB color (e.g., "#D0D0D0")
@@ -1498,6 +1528,7 @@ private:
     juce::Image soloOnImage;
     juce::Image soloOffImage;
     juce::Image logoImage;
+    juce::Image masterBpmImage;
 
     // Custom font for numeric textboxes
     juce::Font textboxCustomFont;

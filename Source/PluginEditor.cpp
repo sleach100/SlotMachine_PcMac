@@ -3639,6 +3639,10 @@ SlotMachineAudioProcessorEditor::SlotMachineAudioProcessorEditor(SlotMachineAudi
     masterLabel.setTooltip("Tap tempo");
     masterLabel.addMouseListener(this, false);
 
+    // Hide masterLabel if using custom Master BPM image from skin
+    if (appLF.getMasterBpmImage().isValid())
+        masterLabel.setVisible(false);
+
     addAndMakeVisible(masterBPM);
     masterBPM.setSliderStyle(juce::Slider::LinearHorizontal);
     masterBPM.setRange(10.0, 400.0, 0.01);
@@ -4821,6 +4825,22 @@ void SlotMachineAudioProcessorEditor::paint(juce::Graphics& g)
                     0.0f,
                     (float)logoImage.getWidth(),
                     (float)logoImage.getHeight());
+
+    // Draw Master BPM image if available (instead of text label)
+    if (appLF.getMasterBpmImage().isValid())
+    {
+        const auto& masterBpmImg = appLF.getMasterBpmImage();
+        auto labelBounds = masterLabel.getBounds();
+        g.drawImage(masterBpmImg,
+                    (float)labelBounds.getX(),
+                    (float)labelBounds.getY(),
+                    (float)labelBounds.getWidth(),
+                    (float)labelBounds.getHeight(),
+                    0.0f,
+                    0.0f,
+                    (float)masterBpmImg.getWidth(),
+                    (float)masterBpmImg.getHeight());
+    }
 
     // VST3: Draw BETA watermark to the right of the logo
     if (isRunningAsVST3() && !logoBounds.isEmpty())
@@ -6645,6 +6665,7 @@ void SlotMachineAudioProcessorEditor::buttonClicked(juce::Button* b)
                     editor->logoImage = editor->appLF.getLogoImage().isValid()
                         ? editor->appLF.getLogoImage()
                         : juce::ImageCache::getFromMemory(BinaryData::SM5_png, BinaryData::SM5_pngSize);
+                    editor->masterLabel.setVisible(!editor->appLF.getMasterBpmImage().isValid());
                     editor->updateMuteSoloButtonImages();
                     editor->updateButtonFontColors();
                     editor->resized();  // Recalculate layout with new skin parameters
@@ -6674,6 +6695,7 @@ void SlotMachineAudioProcessorEditor::buttonClicked(juce::Button* b)
                     editor->logoImage = editor->appLF.getLogoImage().isValid()
                         ? editor->appLF.getLogoImage()
                         : juce::ImageCache::getFromMemory(BinaryData::SM5_png, BinaryData::SM5_pngSize);
+                    editor->masterLabel.setVisible(!editor->appLF.getMasterBpmImage().isValid());
                     editor->updateMuteSoloButtonImages();
                     editor->updateButtonFontColors();
                     editor->resized();  // Recalculate layout with new skin parameters
@@ -7871,6 +7893,7 @@ void SlotMachineAudioProcessorEditor::reloadSkinWithFolder(const juce::String& s
     logoImage = appLF.getLogoImage().isValid()
         ? appLF.getLogoImage()
         : juce::ImageCache::getFromMemory(BinaryData::SM5_png, BinaryData::SM5_pngSize);
+    masterLabel.setVisible(!appLF.getMasterBpmImage().isValid());
     updateMuteSoloButtonImages();
     updateButtonFontColors();
     resized();
