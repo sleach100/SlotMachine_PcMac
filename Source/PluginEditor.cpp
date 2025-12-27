@@ -3820,8 +3820,10 @@ SlotMachineAudioProcessorEditor::SlotMachineAudioProcessorEditor(SlotMachineAudi
         ui->midiChannel.setTextWhenNothingSelected("Ch " + juce::String(idx));
         for (int ch = 1; ch <= 16; ++ch)
             ui->midiChannel.addItem("Ch " + juce::String(ch), ch);
-        // Use TextBoxFontColor if available, otherwise default to white
-        auto midiChannelColor = appLF.hasTextBoxFontColor() ? appLF.getTextBoxFontColor() : juce::Colours::white;
+        // Priority: MidiSelectorColor > TextBoxFontColor > default white
+        auto midiChannelColor = appLF.hasMidiSelectorFontColor() ? appLF.getMidiSelectorFontColor()
+                              : appLF.hasTextBoxFontColor() ? appLF.getTextBoxFontColor()
+                              : juce::Colours::white;
         ui->midiChannel.setColour(juce::ComboBox::textColourId, midiChannelColor);
         ui->midiChannel.setColour(juce::ComboBox::arrowColourId, midiChannelColor);
         ui->midiChannel.setColour(juce::ComboBox::buttonColourId, juce::Colours::transparentBlack);
@@ -7935,8 +7937,10 @@ void SlotMachineAudioProcessorEditor::updateButtonFontColors()
             // Update slot file label (red is preserved in refreshSlotFileLabels for failed samples)
             slot.fileLabel.setColour(juce::Label::textColourId, textColor);
 
-            // Update MIDI channel ComboBox (text and arrow) - use TextBoxFontColor if available, otherwise use ButtonFontColor
-            auto midiChannelColor = appLF.hasTextBoxFontColor() ? appLF.getTextBoxFontColor() : textColor;
+            // Update MIDI channel ComboBox (text and arrow) - Priority: MidiSelectorColor > TextBoxFontColor > ButtonFontColor
+            auto midiChannelColor = appLF.hasMidiSelectorFontColor() ? appLF.getMidiSelectorFontColor()
+                                  : appLF.hasTextBoxFontColor() ? appLF.getTextBoxFontColor()
+                                  : textColor;
             slot.midiChannel.setColour(juce::ComboBox::textColourId, midiChannelColor);
             slot.midiChannel.setColour(juce::ComboBox::arrowColourId, midiChannelColor);
             slot.midiChannel.setColour(juce::ComboBox::buttonColourId, juce::Colours::transparentBlack);

@@ -531,9 +531,24 @@ public:
                           const juce::Drawable* icon,
                           const juce::Colour* textColourToUse) override
     {
-        // Use custom textbox font color if available
-        juce::Colour textColour = textColourToUse != nullptr ? *textColourToUse
-                                 : (textboxFontColor.isNotEmpty() ? textboxCustomColor : findColour(juce::PopupMenu::textColourId));
+        // Priority: MidiSelectorColor > TextBoxFontColor > default
+        juce::Colour textColour;
+        if (textColourToUse != nullptr)
+        {
+            textColour = *textColourToUse;
+        }
+        else if (midiSelectorFontColor.isNotEmpty())
+        {
+            textColour = midiSelectorCustomColor;
+        }
+        else if (textboxFontColor.isNotEmpty())
+        {
+            textColour = textboxCustomColor;
+        }
+        else
+        {
+            textColour = findColour(juce::PopupMenu::textColourId);
+        }
 
         // Pass the custom color to the base implementation
         juce::LookAndFeel_V4::drawPopupMenuItem(g, area, isSeparator, isActive, isHighlighted,
@@ -582,6 +597,10 @@ public:
     juce::Colour getTextBoxFontColor() const { return textboxCustomColor; }
     bool hasTextBoxFontColor() const { return textboxFontColor.isNotEmpty(); }
 
+    // Get MIDI selector font color from skin (overrides TextBoxFontColor if present)
+    juce::Colour getMidiSelectorFontColor() const { return midiSelectorCustomColor; }
+    bool hasMidiSelectorFontColor() const { return midiSelectorFontColor.isNotEmpty(); }
+
     // Set skin folder name (default is "Classic")
     void setSkinFolder(const juce::String& folderName)
     {
@@ -628,6 +647,7 @@ private:
         textboxFontFilename = "";
         textboxFontSize = 0; // 0 = use default
         textboxFontColor = ""; // Empty = use default
+        midiSelectorFontColor = ""; // Empty = use TextBoxFontColor or default
         progressBarWidth = 0; // 0 = use default full width
         hideProgressBar = ""; // Empty = use default behavior
         midiListWidth = 0; // 0 = use default width
@@ -786,6 +806,11 @@ private:
                     textboxFontColor = value;
                     DBG("Skin: TextBoxFontColor = " + textboxFontColor);
                 }
+                else if (key.equalsIgnoreCase("MidiSelectorColor"))
+                {
+                    midiSelectorFontColor = value;
+                    DBG("Skin: MidiSelectorColor = " + midiSelectorFontColor);
+                }
                 else if (key.equalsIgnoreCase("ProgressBarWidth"))
                 {
                     progressBarWidth = value.getIntValue();
@@ -864,6 +889,7 @@ private:
         logoImage = juce::Image();
         textboxCustomFont = juce::Font();
         textboxCustomColor = juce::Colour();
+        midiSelectorCustomColor = juce::Colour();
 
         // Load normal background image
         if (backgroundFilename.isNotEmpty())
@@ -1308,6 +1334,40 @@ private:
                 DBG("Invalid color format: " + buttonFontColor + " (expected #RRGGBB)");
             }
         }
+
+        // Parse MIDI selector font color
+        if (midiSelectorFontColor.isNotEmpty())
+        {
+            juce::String colorStr = midiSelectorFontColor.trim();
+
+            // Remove '#' prefix if present
+            if (colorStr.startsWithChar('#'))
+                colorStr = colorStr.substring(1);
+
+            // Parse hex color (RGB or RRGGBB format)
+            if (colorStr.length() == 6 || colorStr.length() == 3)
+            {
+                // Convert to full RRGGBB if using shorthand RGB
+                if (colorStr.length() == 3)
+                {
+                    juce::String r = colorStr.substring(0, 1);
+                    juce::String g = colorStr.substring(1, 2);
+                    juce::String b = colorStr.substring(2, 3);
+                    colorStr = r + r + g + g + b + b;
+                }
+
+                // Parse the hex string as RRGGBB
+                int rgb = colorStr.getHexValue32();
+                midiSelectorCustomColor = juce::Colour((juce::uint8)((rgb >> 16) & 0xFF),
+                                                       (juce::uint8)((rgb >> 8) & 0xFF),
+                                                       (juce::uint8)(rgb & 0xFF));
+                DBG("MIDI selector font color set to: #" + colorStr + " = " + midiSelectorCustomColor.toString());
+            }
+            else
+            {
+                DBG("Invalid color format: " + midiSelectorFontColor + " (expected #RRGGBB)");
+            }
+        }
     }
 
     bool useFilmstripForSlider(juce::Slider& slider) const
@@ -1406,6 +1466,7 @@ private:
     juce::String textboxFontFilename;
     int textboxFontSize = 0; // 0 = use default
     juce::String textboxFontColor; // Hex RGB color (e.g., "#D0D0D0")
+    juce::String midiSelectorFontColor; // Hex RGB color for MIDI selector (overrides TextBoxFontColor)
     int progressBarWidth = 0; // 0 = use default full width
     juce::String hideProgressBar; // "True" = always hide, empty = use default behavior
     int midiListWidth = 0; // 0 = use default width
@@ -1432,6 +1493,9 @@ private:
     // Custom font for numeric textboxes
     juce::Font textboxCustomFont;
     juce::Colour textboxCustomColor;
+
+    // Custom color for MIDI selector (overrides textboxCustomColor if present)
+    juce::Colour midiSelectorCustomColor;
 
     // Custom color for buttons, tabs, and labels
     juce::Colour buttonCustomColor;
