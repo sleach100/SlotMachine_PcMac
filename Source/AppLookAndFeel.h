@@ -454,9 +454,11 @@ public:
         // Draw custom textbox image if available, otherwise use default rendering
         if (textboxImage.isValid())
         {
-            auto bounds = juce::Rectangle<int>(0, 0, width, height);
+            // First, fill with transparent to ensure no default background shows through
+            g.fillAll(juce::Colours::transparentBlack);
 
             // Draw the textbox image stretched to fit the combobox bounds
+            // This creates a single background that both the text and arrow will appear over
             g.drawImage(textboxImage,
                        0, 0, width, height,
                        0, 0, textboxImage.getWidth(), textboxImage.getHeight(),
