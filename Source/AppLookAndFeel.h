@@ -124,44 +124,47 @@ public:
             if (sliderTrackImage.isValid())
             {
                 DBG("Drawing custom slider track for: " + slider.getName());
+
+                // Get the proper slider layout from JUCE to know where the track should be drawn
+                auto layout = getSliderLayout(slider);
+                auto trackBounds = layout.sliderBounds;
+
                 // Draw the custom slider track image
                 const int imgW = sliderTrackImage.getWidth();
                 const int imgH = sliderTrackImage.getHeight();
 
-                // Calculate track area based on minSliderPos and maxSliderPos
-                const float trackStart = minSliderPos;
-                const float trackEnd = maxSliderPos;
-                const float trackWidth = trackEnd - trackStart;
+                const int trackWidth = trackBounds.getWidth();
+                const int trackHeight = trackBounds.getHeight();
 
                 int scaledW, scaledH;
-                float drawX, drawY;
+                int drawX, drawY;
 
                 // If image is smaller than available width, stretch horizontally to fill
                 if (imgW < trackWidth)
                 {
-                    scaledW = juce::roundToInt(trackWidth);
+                    scaledW = trackWidth;
                     // Maintain aspect ratio for height
-                    scaledH = juce::roundToInt(imgH * (trackWidth / (float)imgW));
-                    drawX = trackStart;
-                    drawY = y + (height - scaledH) / 2.0f;
+                    scaledH = juce::roundToInt(imgH * ((float)trackWidth / (float)imgW));
+                    drawX = trackBounds.getX();
+                    drawY = trackBounds.getY() + (trackHeight - scaledH) / 2;
                 }
                 else
                 {
                     // Image is larger than or equal to width - scale to fit while maintaining aspect ratio
-                    const float scaleW = trackWidth / (float)imgW;
-                    const float scaleH = (float)height / (float)imgH;
+                    const float scaleW = (float)trackWidth / (float)imgW;
+                    const float scaleH = (float)trackHeight / (float)imgH;
                     const float scale = juce::jmin(scaleW, scaleH);
 
                     scaledW = juce::roundToInt(imgW * scale);
                     scaledH = juce::roundToInt(imgH * scale);
 
                     // Center the image within the track bounds
-                    drawX = trackStart + (trackWidth - scaledW) / 2.0f;
-                    drawY = y + (height - scaledH) / 2.0f;
+                    drawX = trackBounds.getX() + (trackWidth - scaledW) / 2;
+                    drawY = trackBounds.getY() + (trackHeight - scaledH) / 2;
                 }
 
                 g.drawImage(sliderTrackImage,
-                           juce::roundToInt(drawX), juce::roundToInt(drawY), scaledW, scaledH,
+                           drawX, drawY, scaledW, scaledH,
                            0, 0, imgW, imgH,
                            false);
             }
