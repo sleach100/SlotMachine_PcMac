@@ -5119,6 +5119,12 @@ void SlotMachineAudioProcessorEditor::resized()
         labelBounds.setHeight(labelHeight);
         labelBounds.setBottom(textBoxBottom + labelOffset);
         labelBounds.translate(0, kMasterLabelExtraYOffset + 20);
+
+        // Set label width so right edge is 10 pixels to the left of the slider's text box
+        // The slider's text box is on the left (TextBoxLeft style, 70px wide)
+        const int labelRightEdge = sliderBounds.getX() - 10;
+        labelBounds.setWidth(labelRightEdge - labelBounds.getX());
+
         masterLabel.setBounds(labelBounds);
 
         const int barLeft = buttonArea.getX();
