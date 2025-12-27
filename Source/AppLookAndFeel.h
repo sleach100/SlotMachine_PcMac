@@ -124,21 +124,35 @@ public:
             if (sliderTrackImage.isValid())
             {
                 DBG("Drawing custom slider track for: " + slider.getName());
-                // Draw the custom slider track image scaled to fit while maintaining aspect ratio
+                // Draw the custom slider track image
                 const int imgW = sliderTrackImage.getWidth();
                 const int imgH = sliderTrackImage.getHeight();
 
-                // Calculate scaling to fit within bounds while maintaining aspect ratio
-                const float scaleW = (float)width / (float)imgW;
-                const float scaleH = (float)height / (float)imgH;
-                const float scale = juce::jmin(scaleW, scaleH);
+                int scaledW, scaledH, drawX, drawY;
 
-                const int scaledW = (int)(imgW * scale);
-                const int scaledH = (int)(imgH * scale);
+                // If image is smaller than available width, stretch horizontally to fill
+                if (imgW < width)
+                {
+                    scaledW = width;
+                    // Maintain aspect ratio for height
+                    scaledH = (int)(imgH * ((float)width / (float)imgW));
+                    drawX = x;
+                    drawY = y + (height - scaledH) / 2;
+                }
+                else
+                {
+                    // Image is larger than or equal to width - scale to fit while maintaining aspect ratio
+                    const float scaleW = (float)width / (float)imgW;
+                    const float scaleH = (float)height / (float)imgH;
+                    const float scale = juce::jmin(scaleW, scaleH);
 
-                // Center the image within the slider bounds
-                const int drawX = x + (width - scaledW) / 2;
-                const int drawY = y + (height - scaledH) / 2;
+                    scaledW = (int)(imgW * scale);
+                    scaledH = (int)(imgH * scale);
+
+                    // Center the image within the slider bounds
+                    drawX = x + (width - scaledW) / 2;
+                    drawY = y + (height - scaledH) / 2;
+                }
 
                 g.drawImage(sliderTrackImage,
                            drawX, drawY, scaledW, scaledH,

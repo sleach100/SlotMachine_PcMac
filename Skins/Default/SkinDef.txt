@@ -84,7 +84,8 @@ KnobFilmstripOrientation=Vertical
 
 ; SliderTrack: Image for the Master BPM slider track background
 ; Applies to: Master BPM slider and other linear sliders
-; Image will be scaled to fit the slider bounds while maintaining aspect ratio
+; If image width < slider width: stretched horizontally to fill (maintains aspect ratio for height)
+; If image width >= slider width: scaled to fit while maintaining aspect ratio
 ; Falls back to default JUCE rendering if SliderTrack image not provided
 ; Note: This parameter only takes effect when SliderThumb is also provided
 
