@@ -5815,6 +5815,10 @@ void SlotMachineAudioProcessorEditor::handlePatternContextMenu(const juce::Mouse
         patternsTree = processor.getPatternsTree();
 
     juce::PopupMenu menu;
+
+    // Use the AppLookAndFeel for this menu to get custom background
+    menu.setLookAndFeel(&appLF);
+
     const int patternCount = patternsTree.getNumChildren();
 
     menu.addItem(1, "New Pattern");
