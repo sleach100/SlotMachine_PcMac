@@ -7920,8 +7920,11 @@ void SlotMachineAudioProcessorEditor::updateButtonFontColors()
     // Update Master BPM label
     masterLabel.setColour(juce::Label::textColourId, textColor);
 
-    // Update Master BPM slider text
-    masterBPM.setColour(juce::Slider::textBoxTextColourId, textColor);
+    // Update Master BPM slider text - Priority: MidiSelectorColor > TextBoxFontColor > ButtonFontColor
+    auto masterBpmColor = appLF.hasMidiSelectorFontColor() ? appLF.getMidiSelectorFontColor()
+                        : appLF.hasTextBoxFontColor() ? appLF.getTextBoxFontColor()
+                        : textColor;
+    masterBPM.setColour(juce::Slider::textBoxTextColourId, masterBpmColor);
 
     // Update slot components
     for (int i = 0; i < kNumSlots; ++i)
