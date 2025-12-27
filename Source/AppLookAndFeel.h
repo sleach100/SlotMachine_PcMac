@@ -128,21 +128,25 @@ public:
                 const int imgW = sliderTrackImage.getWidth();
                 const int imgH = sliderTrackImage.getHeight();
 
+                // Use the actual track area (between minSliderPos and maxSliderPos) not the full slider bounds
+                const int trackX = juce::roundToInt(minSliderPos);
+                const int trackWidth = juce::roundToInt(maxSliderPos - minSliderPos);
+
                 int scaledW, scaledH, drawX, drawY;
 
                 // If image is smaller than available width, stretch horizontally to fill
-                if (imgW < width)
+                if (imgW < trackWidth)
                 {
-                    scaledW = width;
+                    scaledW = trackWidth;
                     // Maintain aspect ratio for height
-                    scaledH = (int)(imgH * ((float)width / (float)imgW));
-                    drawX = x;
+                    scaledH = (int)(imgH * ((float)trackWidth / (float)imgW));
+                    drawX = trackX;
                     drawY = y + (height - scaledH) / 2;
                 }
                 else
                 {
                     // Image is larger than or equal to width - scale to fit while maintaining aspect ratio
-                    const float scaleW = (float)width / (float)imgW;
+                    const float scaleW = (float)trackWidth / (float)imgW;
                     const float scaleH = (float)height / (float)imgH;
                     const float scale = juce::jmin(scaleW, scaleH);
 
@@ -150,7 +154,7 @@ public:
                     scaledH = (int)(imgH * scale);
 
                     // Center the image within the slider bounds
-                    drawX = x + (width - scaledW) / 2;
+                    drawX = trackX + (trackWidth - scaledW) / 2;
                     drawY = y + (height - scaledH) / 2;
                 }
 
