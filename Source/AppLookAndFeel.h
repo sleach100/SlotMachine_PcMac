@@ -519,9 +519,9 @@ public:
                           const juce::Drawable* icon,
                           const juce::Colour* textColourToUse) override
     {
-        // Use custom button font color if available
+        // Use custom textbox font color if available
         juce::Colour textColour = textColourToUse != nullptr ? *textColourToUse
-                                 : (buttonFontColor.isNotEmpty() ? buttonCustomColor : findColour(juce::PopupMenu::textColourId));
+                                 : (textboxFontColor.isNotEmpty() ? textboxCustomColor : findColour(juce::PopupMenu::textColourId));
 
         // Pass the custom color to the base implementation
         juce::LookAndFeel_V4::drawPopupMenuItem(g, area, isSeparator, isActive, isHighlighted,
@@ -565,6 +565,10 @@ public:
     // Get button font color from skin
     juce::Colour getButtonFontColor() const { return buttonCustomColor; }
     bool hasButtonFontColor() const { return buttonFontColor.isNotEmpty(); }
+
+    // Get textbox font color from skin
+    juce::Colour getTextBoxFontColor() const { return textboxCustomColor; }
+    bool hasTextBoxFontColor() const { return textboxFontColor.isNotEmpty(); }
 
     // Set skin folder name (default is "Classic")
     void setSkinFolder(const juce::String& folderName)
