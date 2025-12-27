@@ -2357,7 +2357,10 @@ void SlotMachineAudioProcessorEditor::openEmbeddedSampleSelectorForSlot(int slot
     if (embeddedCatalog.empty())
         return;
 
-    const auto textColor = appLF.hasButtonFontColor() ? appLF.getButtonFontColor() : juce::Colours::whitesmoke;
+    // Priority: MidiSelectorColor > TextBoxFontColor > default whitesmoke
+    auto textColor = appLF.hasMidiSelectorFontColor() ? appLF.getMidiSelectorFontColor()
+                   : appLF.hasTextBoxFontColor() ? appLF.getTextBoxFontColor()
+                   : juce::Colours::whitesmoke;
     auto selector = std::make_unique<EmbeddedSampleSelector>(embeddedCatalog, textColor);
 
     selector->onPreview = [this](const juce::String& resource)
@@ -3636,6 +3639,10 @@ SlotMachineAudioProcessorEditor::SlotMachineAudioProcessorEditor(SlotMachineAudi
     masterLabel.setTooltip("Tap tempo");
     masterLabel.addMouseListener(this, false);
 
+    // Hide masterLabel if using custom Master BPM image from skin
+    if (appLF.getMasterBpmImage().isValid())
+        masterLabel.setVisible(false);
+
     addAndMakeVisible(masterBPM);
     masterBPM.setSliderStyle(juce::Slider::LinearHorizontal);
     masterBPM.setRange(10.0, 400.0, 0.01);
@@ -3820,8 +3827,10 @@ SlotMachineAudioProcessorEditor::SlotMachineAudioProcessorEditor(SlotMachineAudi
         ui->midiChannel.setTextWhenNothingSelected("Ch " + juce::String(idx));
         for (int ch = 1; ch <= 16; ++ch)
             ui->midiChannel.addItem("Ch " + juce::String(ch), ch);
-        // Use TextBoxFontColor if available, otherwise default to white
-        auto midiChannelColor = appLF.hasTextBoxFontColor() ? appLF.getTextBoxFontColor() : juce::Colours::white;
+        // Priority: MidiSelectorColor > TextBoxFontColor > default white
+        auto midiChannelColor = appLF.hasMidiSelectorFontColor() ? appLF.getMidiSelectorFontColor()
+                              : appLF.hasTextBoxFontColor() ? appLF.getTextBoxFontColor()
+                              : juce::Colours::white;
         ui->midiChannel.setColour(juce::ComboBox::textColourId, midiChannelColor);
         ui->midiChannel.setColour(juce::ComboBox::arrowColourId, midiChannelColor);
         ui->midiChannel.setColour(juce::ComboBox::buttonColourId, juce::Colours::transparentBlack);
@@ -4709,7 +4718,11 @@ void SlotMachineAudioProcessorEditor::mouseDown(const juce::MouseEvent& e)
                         slot->count.setValue(picked, juce::sendNotificationSync);
                     };
 
-                    const auto textColor = appLF.hasButtonFontColor() ? appLF.getButtonFontColor() : juce::Colours::white;
+                    // Priority: MidiSelectorColor > TextBoxFontColor > ButtonFontColor
+                    const auto textColor = appLF.hasMidiSelectorFontColor() ? appLF.getMidiSelectorFontColor()
+                                         : appLF.hasTextBoxFontColor() ? appLF.getTextBoxFontColor()
+                                         : appLF.hasButtonFontColor() ? appLF.getButtonFontColor()
+                                         : juce::Colours::white;
                     auto grid = std::make_unique<BeatsQuickPickGrid>(opts, std::move(pickHandler), currentValue, textColor);
 
                     const auto screenPos = e.getScreenPosition().roundToInt();
@@ -4816,6 +4829,24 @@ void SlotMachineAudioProcessorEditor::paint(juce::Graphics& g)
                     0.0f,
                     (float)logoImage.getWidth(),
                     (float)logoImage.getHeight());
+
+    // Draw Master BPM image if available (instead of text label)
+    // Image is stretched to fill the label bounds (no aspect ratio preservation)
+    if (appLF.getMasterBpmImage().isValid())
+    {
+        const auto& masterBpmImg = appLF.getMasterBpmImage();
+        auto labelBounds = masterLabel.getBounds();
+        // Stretch entire source image to fill entire destination bounds
+        g.drawImage(masterBpmImg,
+                    (float)labelBounds.getX(),
+                    (float)labelBounds.getY(),
+                    (float)labelBounds.getWidth(),
+                    (float)labelBounds.getHeight(),
+                    0.0f,
+                    0.0f,
+                    (float)masterBpmImg.getWidth(),
+                    (float)masterBpmImg.getHeight());
+    }
 
     // VST3: Draw BETA watermark to the right of the logo
     if (isRunningAsVST3() && !logoBounds.isEmpty())
@@ -5092,6 +5123,12 @@ void SlotMachineAudioProcessorEditor::resized()
         labelBounds.setHeight(labelHeight);
         labelBounds.setBottom(textBoxBottom + labelOffset);
         labelBounds.translate(0, kMasterLabelExtraYOffset + 20);
+
+        // Set label width so right edge is 10 pixels to the left of the slider's text box
+        // The slider's text box is on the left (TextBoxLeft style, 70px wide)
+        const int labelRightEdge = sliderBounds.getX() - 10;
+        labelBounds.setWidth(labelRightEdge - labelBounds.getX());
+
         masterLabel.setBounds(labelBounds);
 
         const int barLeft = buttonArea.getX();
@@ -5782,6 +5819,10 @@ void SlotMachineAudioProcessorEditor::handlePatternContextMenu(const juce::Mouse
         patternsTree = processor.getPatternsTree();
 
     juce::PopupMenu menu;
+
+    // Use the AppLookAndFeel for this menu to get custom background
+    menu.setLookAndFeel(&appLF);
+
     const int patternCount = patternsTree.getNumChildren();
 
     menu.addItem(1, "New Pattern");
@@ -6640,6 +6681,7 @@ void SlotMachineAudioProcessorEditor::buttonClicked(juce::Button* b)
                     editor->logoImage = editor->appLF.getLogoImage().isValid()
                         ? editor->appLF.getLogoImage()
                         : juce::ImageCache::getFromMemory(BinaryData::SM5_png, BinaryData::SM5_pngSize);
+                    editor->masterLabel.setVisible(!editor->appLF.getMasterBpmImage().isValid());
                     editor->updateMuteSoloButtonImages();
                     editor->updateButtonFontColors();
                     editor->resized();  // Recalculate layout with new skin parameters
@@ -6669,6 +6711,7 @@ void SlotMachineAudioProcessorEditor::buttonClicked(juce::Button* b)
                     editor->logoImage = editor->appLF.getLogoImage().isValid()
                         ? editor->appLF.getLogoImage()
                         : juce::ImageCache::getFromMemory(BinaryData::SM5_png, BinaryData::SM5_pngSize);
+                    editor->masterLabel.setVisible(!editor->appLF.getMasterBpmImage().isValid());
                     editor->updateMuteSoloButtonImages();
                     editor->updateButtonFontColors();
                     editor->resized();  // Recalculate layout with new skin parameters
@@ -7866,6 +7909,7 @@ void SlotMachineAudioProcessorEditor::reloadSkinWithFolder(const juce::String& s
     logoImage = appLF.getLogoImage().isValid()
         ? appLF.getLogoImage()
         : juce::ImageCache::getFromMemory(BinaryData::SM5_png, BinaryData::SM5_pngSize);
+    masterLabel.setVisible(!appLF.getMasterBpmImage().isValid());
     updateMuteSoloButtonImages();
     updateButtonFontColors();
     resized();
@@ -7915,8 +7959,11 @@ void SlotMachineAudioProcessorEditor::updateButtonFontColors()
     // Update Master BPM label
     masterLabel.setColour(juce::Label::textColourId, textColor);
 
-    // Update Master BPM slider text
-    masterBPM.setColour(juce::Slider::textBoxTextColourId, textColor);
+    // Update Master BPM slider text - Priority: MidiSelectorColor > TextBoxFontColor > ButtonFontColor
+    auto masterBpmColor = appLF.hasMidiSelectorFontColor() ? appLF.getMidiSelectorFontColor()
+                        : appLF.hasTextBoxFontColor() ? appLF.getTextBoxFontColor()
+                        : textColor;
+    masterBPM.setColour(juce::Slider::textBoxTextColourId, masterBpmColor);
 
     // Update slot components
     for (int i = 0; i < kNumSlots; ++i)
@@ -7935,8 +7982,10 @@ void SlotMachineAudioProcessorEditor::updateButtonFontColors()
             // Update slot file label (red is preserved in refreshSlotFileLabels for failed samples)
             slot.fileLabel.setColour(juce::Label::textColourId, textColor);
 
-            // Update MIDI channel ComboBox (text and arrow) - use TextBoxFontColor if available, otherwise use ButtonFontColor
-            auto midiChannelColor = appLF.hasTextBoxFontColor() ? appLF.getTextBoxFontColor() : textColor;
+            // Update MIDI channel ComboBox (text and arrow) - Priority: MidiSelectorColor > TextBoxFontColor > ButtonFontColor
+            auto midiChannelColor = appLF.hasMidiSelectorFontColor() ? appLF.getMidiSelectorFontColor()
+                                  : appLF.hasTextBoxFontColor() ? appLF.getTextBoxFontColor()
+                                  : textColor;
             slot.midiChannel.setColour(juce::ComboBox::textColourId, midiChannelColor);
             slot.midiChannel.setColour(juce::ComboBox::arrowColourId, midiChannelColor);
             slot.midiChannel.setColour(juce::ComboBox::buttonColourId, juce::Colours::transparentBlack);
