@@ -1,4 +1,4 @@
-; SKIN: Midnight Forge
+; SKIN: Midnight Forge - Green
 
 ; --- Panel / Slot Backgrounds ---
    Background=DimBezel4.png
@@ -12,6 +12,8 @@
    TextBoxFont=LED.ttf
    TextBoxFontSize=18
    TextBoxFontColor=#FFFF33
+   MIDI_ListPanelBackground=MIDIback.png
+   MidiSelectorColor=#00FF00 ; Green - Applies to:  MIDI channel selector, Midi Channel Selector Dropdown, Sample Selector Font
 
 ;--- Buttons ---
    LoadButtonWidth=75
@@ -22,7 +24,7 @@
    TabSelected=Button3clicked.png
    MIDI_ListWidth=64
    ;  will apply to all the master row buttons (except Start/Stop), Tabs, Master BPM label, Slot buttons(Load and X), MIDI channel selector, Midi Channel Selector Dropdown, Mute label and Solo Label
-   ButtonFontColor=#00FF00
+   ButtonFontColor=#00FF00  ;Green
 
 ;--- Sliders ---
    SliderThumb=Slider_Knob-Grey2.png
