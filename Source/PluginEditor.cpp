@@ -4827,10 +4827,12 @@ void SlotMachineAudioProcessorEditor::paint(juce::Graphics& g)
                     (float)logoImage.getHeight());
 
     // Draw Master BPM image if available (instead of text label)
+    // Image is stretched to fill the label bounds (no aspect ratio preservation)
     if (appLF.getMasterBpmImage().isValid())
     {
         const auto& masterBpmImg = appLF.getMasterBpmImage();
         auto labelBounds = masterLabel.getBounds();
+        // Stretch entire source image to fill entire destination bounds
         g.drawImage(masterBpmImg,
                     (float)labelBounds.getX(),
                     (float)labelBounds.getY(),
