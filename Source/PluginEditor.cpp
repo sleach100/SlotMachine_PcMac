@@ -2016,7 +2016,7 @@ private:
                 label->setText(entry.first, juce::dontSendNotification);
                 label->setFont(createBoldFont(14.0f));
                 label->setJustificationType(juce::Justification::centredLeft);
-                label->setColour(juce::Label::textColourId, owner.customTextColor);
+                label->setColour(juce::Label::textColourId, juce::Colours::whitesmoke);
                 addAndMakeVisible(label.get());
                 section.label = std::move(label);
 
