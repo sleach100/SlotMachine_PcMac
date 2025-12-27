@@ -674,6 +674,15 @@ private:
             if (trimmed.isEmpty() || trimmed.startsWith(";"))
                 continue;
 
+            // Remove inline comments (everything after first ;)
+            int commentPos = trimmed.indexOf(";");
+            if (commentPos >= 0)
+                trimmed = trimmed.substring(0, commentPos).trim();
+
+            // Skip if nothing left after removing comment
+            if (trimmed.isEmpty())
+                continue;
+
             // Parse key=value pairs
             int equalsPos = trimmed.indexOf("=");
             if (equalsPos > 0)
