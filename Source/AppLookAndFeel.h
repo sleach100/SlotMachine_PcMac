@@ -120,8 +120,21 @@ public:
         // If we have a custom thumb image for horizontal sliders, draw track only then custom thumb
         if (sliderThumbImage.isValid() && style == juce::Slider::LinearHorizontal)
         {
-            // Draw the slider background/track using JUCE's method (without the thumb)
-            drawLinearSliderBackground(g, x, y, width, height, sliderPos, minSliderPos, maxSliderPos, style, slider);
+            // Draw the slider background/track - custom image if available, otherwise JUCE default
+            if (sliderTrackImage.isValid())
+            {
+                DBG("Drawing custom slider track for: " + slider.getName());
+                // Draw the custom slider track image stretched to fit the slider bounds
+                g.drawImage(sliderTrackImage,
+                           x, y, width, height,
+                           0, 0, sliderTrackImage.getWidth(), sliderTrackImage.getHeight(),
+                           false);
+            }
+            else
+            {
+                // Draw the slider background/track using JUCE's method (without the thumb)
+                drawLinearSliderBackground(g, x, y, width, height, sliderPos, minSliderPos, maxSliderPos, style, slider);
+            }
 
             DBG("Drawing custom slider thumb for: " + slider.getName()
                 + " (scale: " + juce::String(sliderThumbScale) + "%)");
@@ -551,6 +564,7 @@ private:
         buttonClickedFilename = "";
         sliderThumbFilename = "";
         sliderThumbScale = 100; // Default to 100% (actual size)
+        sliderTrackFilename = "";
         tabSelectedFilename = "";
         muteOnFilename = "";
         muteOffFilename = "";
@@ -668,6 +682,11 @@ private:
                     sliderThumbScale = juce::jlimit(1, 100, value.getIntValue());
                     DBG("Skin: SliderThumbScale = " + juce::String(sliderThumbScale));
                 }
+                else if (key.equalsIgnoreCase("SliderTrack"))
+                {
+                    sliderTrackFilename = value;
+                    DBG("Skin: SliderTrack = " + sliderTrackFilename);
+                }
                 else if (key.equalsIgnoreCase("TabSelected"))
                 {
                     tabSelectedFilename = value;
@@ -782,6 +801,7 @@ private:
         buttonHoverImage = juce::Image();
         buttonClickedImage = juce::Image();
         sliderThumbImage = juce::Image();
+        sliderTrackImage = juce::Image();
         tabSelectedImage = juce::Image();
         muteOnImage = juce::Image();
         muteOffImage = juce::Image();
@@ -993,6 +1013,28 @@ private:
             else
             {
                 DBG("Slider thumb file not found: " + sliderThumbFile.getFullPathName());
+            }
+        }
+
+        // Load slider track image
+        if (sliderTrackFilename.isNotEmpty())
+        {
+            juce::File sliderTrackFile = juce::File::getCurrentWorkingDirectory()
+                                             .getChildFile("Skins")
+                                             .getChildFile(skinFolderName)
+                                             .getChildFile(sliderTrackFilename);
+
+            if (sliderTrackFile.existsAsFile())
+            {
+                sliderTrackImage = juce::ImageFileFormat::loadFrom(sliderTrackFile);
+                if (sliderTrackImage.isValid())
+                    DBG("Successfully loaded slider track: " + sliderTrackFile.getFullPathName());
+                else
+                    DBG("Failed to load slider track: " + sliderTrackFile.getFullPathName());
+            }
+            else
+            {
+                DBG("Slider track file not found: " + sliderTrackFile.getFullPathName());
             }
         }
 
@@ -1300,6 +1342,7 @@ private:
     juce::String buttonClickedFilename;
     juce::String sliderThumbFilename;
     int sliderThumbScale = 100; // Scale percentage (1-100)
+    juce::String sliderTrackFilename;
     juce::String tabSelectedFilename;
     juce::String muteOnFilename;
     juce::String muteOffFilename;
@@ -1324,6 +1367,7 @@ private:
     juce::Image buttonHoverImage;
     juce::Image buttonClickedImage;
     juce::Image sliderThumbImage;
+    juce::Image sliderTrackImage;
     juce::Image tabSelectedImage;
     juce::Image muteOnImage;
     juce::Image muteOffImage;

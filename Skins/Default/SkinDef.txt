@@ -77,4 +77,15 @@ KnobFilmstripOrientation=Vertical
 ; Image will be drawn at actual size, centered on thumb position
 ; Falls back to default rendering if SliderThumb image not provided
 
+; Slider Track Image
+; Custom image for the slider track/background (Master BPM slider, etc.)
+; Leave blank to use default JUCE slider track rendering
+;SliderTrack=slider_track.png
+
+; SliderTrack: Image for the Master BPM slider track background
+; Applies to: Master BPM slider and other linear sliders
+; Image will be stretched to fit the slider bounds
+; Falls back to default JUCE rendering if SliderTrack image not provided
+; Note: This parameter only takes effect when SliderThumb is also provided
+
 ; Additional skin parameters will be added here as the skinning system develops
