@@ -2016,7 +2016,7 @@ private:
                 label->setText(entry.first, juce::dontSendNotification);
                 label->setFont(createBoldFont(14.0f));
                 label->setJustificationType(juce::Justification::centredLeft);
-                label->setColour(juce::Label::textColourId, juce::Colours::whitesmoke);
+                label->setColour(juce::Label::textColourId, owner.customTextColor);
                 addAndMakeVisible(label.get());
                 section.label = std::move(label);
 
@@ -2357,7 +2357,10 @@ void SlotMachineAudioProcessorEditor::openEmbeddedSampleSelectorForSlot(int slot
     if (embeddedCatalog.empty())
         return;
 
-    const auto textColor = appLF.hasButtonFontColor() ? appLF.getButtonFontColor() : juce::Colours::whitesmoke;
+    // Priority: MidiSelectorColor > TextBoxFontColor > default whitesmoke
+    auto textColor = appLF.hasMidiSelectorFontColor() ? appLF.getMidiSelectorFontColor()
+                   : appLF.hasTextBoxFontColor() ? appLF.getTextBoxFontColor()
+                   : juce::Colours::whitesmoke;
     auto selector = std::make_unique<EmbeddedSampleSelector>(embeddedCatalog, textColor);
 
     selector->onPreview = [this](const juce::String& resource)
