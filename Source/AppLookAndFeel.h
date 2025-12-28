@@ -1483,7 +1483,7 @@ private:
 
                 // Create radial gradient for soft shadow effect
                 juce::ColourGradient shadowGradient(
-                    juce::Colours::black.withAlpha(0.4f),  // Center of shadow
+                    juce::Colours::black.withAlpha(0.8f),  // Center of shadow - much darker
                     shadowCenterX, shadowCenterY,
                     juce::Colours::transparentBlack,       // Fades to transparent
                     shadowCenterX + shadowRadius, shadowCenterY,
