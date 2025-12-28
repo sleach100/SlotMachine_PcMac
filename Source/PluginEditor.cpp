@@ -2433,7 +2433,8 @@ static const juce::StringArray kOptionParamIds{
     "optSampleRate", "optTimingMode",
     "optSlotScale",
     "optGlowColor", "optGlowAlpha", "optGlowWidth",
-    "optPulseColor", "optPulseAlpha", "optPulseWidth"
+    "optPulseColor", "optPulseAlpha", "optPulseWidth",
+    "optSkinFolder"
 };
 
 static bool isOptionParameter(const juce::String& paramID)
@@ -2477,6 +2478,11 @@ static void saveOptionsToDisk(juce::AudioProcessorValueTreeState& apvts)
             else if (auto* fp = dynamic_cast<juce::AudioParameterFloat*>(p))
                 vt.setProperty(id, (double)fp->get(), nullptr);
         }
+        else if (apvts.state.hasProperty(id))
+        {
+            // Handle string properties that are not AudioParameters (e.g., optSkinFolder)
+            vt.setProperty(id, apvts.state.getProperty(id), nullptr);
+        }
     }
     if (auto xml = vt.createXml())
         xml->writeTo(f);
@@ -2517,6 +2523,11 @@ static void loadOptionsFromDiskIfNoHostState(juce::AudioProcessorValueTreeState&
                 *fp = (float)(double)vt.getProperty(id);
                 fp->endChangeGesture();
             }
+        }
+        else
+        {
+            // Handle string properties that are not AudioParameters (e.g., optSkinFolder)
+            apvts.state.setProperty(id, vt.getProperty(id), nullptr);
         }
     }
 }
