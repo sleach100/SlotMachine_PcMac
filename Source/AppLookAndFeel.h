@@ -629,6 +629,7 @@ private:
         knobFrameCount = 50;
         knobOrientation = "Vertical";
         staticKnob = false;
+        knobShadow.enabled = false;  // No shadow by default
         backgroundFilename = "";
         backgroundFlashFilename = "";
         backgroundSampleLoadedFilename = "";
@@ -714,6 +715,32 @@ private:
                 {
                     staticKnob = value.equalsIgnoreCase("True");
                     DBG("Skin: StaticKnob = " + juce::String(staticKnob ? "True" : "False"));
+                }
+                else if (key.equalsIgnoreCase("KnobShadow"))
+                {
+                    // Parse KnobShadow=radiusPercent,outerEdgeOpacity,verticalOffsetPercent,horizontalOffsetPercent
+                    // Example: KnobShadow=110,10,15,15
+                    juce::StringArray parts;
+                    parts.addTokens(value, ",", "");
+
+                    if (parts.size() == 4)
+                    {
+                        knobShadow.radiusPercent = parts[0].trim().getFloatValue();
+                        knobShadow.outerEdgeOpacity = parts[1].trim().getFloatValue();
+                        knobShadow.verticalOffsetPercent = parts[2].trim().getFloatValue();
+                        knobShadow.horizontalOffsetPercent = parts[3].trim().getFloatValue();
+                        knobShadow.enabled = true;
+
+                        DBG("Skin: KnobShadow = " + juce::String(knobShadow.radiusPercent) + "%, "
+                            + juce::String(knobShadow.outerEdgeOpacity) + "%, "
+                            + juce::String(knobShadow.verticalOffsetPercent) + "%, "
+                            + juce::String(knobShadow.horizontalOffsetPercent) + "%");
+                    }
+                    else
+                    {
+                        DBG("Skin: KnobShadow format invalid (expected 4 comma-separated values), shadow disabled");
+                        knobShadow.enabled = false;
+                    }
                 }
                 else if (key.equalsIgnoreCase("Background"))
                 {
@@ -1472,20 +1499,24 @@ private:
                 .translated(centerX, centerY);
 
             // Draw shadow FIRST - positioned completely behind/below the knob
-            // Shadow radius is 8% larger than knob radius so it peeks out from behind
+            // Only draw shadow if KnobShadow parameter is enabled
+            if (knobShadow.enabled)
             {
                 const float knobRadius = knobSize * 0.5f;
-                const float shadowRadius = knobRadius * 1.08f;  // 8% larger than knob
-                const float shadowOffsetX = knobSize * 0.08f;   // Offset to show shadow on right
-                const float shadowOffsetY = knobSize * 0.08f;   // Offset to show shadow on bottom
+
+                // Use KnobShadow parameters
+                const float shadowRadius = knobRadius * (knobShadow.radiusPercent / 100.0f);
+                const float shadowOffsetX = knobSize * (knobShadow.horizontalOffsetPercent / 100.0f);
+                const float shadowOffsetY = knobSize * (knobShadow.verticalOffsetPercent / 100.0f);
                 const float shadowCenterX = centerX + shadowOffsetX;
                 const float shadowCenterY = centerY + shadowOffsetY;
+                const float outerEdgeAlpha = knobShadow.outerEdgeOpacity / 100.0f;
 
                 // Create radial gradient for soft shadow effect
                 juce::ColourGradient shadowGradient(
-                    juce::Colours::black.withAlpha(1.0f),  // Center: 100% black
+                    juce::Colours::black.withAlpha(1.0f),           // Center: 100% black
                     shadowCenterX, shadowCenterY,
-                    juce::Colours::black.withAlpha(0.1f),  // Edges: 10% black
+                    juce::Colours::black.withAlpha(outerEdgeAlpha), // Edges: configurable opacity
                     shadowCenterX + shadowRadius, shadowCenterY,
                     true  // isRadial
                 );
@@ -1563,6 +1594,17 @@ private:
     int knobFrameCount = 50;
     juce::String knobOrientation = "Vertical";
     bool staticKnob = false;
+
+    // KnobShadow parameters (parsed from "KnobShadow=radiusPercent,outerEdgeOpacity,verticalOffsetPercent,horizontalOffsetPercent")
+    struct KnobShadowSettings
+    {
+        bool enabled = false;
+        float radiusPercent = 110.0f;      // Percentage of knob radius (e.g., 110 = 110%)
+        float outerEdgeOpacity = 10.0f;    // Opacity at outer edge (0-100)
+        float verticalOffsetPercent = 15.0f;   // Vertical offset as percentage of knob size
+        float horizontalOffsetPercent = 15.0f; // Horizontal offset as percentage of knob size
+    } knobShadow;
+
     juce::String backgroundFilename;
     juce::String backgroundFlashFilename;
     juce::String backgroundSampleLoadedFilename;
