@@ -1471,7 +1471,32 @@ private:
                 .rotated(angle)
                 .translated(centerX, centerY);
 
-            // Draw the rotated image
+            // Draw shadow FIRST - positioned completely behind/below the knob
+            // The shadow is offset enough that it won't overlap the knob area
+            {
+                const float shadowOffsetX = knobSize * 0.15f;  // Offset as percentage of knob size
+                const float shadowOffsetY = knobSize * 0.15f;
+                const float shadowCenterX = centerX + shadowOffsetX;
+                const float shadowCenterY = centerY + shadowOffsetY;
+                const float shadowRadius = knobSize * 0.35f;  // Smaller than knob, won't overlap
+
+                // Create radial gradient for soft shadow effect
+                juce::ColourGradient shadowGradient(
+                    juce::Colours::black.withAlpha(0.4f),  // Center of shadow
+                    shadowCenterX, shadowCenterY,
+                    juce::Colours::transparentBlack,       // Fades to transparent
+                    shadowCenterX + shadowRadius, shadowCenterY,
+                    true  // isRadial
+                );
+
+                g.setGradientFill(shadowGradient);
+                g.fillEllipse(shadowCenterX - shadowRadius,
+                             shadowCenterY - shadowRadius,
+                             shadowRadius * 2.0f,
+                             shadowRadius * 2.0f);
+            }
+
+            // Draw the rotated knob image on top (nothing will be drawn over this)
             g.drawImageTransformed(knobFilmstrip, transform);
         }
         else
