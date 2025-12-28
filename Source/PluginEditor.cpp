@@ -2433,7 +2433,8 @@ static const juce::StringArray kOptionParamIds{
     "optSampleRate", "optTimingMode",
     "optSlotScale",
     "optGlowColor", "optGlowAlpha", "optGlowWidth",
-    "optPulseColor", "optPulseAlpha", "optPulseWidth"
+    "optPulseColor", "optPulseAlpha", "optPulseWidth",
+    "optSkinFolder"
 };
 
 static bool isOptionParameter(const juce::String& paramID)
