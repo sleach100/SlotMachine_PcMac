@@ -1471,6 +1471,10 @@ private:
                 .rotated(angle)
                 .translated(centerX, centerY);
 
+            // Add a subtle drop shadow for depth
+            juce::DropShadow shadow(juce::Colours::black.withAlpha(0.5f), 4, juce::Point<int>(2, 2));
+            shadow.drawForImage(g, knobFilmstrip, transform);
+
             // Draw the rotated image
             g.drawImageTransformed(knobFilmstrip, transform);
         }
