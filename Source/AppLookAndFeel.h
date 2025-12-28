@@ -1472,8 +1472,19 @@ private:
                 .translated(centerX, centerY);
 
             // Add a subtle drop shadow for depth
-            juce::DropShadow shadow(juce::Colours::black.withAlpha(0.5f), 4, juce::Point<int>(2, 2));
-            shadow.drawForImage(g, knobFilmstrip, transform);
+            // Draw a circular shadow slightly offset from the knob center
+            const float shadowOffsetX = 2.0f;
+            const float shadowOffsetY = 2.0f;
+            const float shadowRadius = (knobSize * 0.5f) + 2.0f;
+
+            juce::Path shadowPath;
+            shadowPath.addEllipse(centerX - shadowRadius + shadowOffsetX,
+                                 centerY - shadowRadius + shadowOffsetY,
+                                 shadowRadius * 2.0f,
+                                 shadowRadius * 2.0f);
+
+            juce::DropShadow shadow(juce::Colours::black.withAlpha(0.5f), 4, juce::Point<int>(0, 0));
+            shadow.drawForPath(g, shadowPath);
 
             // Draw the rotated image
             g.drawImageTransformed(knobFilmstrip, transform);
