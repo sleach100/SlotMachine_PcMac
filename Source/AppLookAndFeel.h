@@ -1427,7 +1427,11 @@ private:
     {
         // This function should only be called if filmstrip is valid
         // (checked in drawRotarySlider), but double-check for safety
-        if (!knobFilmstrip.isValid() || knobFrameCount <= 0)
+        if (!knobFilmstrip.isValid())
+            return;
+
+        // For filmstrip mode, we need frames; for static mode we don't
+        if (!staticKnob && knobFrameCount <= 0)
             return;
 
         // If StaticKnob is enabled, rotate the image instead of using filmstrip frames
@@ -1435,8 +1439,8 @@ private:
         {
             // Calculate destination rectangle (center the knob in the available space)
             const int knobSize = juce::jmin(width, height);
-            const int destX = x + (width - knobSize) / 2;
-            const int destY = y + (height - knobSize) / 2;
+            const float destX = x + (width - knobSize) / 2.0f;
+            const float destY = y + (height - knobSize) / 2.0f;
 
             // Calculate rotation angle
             // Standard rotary slider range is 270 degrees (-135° to +135°)
@@ -1445,19 +1449,27 @@ private:
             const float startAngle = juce::MathConstants<float>::pi * 1.25f; // Start at -135 degrees (bottom left)
             const float angle = startAngle + sliderPosProportional * rotaryRange;
 
-            // Calculate the center point of the destination area
+            // Calculate the center point where we want the knob
             const float centerX = destX + knobSize * 0.5f;
             const float centerY = destY + knobSize * 0.5f;
 
-            // Get the original image center
-            const float imageCenterX = knobFilmstrip.getWidth() * 0.5f;
-            const float imageCenterY = knobFilmstrip.getHeight() * 0.5f;
+            // Get the image dimensions
+            const float imageWidth = (float)knobFilmstrip.getWidth();
+            const float imageHeight = (float)knobFilmstrip.getHeight();
 
-            // Create transform: scale, rotate around image center, then translate to destination
-            const float scale = (float)knobSize / (float)juce::jmax(knobFilmstrip.getWidth(), knobFilmstrip.getHeight());
-            juce::AffineTransform transform = juce::AffineTransform::scale(scale, scale, imageCenterX, imageCenterY)
-                                                .followedBy(juce::AffineTransform::rotation(angle, imageCenterX * scale, imageCenterY * scale))
-                                                .followedBy(juce::AffineTransform::translation(centerX - imageCenterX * scale, centerY - imageCenterY * scale));
+            // Calculate scale to fit the knob into the destination size
+            const float scale = (float)knobSize / juce::jmax(imageWidth, imageHeight);
+
+            // Create the transform:
+            // 1. Translate image so its center is at origin
+            // 2. Scale it
+            // 3. Rotate it
+            // 4. Translate to final position
+            juce::AffineTransform transform =
+                juce::AffineTransform::translation(-imageWidth * 0.5f, -imageHeight * 0.5f)
+                .scaled(scale)
+                .rotated(angle)
+                .translated(centerX, centerY);
 
             // Draw the rotated image
             g.drawImageTransformed(knobFilmstrip, transform);
