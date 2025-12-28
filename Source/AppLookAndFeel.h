@@ -1485,7 +1485,7 @@ private:
                 juce::ColourGradient shadowGradient(
                     juce::Colours::black.withAlpha(1.0f),  // Center: 100% black
                     shadowCenterX, shadowCenterY,
-                    juce::Colours::black.withAlpha(0.4f),  // Edges: 40% black
+                    juce::Colours::black.withAlpha(0.1f),  // Edges: 10% black
                     shadowCenterX + shadowRadius, shadowCenterY,
                     true  // isRadial
                 );
