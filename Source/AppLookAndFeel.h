@@ -1472,13 +1472,14 @@ private:
                 .translated(centerX, centerY);
 
             // Draw shadow FIRST - positioned completely behind/below the knob
-            // The shadow is offset enough that it won't overlap the knob area
+            // Shadow radius is 8% larger than knob radius so it peeks out from behind
             {
-                const float shadowOffsetX = knobSize * 0.15f;  // Offset as percentage of knob size
-                const float shadowOffsetY = knobSize * 0.15f;
+                const float knobRadius = knobSize * 0.5f;
+                const float shadowRadius = knobRadius * 1.08f;  // 8% larger than knob
+                const float shadowOffsetX = knobSize * 0.08f;   // Offset to show shadow on right
+                const float shadowOffsetY = knobSize * 0.08f;   // Offset to show shadow on bottom
                 const float shadowCenterX = centerX + shadowOffsetX;
                 const float shadowCenterY = centerY + shadowOffsetY;
-                const float shadowRadius = knobSize * 0.35f;  // Smaller than knob, won't overlap
 
                 // Create radial gradient for soft shadow effect
                 juce::ColourGradient shadowGradient(
