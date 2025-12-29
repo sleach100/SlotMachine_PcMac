@@ -2,8 +2,8 @@
 
 ; --- Panel / Slot Backgrounds ---
    Background=DimBezel4.png
-   BackgroundFlash=DimBezelFlash-Blue2.png
-   BackgroundSampleLoaded=Background-SampleLoaded.png
+   BackgroundFlash=DimBezelFlash-Blue.png
+   BackgroundSampleLoaded=Background-SampleLoaded2.png
 
 ;--- File / Text ---
    ;Default FileNameWidth=142
@@ -40,6 +40,7 @@
 
 ;--- Branding ---
    Logo=SM5-Metal.png
+   MasterBPM_Image=Tempo.png
 
 ;--- Audio Knobs (Filmstrip) ---
 ;knob = filename, KnobFrames = number of frames in the filmstrip, KnobFilmstripOrientation=Vertical or Horizontal

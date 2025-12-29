@@ -1,9 +1,9 @@
-; SKIN: Midnight Forge
+; SKIN: Midnight Forge - Red
 
 ; --- Panel / Slot Backgrounds ---
    Background=DimBezel4.png
-   BackgroundFlash=DimBezelFlash-Red.png
-   BackgroundSampleLoaded=Background-SampleLoaded.png
+   BackgroundFlash=DimBezelFlash-Red2.png
+   BackgroundSampleLoaded=Background-SampleLoaded2.png
 
 ;--- File / Text ---
    FileNameWidth=155  ;Default FileNameWidth=142
@@ -37,6 +37,7 @@
 
 ;--- Branding ---
    Logo=SM5-Metal.png
+   MasterBPM_Image=Tempo.png
 
 ;--- Audio Knobs (Filmstrip) ---
    ;knob = filename, KnobFrames = number of frames in the filmstrip, KnobFilmstripOrientation=Vertical or Horizontal

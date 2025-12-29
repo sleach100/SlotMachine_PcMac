@@ -44,14 +44,12 @@
 
 ;--- Audio Knobs (Filmstrip) ---
 ;knob = filename(supports filmstrip or static image), KnobFrames = number of frames in the filmstrip, KnobFilmstripOrientation=Vertical or Horizontal
-   Knobs=knob1.png  ; Filmstrip
+   ;Knobs=knob1.png  ; Filmstrip
+   Knobs=CircleNickelKnob.png  ; Static Image 
+   KnobShadow=115, 0, 1, 1  ; format: KnobShadow=Radious percentage of the knob, Percentage of black at outer edge, Vertical offset percentage of the knob size(can be positive or negative), Horizontal offset percentage of the knob size(can be positive or negative).
+   StaticKnob=True  ;If StaticKnob=True, it signifies that Knobs is a static image instead of a filmstrip, and the knob image will be rotated with the knobs value.
    KnobFrames=50
    KnobFilmstripOrientation=Vertical
-
-   ;Knobs=CircleNickelKnob.png  ; Static Image 
-   ;KnobShadow=115, 0, 1, 1  ; format: KnobShadow=Radious percentage of the knob, Percentage of black at outer edge, Vertical offset percentage of the knob size(can be positive or negative), Horizontal offset percentage of the knob size(can be positive or negative).
-   ;StaticKnob=True  ;If StaticKnob=True, it signifies that Knobs is a static image instead of a filmstrip, and the knob image will be rotated with the knobs value.
-
 
    ;Knobs=knob1.png
    ;KnobFrames=50
@@ -62,7 +60,6 @@
 ;--- Slot Progress Bar ---
    ProgressBarWidth=250
    HideProgressBar=True
-
 
 
 
