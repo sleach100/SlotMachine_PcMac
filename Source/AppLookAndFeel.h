@@ -115,15 +115,12 @@ public:
                           float sliderPos, float minSliderPos, float maxSliderPos,
                           const juce::Slider::SliderStyle style, juce::Slider& slider) override
     {
-        DBG("drawLinearSlider called for: " + slider.getName() + " (style: " + juce::String((int)style) + ")");
-
         // If we have a custom thumb image for horizontal sliders, draw track only then custom thumb
         if (sliderThumbImage.isValid() && style == juce::Slider::LinearHorizontal)
         {
             // Draw the slider background/track - custom image if available, otherwise JUCE default
             if (sliderTrackImage.isValid())
             {
-                DBG("Drawing custom slider track for: " + slider.getName());
 
                 // Get the proper slider layout from JUCE to know where the track should be drawn
                 auto layout = getSliderLayout(slider);
@@ -174,9 +171,6 @@ public:
                 drawLinearSliderBackground(g, x, y, width, height, sliderPos, minSliderPos, maxSliderPos, style, slider);
             }
 
-            DBG("Drawing custom slider thumb for: " + slider.getName()
-                + " (scale: " + juce::String(sliderThumbScale) + "%)");
-
             const int imgW = sliderThumbImage.getWidth();
             const int imgH = sliderThumbImage.getHeight();
 
@@ -208,13 +202,9 @@ public:
                                float sliderPos, float minSliderPos, float maxSliderPos,
                                const juce::Slider::SliderStyle style, juce::Slider& slider) override
     {
-        DBG("drawLinearSliderThumb called for: " + slider.getName() + " (style: " + juce::String((int)style) + ")");
-
         // Use custom slider thumb image if available, otherwise use default rendering
         if (sliderThumbImage.isValid())
         {
-            DBG("drawLinearSliderThumb: Using custom thumb image for slider: " + slider.getName()
-                + " (bounds: " + juce::String(width) + "x" + juce::String(height) + ")");
 
             // Draw the static slider thumb image maintaining aspect ratio, centered in bounds
             const int imgW = sliderThumbImage.getWidth();
@@ -236,7 +226,6 @@ public:
         }
         else
         {
-            DBG("drawLinearSliderThumb: No custom thumb image, using default for: " + slider.getName());
             // Fall back to default JUCE slider thumb rendering
             juce::LookAndFeel_V4::drawLinearSliderThumb(g, x, y, width, height,
                                                         sliderPos, minSliderPos, maxSliderPos,
@@ -272,13 +261,6 @@ public:
             {
                 hasFile = (bool)hasFileVar;
             }
-
-            // Debug: log flash state when it's significant
-            if (flashState > 0.01f)
-            {
-                DBG("Flash state for " + text + ": " + juce::String(flashState));
-                DBG("  backgroundFlashImage.isValid(): " + juce::String(backgroundFlashImage.isValid() ? "true" : "false"));
-            }
         }
 
         // Determine which background image to use
@@ -287,7 +269,6 @@ public:
         if (hasFlashState && flashState > 0.01f && backgroundFlashImage.isValid())
         {
             bgImage = &backgroundFlashImage;
-            DBG("Using FLASH image for " + text);
         }
         else if (hasFile && backgroundSampleLoadedImage.isValid())
         {
@@ -498,11 +479,6 @@ public:
         // Falls back to default JUCE rendering (not TextBox) to avoid vertical distortion
         if (midiListPanelBackgroundImage.isValid())
         {
-            DBG("drawPopupMenuBackground: Drawing custom MIDI list panel image ("
-                + juce::String(midiListPanelBackgroundImage.getWidth()) + "x"
-                + juce::String(midiListPanelBackgroundImage.getHeight()) + ") into "
-                + juce::String(width) + "x" + juce::String(height));
-
             // First, fill the entire background with transparent to enable window transparency
             g.fillAll(juce::Colours::transparentBlack);
 
@@ -516,7 +492,6 @@ public:
         }
         else
         {
-            DBG("drawPopupMenuBackground: No custom image, using default");
             // Fall back to default JUCE popup menu background (not TextBox)
             juce::LookAndFeel_V4::drawPopupMenuBackground(g, width, height);
         }
