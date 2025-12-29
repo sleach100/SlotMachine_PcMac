@@ -628,6 +628,8 @@ private:
         knobFilename = "knob.png";
         knobFrameCount = 50;
         knobOrientation = "Vertical";
+        staticKnob = false;
+        knobShadow.enabled = false;  // No shadow by default
         backgroundFilename = "";
         backgroundFlashFilename = "";
         backgroundSampleLoadedFilename = "";
@@ -708,6 +710,37 @@ private:
                 {
                     knobOrientation = value;
                     DBG("Skin: KnobFilmstripOrientation = " + knobOrientation);
+                }
+                else if (key.equalsIgnoreCase("StaticKnob"))
+                {
+                    staticKnob = value.equalsIgnoreCase("True");
+                    DBG("Skin: StaticKnob = " + juce::String(staticKnob ? "True" : "False"));
+                }
+                else if (key.equalsIgnoreCase("KnobShadow"))
+                {
+                    // Parse KnobShadow=radiusPercent,outerEdgeOpacity,verticalOffsetPercent,horizontalOffsetPercent
+                    // Example: KnobShadow=110,10,15,15
+                    juce::StringArray parts;
+                    parts.addTokens(value, ",", "");
+
+                    if (parts.size() == 4)
+                    {
+                        knobShadow.radiusPercent = parts[0].trim().getFloatValue();
+                        knobShadow.outerEdgeOpacity = parts[1].trim().getFloatValue();
+                        knobShadow.verticalOffsetPercent = parts[2].trim().getFloatValue();
+                        knobShadow.horizontalOffsetPercent = parts[3].trim().getFloatValue();
+                        knobShadow.enabled = true;
+
+                        DBG("Skin: KnobShadow = " + juce::String(knobShadow.radiusPercent) + "%, "
+                            + juce::String(knobShadow.outerEdgeOpacity) + "%, "
+                            + juce::String(knobShadow.verticalOffsetPercent) + "%, "
+                            + juce::String(knobShadow.horizontalOffsetPercent) + "%");
+                    }
+                    else
+                    {
+                        DBG("Skin: KnobShadow format invalid (expected 4 comma-separated values), shadow disabled");
+                        knobShadow.enabled = false;
+                    }
                 }
                 else if (key.equalsIgnoreCase("Background"))
                 {
@@ -1421,56 +1454,134 @@ private:
     {
         // This function should only be called if filmstrip is valid
         // (checked in drawRotarySlider), but double-check for safety
-        if (!knobFilmstrip.isValid() || knobFrameCount <= 0)
+        if (!knobFilmstrip.isValid())
             return;
 
-        const int numFrames = knobFrameCount;
-        const bool isVertical = knobOrientation.equalsIgnoreCase("Vertical");
+        // For filmstrip mode, we need frames; for static mode we don't
+        if (!staticKnob && knobFrameCount <= 0)
+            return;
 
-        // Calculate frame dimensions based on orientation
-        int frameWidth, frameHeight;
-        if (isVertical)
+        // If StaticKnob is enabled, rotate the image instead of using filmstrip frames
+        if (staticKnob)
         {
-            frameWidth = knobFilmstrip.getWidth();
-            frameHeight = knobFilmstrip.getHeight() / numFrames;
+            // Calculate destination rectangle (center the knob in the available space)
+            const int knobSize = juce::jmin(width, height);
+            const float destX = x + (width - knobSize) / 2.0f;
+            const float destY = y + (height - knobSize) / 2.0f;
+
+            // Calculate rotation angle
+            // Standard rotary slider range is 270 degrees (-135° to +135°)
+            // Convert sliderPosProportional (0.0 to 1.0) to angle in radians
+            const float rotaryRange = 1.5f * juce::MathConstants<float>::pi; // 270 degrees in radians
+            const float startAngle = juce::MathConstants<float>::pi * 1.25f; // Start at -135 degrees (bottom left)
+            const float angle = startAngle + sliderPosProportional * rotaryRange;
+
+            // Calculate the center point where we want the knob
+            const float centerX = destX + knobSize * 0.5f;
+            const float centerY = destY + knobSize * 0.5f;
+
+            // Get the image dimensions
+            const float imageWidth = (float)knobFilmstrip.getWidth();
+            const float imageHeight = (float)knobFilmstrip.getHeight();
+
+            // Calculate scale to fit the knob into the destination size
+            const float scale = (float)knobSize / juce::jmax(imageWidth, imageHeight);
+
+            // Create the transform:
+            // 1. Translate image so its center is at origin
+            // 2. Scale it
+            // 3. Rotate it
+            // 4. Translate to final position
+            juce::AffineTransform transform =
+                juce::AffineTransform::translation(-imageWidth * 0.5f, -imageHeight * 0.5f)
+                .scaled(scale)
+                .rotated(angle)
+                .translated(centerX, centerY);
+
+            // Draw shadow FIRST - positioned completely behind/below the knob
+            // Only draw shadow if KnobShadow parameter is enabled
+            if (knobShadow.enabled)
+            {
+                const float knobRadius = knobSize * 0.5f;
+
+                // Use KnobShadow parameters
+                const float shadowRadius = knobRadius * (knobShadow.radiusPercent / 100.0f);
+                const float shadowOffsetX = knobSize * (knobShadow.horizontalOffsetPercent / 100.0f);
+                const float shadowOffsetY = knobSize * (knobShadow.verticalOffsetPercent / 100.0f);
+                const float shadowCenterX = centerX + shadowOffsetX;
+                const float shadowCenterY = centerY + shadowOffsetY;
+                const float outerEdgeAlpha = knobShadow.outerEdgeOpacity / 100.0f;
+
+                // Create radial gradient for soft shadow effect
+                juce::ColourGradient shadowGradient(
+                    juce::Colours::black.withAlpha(1.0f),           // Center: 100% black
+                    shadowCenterX, shadowCenterY,
+                    juce::Colours::black.withAlpha(outerEdgeAlpha), // Edges: configurable opacity
+                    shadowCenterX + shadowRadius, shadowCenterY,
+                    true  // isRadial
+                );
+
+                g.setGradientFill(shadowGradient);
+                g.fillEllipse(shadowCenterX - shadowRadius,
+                             shadowCenterY - shadowRadius,
+                             shadowRadius * 2.0f,
+                             shadowRadius * 2.0f);
+            }
+
+            // Draw the rotated knob image on top (nothing will be drawn over this)
+            g.drawImageTransformed(knobFilmstrip, transform);
         }
-        else // Horizontal
+        else
         {
-            frameWidth = knobFilmstrip.getWidth() / numFrames;
-            frameHeight = knobFilmstrip.getHeight();
+            // Original filmstrip logic
+            const int numFrames = knobFrameCount;
+            const bool isVertical = knobOrientation.equalsIgnoreCase("Vertical");
+
+            // Calculate frame dimensions based on orientation
+            int frameWidth, frameHeight;
+            if (isVertical)
+            {
+                frameWidth = knobFilmstrip.getWidth();
+                frameHeight = knobFilmstrip.getHeight() / numFrames;
+            }
+            else // Horizontal
+            {
+                frameWidth = knobFilmstrip.getWidth() / numFrames;
+                frameHeight = knobFilmstrip.getHeight();
+            }
+
+            // Calculate which frame to display
+            int frameIndex = juce::jlimit(0, numFrames - 1,
+                                         (int)(sliderPosProportional * (numFrames - 1) + 0.5f));
+
+            // Calculate source rectangle for this frame based on orientation
+            int sourceX, sourceY;
+            if (isVertical)
+            {
+                sourceX = 0;
+                sourceY = frameIndex * frameHeight;
+            }
+            else // Horizontal
+            {
+                sourceX = frameIndex * frameWidth;
+                sourceY = 0;
+            }
+            const int sourceWidth = frameWidth;
+            const int sourceHeight = frameHeight;
+
+            // Calculate destination rectangle (center the knob in the available space)
+            const int knobSize = juce::jmin(width, height);
+            const int destX = x + (width - knobSize) / 2;
+            const int destY = y + (height - knobSize) / 2;
+            const int destWidth = knobSize;
+            const int destHeight = knobSize;
+
+            // Draw the appropriate frame using JUCE's drawImage with explicit coordinates
+            g.drawImage(knobFilmstrip,
+                        destX, destY, destWidth, destHeight,
+                        sourceX, sourceY, sourceWidth, sourceHeight,
+                        false);
         }
-
-        // Calculate which frame to display
-        int frameIndex = juce::jlimit(0, numFrames - 1,
-                                     (int)(sliderPosProportional * (numFrames - 1) + 0.5f));
-
-        // Calculate source rectangle for this frame based on orientation
-        int sourceX, sourceY;
-        if (isVertical)
-        {
-            sourceX = 0;
-            sourceY = frameIndex * frameHeight;
-        }
-        else // Horizontal
-        {
-            sourceX = frameIndex * frameWidth;
-            sourceY = 0;
-        }
-        const int sourceWidth = frameWidth;
-        const int sourceHeight = frameHeight;
-
-        // Calculate destination rectangle (center the knob in the available space)
-        const int knobSize = juce::jmin(width, height);
-        const int destX = x + (width - knobSize) / 2;
-        const int destY = y + (height - knobSize) / 2;
-        const int destWidth = knobSize;
-        const int destHeight = knobSize;
-
-        // Draw the appropriate frame using JUCE's drawImage with explicit coordinates
-        g.drawImage(knobFilmstrip,
-                    destX, destY, destWidth, destHeight,
-                    sourceX, sourceY, sourceWidth, sourceHeight,
-                    false);
     }
 
     float cornerRadius = 6.0f;
@@ -1482,6 +1593,18 @@ private:
     juce::String knobFilename;
     int knobFrameCount = 50;
     juce::String knobOrientation = "Vertical";
+    bool staticKnob = false;
+
+    // KnobShadow parameters (parsed from "KnobShadow=radiusPercent,outerEdgeOpacity,verticalOffsetPercent,horizontalOffsetPercent")
+    struct KnobShadowSettings
+    {
+        bool enabled = false;
+        float radiusPercent = 110.0f;      // Percentage of knob radius (e.g., 110 = 110%)
+        float outerEdgeOpacity = 10.0f;    // Opacity at outer edge (0-100)
+        float verticalOffsetPercent = 15.0f;   // Vertical offset as percentage of knob size
+        float horizontalOffsetPercent = 15.0f; // Horizontal offset as percentage of knob size
+    } knobShadow;
+
     juce::String backgroundFilename;
     juce::String backgroundFlashFilename;
     juce::String backgroundSampleLoadedFilename;
