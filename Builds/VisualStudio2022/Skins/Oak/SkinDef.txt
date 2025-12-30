@@ -22,11 +22,11 @@ Background=OakBackground.png
 
 ; BackgroundFlash: Flash background shown during beat hits
 ; Displayed momentarily when a beat triggers
-;BackgroundFlash=
+BackgroundFlash=OakBackgroundFlash.png
 
 ; BackgroundSampleLoaded: Background shown when a sample is loaded
 ; Displayed when slot has an audio file loaded (optional variation)
-;BackgroundSampleLoaded=
+BackgroundSampleLoaded=OakBackgroundLoaded.png
 
 
 ; =============================================================================
@@ -120,18 +120,18 @@ ButtonFontColor=#E9DECD
 ; SliderThumb: Image for the slider thumb/handle
 ; Applied to: Master BPM slider thumb and other linear sliders
 ; Image drawn at scaled size, centered on thumb position
-;SliderThumb=
+SliderThumb=SliderThumbOak.png
 
 ; SliderThumbScale: Scale percentage for slider thumb image
 ; Range: 1-100 (e.g., 50 = half size, 100 = full size)
 ; Only applied when SliderThumb is specified
-;SliderThumbScale=100
+SliderThumbScale=5
 
 ; SliderTrack: Background image for the slider track/rail
 ; Applied to: Master BPM slider track background
 ; Scaled/stretched to fit slider width while maintaining aspect ratio
 ; Only takes effect when SliderThumb is also provided
-;SliderTrack=
+SliderTrack=SliderRailOak.png
 
 
 ; =============================================================================
@@ -179,16 +179,16 @@ KnobFilmstripOrientation=Vertical
 ; =============================================================================
 
 ; MuteON: Image shown when Mute is enabled (channel muted)
-;MuteON=
+MuteON=SphereOakOn.png
 
 ; MuteOFF: Image shown when Mute is disabled (channel active)
-;MuteOFF=
+MuteOFF=SphereOakOff.png
 
 ; SoloON: Image shown when Solo is enabled (channel soloed)
-;SoloON=
+SoloON=SphereOakOn.png
 
 ; SoloOFF: Image shown when Solo is disabled (normal playback)
-;SoloOFF=
+SoloOFF=SphereOakOff.png
 
 
 ; =============================================================================
