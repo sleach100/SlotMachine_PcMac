@@ -1,0 +1,77 @@
+; SKIN: Studio Steel
+
+; --- Panel / Slot Backgrounds ---
+   Background=BrushedNickelBackground_LED_OFF.png
+   BackgroundFlash=BrushedNickelBackground_LED_ON.png
+   BackgroundSampleLoaded=BrushedNickelBackground_LED_OFF.png
+
+;--- File / Text ---
+   ;Default FileNameWidth=142
+   FileNameWidth=155
+   TextBox=TextBox-Metal2.png
+   MIDI_ListPanelBackground=TextBox-Metal3.png   ;TexBoxVerticalThin.png
+   MasterBPM_Image=Tempo.png
+   TextBoxFont=LED.ttf
+   TextBoxFontSize=18
+   TextBoxFontColor=#FFFF33
+
+;--- Buttons ---
+   LoadButtonWidth=75
+   Button=Button-Nickel.png
+   ButtonHover=ButtonHover.png  ;ButtonHover.png
+   ButtonClicked=ButtonClicked.png  ;ButtonClicked.png
+   ;TabSelected= Image to use for the Tab when there are multiple tabs.  Distinguishes active tab from inactive tabs.  Only used when there are multiple tabs.
+   TabSelected=ButtonClicked.png
+   MIDI_ListWidth=64
+   ;  will apply to all the master row buttons (except Start/Stop), Tabs, Master BPM label, Slot buttons(Load and X), MIDI channel selector, Midi Channel Selector Dropdown, Mute label and Solo Label
+   ButtonFontColor=#303030
+     ;#00FF00
+
+;--- Sliders ---
+   SliderTrack=SliderTrack-ThinMetal.png
+   SliderThumb=SliderThumbSilver.png
+   ;SliderThumbScale=size percentage of original image (1-100)
+   SliderThumbScale=8
+
+;--- Toggles / LEDs ---
+   MuteON=Red_LED3.png
+   MuteOFF=SoloOFF2.png
+   SoloON=SoloONwb.png
+   SoloOFF=SoloOFFwb.png
+
+;--- Branding ---
+   Logo=SM5-Metal.png
+
+;--- Audio Knobs (Filmstrip) ---
+;knob = filename(supports filmstrip or static image), KnobFrames = number of frames in the filmstrip, KnobFilmstripOrientation=Vertical or Horizontal
+   Knobs=Vintage_KnobScale.png ;knob1.png  ; Filmstrip
+   KnobFrames=101
+;50
+   KnobFilmstripOrientation=Vertical
+
+   ;Knobs=CircleNickelKnob.png  ; Static Image 
+   ;KnobShadow=115, 0, 1, 1  ; format: KnobShadow=Radious percentage of the knob, Percentage of black at outer edge, Vertical offset percentage of the knob size(can be positive or negative), Horizontal offset percentage of the knob size(can be positive or negative).
+   ;StaticKnob=True  ;If StaticKnob=True, it signifies that Knobs is a static image instead of a filmstrip, and the knob image will be rotated with the knobs value.
+
+
+   ;Knobs=knob1.png
+   ;KnobFrames=50
+
+   ;Knobs=knob2.png
+   ;KnobFrames=101
+
+;--- Slot Progress Bar ---
+   ProgressBarWidth=250
+   HideProgressBar=True
+
+
+
+
+
+
+
+
+
+
+
+

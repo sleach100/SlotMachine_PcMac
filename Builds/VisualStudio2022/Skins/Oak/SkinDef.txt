@@ -7,7 +7,7 @@
 ; Leave parameters commented out (with ;) to use default JUCE rendering
 ; =============================================================================
 
-; SKIN: [Your Skin Name Here]
+; SKIN: Oak
 
 ; =============================================================================
 ; PANEL / SLOT BACKGROUNDS
@@ -39,12 +39,12 @@ Background=OakBackground.png
 ; Applied to: File name display, MIDI channel selector, numeric value labels
 ; Excludes: Mute, Solo, and Master BPM text labels
 ; Image will be stretched to fit component bounds
-;TextBox=
+TextBox=TextBoxOak.png
 
 ; MIDI_ListPanelBackground: Background for MIDI channel dropdown menu
 ; Applied to: The popup list that appears when selecting MIDI channels
 ; Falls back to default if not specified
-;MIDI_ListPanelBackground=
+MIDI_ListPanelBackground=TextBoxOak.png
 
 ; FileNameWidth: Fixed width in pixels for the file name label
 ; 0 or omitted = auto-width (default ~142px, scales with window)
@@ -54,24 +54,23 @@ Background=OakBackground.png
 ; TextBoxFont: Custom font file (.ttf) for numeric displays
 ; Applied to: Count/Rate, Volume, Decay values, Master BPM slider value
 ; Must be a TrueType font file in the skin folder
-;TextBoxFont=
+TextBoxFont=Montserrat-SemiBold.ttf
 
 ; TextBoxFontSize: Font size in points for numeric displays
 ; 0 or omitted = use default size
 ; Only applied when TextBoxFont is specified
-;TextBoxFontSize=0
+TextBoxFontSize=20
 
 ; TextBoxFontColor: Hex color code for numeric text (e.g., #FFFF33, #F0F)
 ; Applied to: Numeric value displays where TextBoxFont is used
 ; Format: #RRGGBB or #RGB (# is optional)
-;TextBoxFontColor=
+TextBoxFontColor=#E9DECD
 
 ; MidiSelectorColor: Hex color code for MIDI channel selector text
 ; Applied to: MIDI channel selector, dropdown menu, sample selector
 ; Overrides TextBoxFontColor if specified
 ; Format: #RRGGBB or #RGB (# is optional)
-;MidiSelectorColor=
-
+MidiSelectorColor=#E9DECD
 
 ; =============================================================================
 ; BUTTONS
@@ -82,34 +81,34 @@ Background=OakBackground.png
 ; LoadButtonWidth: Width in pixels for the Load button
 ; 0 or omitted = auto-width (default 110px scaled)
 ; Right edge is anchored; width changes extend/reduce from left edge
-;LoadButtonWidth=0
+LoadButtonWidth=80
 
 ; Button: Normal button state image
 ; Applied to: All buttons in normal/idle state
 ; Image will be stretched to fit button bounds
-;Button=
+Button=ButtonOak.png
 
 ; ButtonHover: Button hover state image
 ; Displayed when mouse cursor is over the button
 ; Falls back to Button image if not specified
-;ButtonHover=
+ButtonHover=ButtonOakHover.png
 
 ; ButtonClicked: Button pressed/clicked state image
 ; Displayed when button is being clicked/held down
 ; Falls back to Button image if not specified
-;ButtonClicked=
+ButtonClicked=ButtonOakClicked.png
 
 ; TabSelected: Selected tab button image
 ; Applied to: Active tab when multiple tabs are present
 ; Only used when there are 2+ tabs; single tabs use normal Button image
 ; Falls back to ButtonClicked if not specified
-;TabSelected=
+TabSelected=ButtonOakHover.png
 
 ; ButtonFontColor: Hex color code for button text
 ; Applied to: All master row buttons (except Start/Stop), Tabs, Master BPM label,
 ;             Slot buttons (Load and X), MIDI channel selector, Mute label, Solo label
 ; Format: #RRGGBB or #RGB (# is optional)
-;ButtonFontColor=
+ButtonFontColor=#E9DECD
 
 
 ; =============================================================================
@@ -145,23 +144,22 @@ Background=OakBackground.png
 ; Knobs: Filmstrip image file or static knob image
 ; For filmstrip: Contains all rotation frames stacked vertically or horizontally
 ; For static: Single knob image that will be rotated in real-time
-;Knobs=
+Knobs=OakKnob-100frames.png
 
 ; KnobFrames: Number of frames in the filmstrip
 ; Required for filmstrip mode, ignored for static mode
 ; Example: 50 frames = 50 different rotation positions
-;KnobFrames=50
-
+KnobFrames=100
 ; KnobFilmstripOrientation: Layout direction of filmstrip frames
 ; Options: Vertical (frames stacked top to bottom)
 ;          Horizontal (frames arranged left to right)
 ; Only relevant for filmstrip mode
-;KnobFilmstripOrientation=Vertical
+KnobFilmstripOrientation=Vertical
 
 ; StaticKnob: Enable real-time rotation instead of filmstrip animation
 ; Options: True (rotate single image), False (use filmstrip frames)
 ; When True, the Knobs image is rotated dynamically; KnobFrames is ignored
-;StaticKnob=False
+;StaticKnob=True
 
 ; KnobShadow: Add a soft shadow beneath static knobs
 ; Format: radiusPercent,outerEdgeOpacity,verticalOffsetPercent,horizontalOffsetPercent
@@ -171,7 +169,7 @@ Background=OakBackground.png
 ; horizontalOffsetPercent: Horizontal shadow offset as % of knob size (e.g., 15)
 ; Only visible when StaticKnob=True
 ; Example: KnobShadow=110,10,15,15
-;KnobShadow=
+;KnobShadow=110,10,15,15
 
 
 ; =============================================================================
@@ -201,11 +199,11 @@ Background=OakBackground.png
 
 ; Logo: Main application logo image
 ; Displayed in the UI header or branding area
-;Logo=
+Logo=SM5.png
 
 ; MasterBPM_Image: Image/label for the Master BPM control
 ; Decorative label or icon for the tempo control area
-;MasterBPM_Image=
+MasterBPM_Image=TempoOak2.png
 
 
 ; =============================================================================
