@@ -411,6 +411,216 @@
   <li>Mono samples are automatically duplicated to stereo.</li>
 </ul>
 
+
+<h4>Building Custom Skins</h4>
+
+<p>
+  The SLOT MACHINE includes a powerful skin API that lets you fully customize the visual appearance without modifying any code.
+  Skins are automatically discovered from the <code>./Skins/</code> directory and can be switched on-the-fly via the <strong>Options</strong> menu.
+</p>
+
+<h5>Quick Start</h5>
+<ol>
+  <li>Create a new folder in <code>./Skins/</code> (e.g., <code>./Skins/MySkin/</code>)</li>
+  <li>Create a text file named <code>SkinDef.txt</code> in that folder</li>
+  <li>Add skin properties (see below) and place any referenced image files in the same folder</li>
+  <li>Launch the app and select your skin from <strong>Options → Skin Selector</strong></li>
+</ol>
+
+<h5>SkinDef.txt Format</h5>
+<p>
+  The skin definition file uses a simple <code>PropertyName=Value</code> format. Lines starting with <code>;</code> are comments and will be ignored.
+  All properties are optional — any missing property will use the application's default rendering.
+</p>
+
+<p><strong>Example:</strong></p>
+<pre style="background:#f5f5f5; padding:10px; border-left:3px solid #666;">
+; My Custom Skin
+Knobs=my_knob.png
+KnobFrames=50
+ButtonFontColor=#FFFFFF
+TextBoxFontColor=#D0D0D0
+Background=slot_bg.png
+</pre>
+
+<h5>Available Properties</h5>
+
+<h6>Knob & Slider Configuration</h6>
+<ul>
+  <li><code>Knobs=filename.png</code> — Filmstrip image for rotary knobs/sliders</li>
+  <li><code>KnobFrames=50</code> — Number of frames in the filmstrip (default: 50)</li>
+  <li><code>KnobFilmstripOrientation=Vertical</code> or <code>Horizontal</code> — How frames are arranged</li>
+  <li><code>StaticKnob=True</code> — Rotate the image instead of using filmstrip frames (default: False)</li>
+  <li><code>KnobShadow=110,10,15,15</code> — Add drop shadow: radiusPercent, outerEdgeOpacity, verticalOffsetPercent, horizontalOffsetPercent</li>
+  <li><code>SliderThumb=slider_thumb.png</code> — Custom thumb image for linear sliders</li>
+  <li><code>SliderThumbScale=100</code> — Scale percentage for slider thumb (1-100)</li>
+  <li><code>SliderTrack=slider_track.png</code> — Custom track background for linear sliders</li>
+</ul>
+
+<h6>Slot Background Images</h6>
+<ul>
+  <li><code>Background=slot_background.png</code> — Normal slot background</li>
+  <li><code>BackgroundFlash=slot_background_flash.png</code> — Flash/highlight state when triggered</li>
+  <li><code>BackgroundSampleLoaded=slot_background_loaded.png</code> — Displayed when a sample is loaded</li>
+</ul>
+
+<h6>UI Element Images</h6>
+<ul>
+  <li><code>TextBox=textbox_background.png</code> — Background for text labels and comboboxes</li>
+  <li><code>Button=button_normal.png</code> — Load button normal state</li>
+  <li><code>ButtonHover=button_hover.png</code> — Load button hover state</li>
+  <li><code>ButtonClicked=button_clicked.png</code> — Load button clicked/pressed state</li>
+  <li><code>TabSelected=tab_selected.png</code> — Selected tab appearance</li>
+  <li><code>MuteON=mute_on.png</code> — Mute button active state</li>
+  <li><code>MuteOFF=mute_off.png</code> — Mute button inactive state</li>
+  <li><code>SoloON=solo_on.png</code> — Solo button active state</li>
+  <li><code>SoloOFF=solo_off.png</code> — Solo button inactive state</li>
+  <li><code>Logo=logo.png</code> — Main application logo image</li>
+  <li><code>MasterBPM_Image=master_bpm.png</code> — Master BPM label image</li>
+  <li><code>MIDI_ListPanelBackground=midi_panel.png</code> — MIDI selector dropdown background</li>
+</ul>
+
+<h6>Font & Color Configuration</h6>
+<ul>
+  <li><code>TextBoxFont=font.ttf</code> — Custom font file (TTF or OTF format)</li>
+  <li><code>TextBoxFontSize=14</code> — Font size in points (0 = use default)</li>
+  <li><code>TextBoxFontColor=#D0D0D0</code> — Hex color for textbox and label text</li>
+  <li><code>ButtonFontColor=#FFFFFF</code> — Hex color for buttons and tabs</li>
+  <li><code>MidiSelectorColor=#CCCCCC</code> — Hex color for MIDI dropdown (overrides TextBoxFontColor if set)</li>
+</ul>
+<p><em>Note: Colors use hex format: <code>#RRGGBB</code> or shorthand <code>#RGB</code></em></p>
+
+<h6>Layout Configuration</h6>
+<ul>
+  <li><code>FileNameWidth=0</code> — Fixed width in pixels for filename label (0 = automatic/dynamic)</li>
+  <li><code>LoadButtonWidth=0</code> — Fixed width in pixels for Load button (0 = default 110px scaled)</li>
+  <li><code>ProgressBarWidth=0</code> — Fixed width in pixels for progress bar (0 = full width)</li>
+  <li><code>HideProgressBar=True</code> — Completely hide the progress bar (True/False)</li>
+  <li><code>MIDI_ListWidth=0</code> — Fixed width in pixels for MIDI list dropdown (0 = default width)</li>
+</ul>
+
+<h5>Image Specifications</h5>
+
+<h6>Filmstrip Knobs</h6>
+<p>
+  Knob filmstrips are vertical or horizontal strips containing multiple frames showing the knob at different rotation positions.
+  The image is divided into equal-sized frames based on <code>KnobFrames</code>.
+</p>
+<ul>
+  <li><strong>Vertical orientation:</strong> Frames stacked top-to-bottom (frame 0 at top = minimum value)</li>
+  <li><strong>Horizontal orientation:</strong> Frames arranged left-to-right (frame 0 at left = minimum value)</li>
+  <li>Recommended: 50-100 frames for smooth animation</li>
+  <li>Each frame should be square for proper aspect ratio</li>
+  <li>PNG format with transparency recommended</li>
+</ul>
+
+<p><strong>Example:</strong> For a 50-frame vertical filmstrip with 64×64px frames, your image would be 64×3200 pixels (64 width × 64 height × 50 frames).</p>
+
+<h6>Buttons & UI Elements</h6>
+<ul>
+  <li>Use PNG format with alpha transparency for best results</li>
+  <li>Images will be scaled to fit their UI component size</li>
+  <li>Button states (normal/hover/clicked) should have consistent dimensions</li>
+  <li>Mute/Solo buttons are rendered as small icons (typically 16-32px works well)</li>
+</ul>
+
+<h6>Backgrounds</h6>
+<ul>
+  <li>Slot backgrounds are drawn behind all slot controls</li>
+  <li>Use semi-transparent PNGs to let the default UI show through if desired</li>
+  <li>Consider the slot dimensions when designing background images</li>
+</ul>
+
+<h5>Example: Creating a "Dark Mode" Skin</h5>
+
+<p><strong>Step 1:</strong> Create directory structure</p>
+<pre style="background:#f5f5f5; padding:10px; border-left:3px solid #666;">
+./Skins/DarkMode/
+├── SkinDef.txt
+├── knob_dark.png
+├── button_dark.png
+├── button_dark_hover.png
+└── dark_font.ttf
+</pre>
+
+<p><strong>Step 2:</strong> Write SkinDef.txt</p>
+<pre style="background:#f5f5f5; padding:10px; border-left:3px solid #666;">
+; Dark Mode Skin
+; Created by YourName
+
+; Knobs
+Knobs=knob_dark.png
+KnobFrames=50
+KnobFilmstripOrientation=Vertical
+KnobShadow=120,15,10,10
+
+; Buttons
+Button=button_dark.png
+ButtonHover=button_dark_hover.png
+ButtonFontColor=#FFFFFF
+
+; Text & Fonts
+TextBoxFontColor=#E0E0E0
+TextBoxFont=dark_font.ttf
+TextBoxFontSize=13
+
+; Layout
+HideProgressBar=False
+</pre>
+
+<p><strong>Step 3:</strong> Create your image assets</p>
+<ul>
+  <li>Design a dark-themed knob filmstrip (e.g., 64×3200px for 50 frames)</li>
+  <li>Create dark button backgrounds</li>
+  <li>Include a font file if desired</li>
+</ul>
+
+<p><strong>Step 4:</strong> Test your skin</p>
+<ul>
+  <li>Launch SLOT MACHINE</li>
+  <li>Go to <strong>Options → Skin Selector</strong></li>
+  <li>Select "DarkMode" from the dropdown</li>
+  <li>Your skin will be applied immediately</li>
+</ul>
+
+<h5>Skin Development Tips</h5>
+<ul>
+  <li><strong>Start simple:</strong> Begin with just colors and fonts, then add images progressively</li>
+  <li><strong>Hot reload:</strong> Use the skin selector to quickly test changes — no app restart needed</li>
+  <li><strong>Fallback behavior:</strong> Missing properties automatically use defaults, so you can customize only what you want</li>
+  <li><strong>Test all states:</strong> Check button hover/click, solo/mute states, and slot backgrounds with/without samples</li>
+  <li><strong>Keep backups:</strong> Save versions of your skin as you iterate</li>
+  <li><strong>Check the Default skin:</strong> Reference <code>./Skins/Default/SkinDef.txt</code> to see all available options</li>
+  <li><strong>Image optimization:</strong> Compress PNGs to reduce skin folder size without losing quality</li>
+  <li><strong>Contrast matters:</strong> Ensure text colors have sufficient contrast against backgrounds for readability</li>
+</ul>
+
+<h5>Troubleshooting</h5>
+<ul>
+  <li><strong>Skin not appearing:</strong> Check that your folder is directly inside <code>./Skins/</code> and contains <code>SkinDef.txt</code></li>
+  <li><strong>Images not loading:</strong> Verify filenames match exactly (case-sensitive) and files are in the same folder as SkinDef.txt</li>
+  <li><strong>Knobs look wrong:</strong> Double-check <code>KnobFrames</code> count and <code>KnobFilmstripOrientation</code> match your actual image</li>
+  <li><strong>Colors not working:</strong> Ensure hex colors use <code>#</code> prefix (e.g., <code>#FF0000</code> not <code>FF0000</code>)</li>
+  <li><strong>Font not appearing:</strong> Confirm the font file is TTF or OTF format and the filename is correct</li>
+</ul>
+
+<h5>Advanced: Programmatic Skin Access</h5>
+<p>
+  For developers extending the application, the skin API is accessible via the <code>AppLookAndFeel</code> class:
+</p>
+<pre style="background:#f5f5f5; padding:10px; border-left:3px solid #666;">
+// Set skin folder
+appLF.setSkinFolder("MySkinName");
+
+// Reload current skin
+appLF.reloadSkin();
+
+// Access skin properties
+juce::Image logo = appLF.getLogoImage();
+juce::Colour buttonColor = appLF.getButtonFontColor();
+int fileNameWidth = appLF.getFileNameWidth();
+</pre>
+
 <hr>
 
 <h4>Technical Summary</h4>
