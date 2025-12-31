@@ -156,7 +156,7 @@ namespace BinaryData
     const int            TOMMid_wavSize = 88422;
 
     extern const char*   SpeakerIcon_png;
-    const int            SpeakerIcon_pngSize = 2701;
+    const int            SpeakerIcon_pngSize = 5573;
 
     extern const char*   LockIcon2_png;
     const int            LockIcon2_pngSize = 878;
@@ -171,13 +171,13 @@ namespace BinaryData
     const int            MuteON_pngSize = 11116;
 
     extern const char*   SlotMachineUserManual_html;
-    const int            SlotMachineUserManual_htmlSize = 681418;
+    const int            SlotMachineUserManual_htmlSize = 690800;
 
     extern const char*   SlotMachine_ico;
     const int            SlotMachine_icoSize = 4286;
 
     extern const char*   SM5_png;
-    const int            SM5_pngSize = 50997;
+    const int            SM5_pngSize = 43160;
 
     extern const char*   SoloOFF_png;
     const int            SoloOFF_pngSize = 9791;

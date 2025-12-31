@@ -18,16 +18,16 @@
 
 ; Background: Normal slot background (default state)
 ; Displayed when slot is idle or playing
-Background=OakBackgroundThinFrame.png
+Background=OakBackgroundThinFrameOPT.png
 
 ; BackgroundFlash: Flash background shown during beat hits
 ; Displayed momentarily when a beat triggers
-BackgroundFlash=OakBackgroundThinFrameFlash.png
+BackgroundFlash=OakBackgroundThinFrameFlashOPT.png
 
 
 ; BackgroundSampleLoaded: Background shown when a sample is loaded
 ; Displayed when slot has an audio file loaded (optional variation)
-BackgroundSampleLoaded=OakBackgroundThinFrameLoaded.png
+BackgroundSampleLoaded=OakBackgroundThinFrameLoadedOPT.png
 
 
 
@@ -51,7 +51,7 @@ MIDI_ListPanelBackground=TextBoxOak.png
 ; FileNameWidth: Fixed width in pixels for the file name label
 ; 0 or omitted = auto-width (default ~142px, scales with window)
 ; Useful to prevent text from extending into decorative bezels
-;FileNameWidth=0
+FileNameWidth=160
 
 ; TextBoxFont: Custom font file (.ttf) for numeric displays
 ; Applied to: Count/Rate, Volume, Decay values, Master BPM slider value
@@ -88,23 +88,23 @@ LoadButtonWidth=84
 ; Button: Normal button state image
 ; Applied to: All buttons in normal/idle state
 ; Image will be stretched to fit button bounds
-Button=ButtonOak.png
+Button=ButtonOakOPT.png
 
 ; ButtonHover: Button hover state image
 ; Displayed when mouse cursor is over the button
 ; Falls back to Button image if not specified
-ButtonHover=ButtonOakHover.png
+ButtonHover=ButtonOakHoverOPT.png
 
 ; ButtonClicked: Button pressed/clicked state image
 ; Displayed when button is being clicked/held down
 ; Falls back to Button image if not specified
-ButtonClicked=ButtonOakClicked.png
+ButtonClicked=ButtonOakClickedOPT.png
 
 ; TabSelected: Selected tab button image
 ; Applied to: Active tab when multiple tabs are present
 ; Only used when there are 2+ tabs; single tabs use normal Button image
 ; Falls back to ButtonClicked if not specified
-TabSelected=ButtonOakHover.png
+TabSelected=ButtonOakHoverOPT.png
 
 ; ButtonFontColor: Hex color code for button text
 ; Applied to: All master row buttons (except Start/Stop), Tabs, Master BPM label,
@@ -122,18 +122,18 @@ ButtonFontColor=#E9DECD
 ; SliderThumb: Image for the slider thumb/handle
 ; Applied to: Master BPM slider thumb and other linear sliders
 ; Image drawn at scaled size, centered on thumb position
-SliderThumb=SliderThumbOak.png
+SliderThumb=SliderThumbOakOPT.png
 
 ; SliderThumbScale: Scale percentage for slider thumb image
 ; Range: 1-100 (e.g., 50 = half size, 100 = full size)
 ; Only applied when SliderThumb is specified
-SliderThumbScale=5
+SliderThumbScale=55
 
 ; SliderTrack: Background image for the slider track/rail
 ; Applied to: Master BPM slider track background
 ; Scaled/stretched to fit slider width while maintaining aspect ratio
 ; Only takes effect when SliderThumb is also provided
-SliderTrack=SliderRailOak.png
+SliderTrack=SliderRailOakOPT.png
 
 
 ; =============================================================================
@@ -181,16 +181,16 @@ KnobFilmstripOrientation=Vertical
 ; =============================================================================
 
 ; MuteON: Image shown when Mute is enabled (channel muted)
-MuteON=SphereOakOn.png
+MuteON=SphereOakOnOPT.png
 
 ; MuteOFF: Image shown when Mute is disabled (channel active)
-MuteOFF=SphereOakOff.png
+MuteOFF=SphereOakOffOPT.png
 
 ; SoloON: Image shown when Solo is enabled (channel soloed)
-SoloON=SphereOakOn.png
+SoloON=SphereOakOnOPT.png
 
 ; SoloOFF: Image shown when Solo is disabled (normal playback)
-SoloOFF=SphereOakOff.png
+SoloOFF=SphereOakOffOPT.png
 
 
 ; =============================================================================
@@ -201,7 +201,7 @@ SoloOFF=SphereOakOff.png
 
 ; Logo: Main application logo image
 ; Displayed in the UI header or branding area
-Logo=SM5.png
+Logo=LogoOak.png
 
 ; MasterBPM_Image: Image/label for the Master BPM control
 ; Decorative label or icon for the tempo control area

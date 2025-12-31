@@ -1,0 +1,64 @@
+Skin Image Optimization Guide
+
+
+Slot Panel Backgrounds
+These images are stretched to fill the entire slot panel area:
+
+Background - Recommended: 300px × 220px (stretched to fit slot width)
+BackgroundFlash - Recommended: 300px × 220px (beat flash state)
+BackgroundSampleLoaded - Recommended: 300px × 220px (sample loaded state)
+Buttons
+Fixed-size UI elements:
+
+Button - 110px × 28px (normal state)
+ButtonHover - 110px × 28px (hover state)
+ButtonClicked - 110px × 28px (pressed state)
+TabSelected - 110px × 28px (selected tab)
+Toggle Buttons (Mute/Solo)
+Small rectangular buttons:
+
+MuteON - 60px × 22px (mute enabled)
+MuteOFF - 60px × 22px (mute disabled)
+SoloON - 60px × 22px (solo enabled)
+SoloOFF - 60px × 22px (solo disabled)
+Sliders (Linear/Horizontal)
+SliderThumb - 20px × 20px (can be scaled via SliderThumbScale parameter)
+SliderTrack - 100px × 4px (stretched to slider width)
+Rotary Knobs
+Two options:
+
+Option 1: Filmstrip (Multiple Frames)
+
+Knobs - 64px × 3200px for 50 frames (64px per frame)
+Each frame = 64px × 64px
+Total height = frameHeight × KnobFrames count
+Can be vertical or horizontal filmstrip
+Option 2: Static Single Image
+
+Knobs - 64px × 64px (single image, rotated in real-time)
+Text Boxes and Dropdowns
+Stretched to fit their container:
+
+TextBox - 100px × 16px (text label backgrounds)
+MIDI_ListPanelBackground - 80px × 22px (MIDI dropdown menu)
+Logos and Decorative Elements
+Logo - 200px × 50px (main application logo, displayed in header)
+MasterBPM_Image - 100px × 30px (BPM control label/icon)
+Key Notes for Optimization:
+Scaling Factor: The UI uses a slotScale multiplier (0.75 to 1.0), so images at the recommended sizes will look sharp at all zoom levels.
+
+Filmstrip Knobs: If using filmstrip knobs, calculate total size as:
+
+Vertical: Width = 64px, Height = (64px × number of frames)
+Horizontal: Width = (64px × number of frames), Height = 64px
+Common frame counts: 50, 60, or 100 frames
+Stretching vs. Scaling:
+
+Backgrounds are stretched to fill panels
+Buttons maintain aspect ratio
+Slider thumbs can be scaled via SliderThumbScale parameter (1-100%)
+Format Recommendations:
+
+Use PNG with transparency for buttons and UI elements
+Use JPG for solid backgrounds without transparency
+Keep file sizes minimal (optimize/compress after resizing)
