@@ -18,15 +18,17 @@
 
 ; Background: Normal slot background (default state)
 ; Displayed when slot is idle or playing
-Background=OakBackground.png
+Background=OakBackgroundThinFrame.png
 
 ; BackgroundFlash: Flash background shown during beat hits
 ; Displayed momentarily when a beat triggers
-BackgroundFlash=OakBackgroundFlash.png
+BackgroundFlash=OakBackgroundThinFrameFlash.png
+
 
 ; BackgroundSampleLoaded: Background shown when a sample is loaded
 ; Displayed when slot has an audio file loaded (optional variation)
-BackgroundSampleLoaded=OakBackgroundLoaded.png
+BackgroundSampleLoaded=OakBackgroundThinFrameLoaded.png
+
 
 
 ; =============================================================================
@@ -81,7 +83,7 @@ MidiSelectorColor=#E9DECD
 ; LoadButtonWidth: Width in pixels for the Load button
 ; 0 or omitted = auto-width (default 110px scaled)
 ; Right edge is anchored; width changes extend/reduce from left edge
-LoadButtonWidth=80
+LoadButtonWidth=84
 
 ; Button: Normal button state image
 ; Applied to: All buttons in normal/idle state
@@ -213,8 +215,8 @@ MasterBPM_Image=TempoOak2.png
 ; =============================================================================
 
 ; ProgressBarWidth: Width in pixels for the progress bar
-; 0 or omitted = use default full available width
-;ProgressBarWidth=0
+; 0 or omitted = use default full available width (default=290)
+ProgressBarWidth=279
 
 ; HideProgressBar: Completely hide the progress bar
 ; Options: True (hide), False or omitted (show)
