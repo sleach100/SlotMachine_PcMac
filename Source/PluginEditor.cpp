@@ -3003,6 +3003,11 @@ public:
         populateSkinCombo();
         skinCombo.onChange = [this]() { handleSkinSelection(); };
 
+        // hot reload button
+        addAndMakeVisible(btnHotReload);
+        btnHotReload.setButtonText("Hot Reload");
+        btnHotReload.addListener(this);
+
         // colour selectors
         addAndMakeVisible(glowColourSel);
         glowColourSel.setColour(juce::ColourSelector::backgroundColourId, juce::Colours::black);
@@ -3081,6 +3086,8 @@ public:
         auto skinRow = a.removeFromTop(48);
         skinLabel.setBounds(skinRow.removeFromLeft(getWidth() / 2 - 16));
         skinCombo.setBounds(skinRow.removeFromLeft(220).reduced(0, 8));
+        skinRow.removeFromLeft(8);  // gap between combo and button
+        btnHotReload.setBounds(skinRow.removeFromLeft(100).reduced(0, 8));
 
         a.removeFromTop(6);
 
@@ -3135,6 +3142,7 @@ private:
 
     juce::Label skinLabel;
     juce::ComboBox skinCombo;
+    juce::TextButton btnHotReload;
 
     juce::Label glowLabel, pulseLabel;
     juce::ColourSelector glowColourSel{ juce::ColourSelector::showColourAtTop
@@ -3283,6 +3291,8 @@ private:
             setBoolParam("optShowSlotBars", showSlotBars.getToggleState());
         else if (b == &btnResetDefaults)
             resetToDefaultOptions();
+        else if (b == &btnHotReload)
+            handleHotReload();
         else if (b == &btnClose)
             if (auto* dw = findParentComponentOfClass<juce::DialogWindow>())
                 dw->closeButtonPressed();
@@ -3397,6 +3407,20 @@ private:
         setStringParam("optSkinFolder", skinName);
 
         // Reload the skin with the new folder via callback
+        if (skinChanged)
+            skinChanged(skinName);
+    }
+
+    void handleHotReload()
+    {
+        // Get the currently selected skin from the combo box
+        const int id = skinCombo.getSelectedId();
+        if (id <= 0 || id > skinCombo.getNumItems())
+            return;
+
+        const juce::String skinName = skinCombo.getItemText(id - 1);
+
+        // Reload the skin from disk via callback
         if (skinChanged)
             skinChanged(skinName);
     }
@@ -4857,6 +4881,26 @@ void SlotMachineAudioProcessorEditor::mouseWheelMove(const juce::MouseEvent& e, 
     }
 
     juce::AudioProcessorEditor::mouseWheelMove(e, wheel);
+}
+
+bool SlotMachineAudioProcessorEditor::keyPressed(const juce::KeyPress& key)
+{
+    // Check for CTRL+H (or CMD+H on Mac) to trigger Hot Reload
+    if (key.getKeyCode() == 'h' || key.getKeyCode() == 'H')
+    {
+        if (key.getModifiers().isCtrlDown() || key.getModifiers().isCommandDown())
+        {
+            // Get the current skin folder from APVTS
+            const juce::String currentSkinFolder = Opt::getString(apvts, "optSkinFolder", "Classic");
+
+            // Reload the skin from disk
+            reloadSkinWithFolder(currentSkinFolder);
+
+            return true;  // Key press handled
+        }
+    }
+
+    return false;  // Key press not handled
 }
 
 void SlotMachineAudioProcessorEditor::updateStandaloneWindowTitle()
