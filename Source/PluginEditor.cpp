@@ -4883,6 +4883,26 @@ void SlotMachineAudioProcessorEditor::mouseWheelMove(const juce::MouseEvent& e, 
     juce::AudioProcessorEditor::mouseWheelMove(e, wheel);
 }
 
+bool SlotMachineAudioProcessorEditor::keyPressed(const juce::KeyPress& key)
+{
+    // Check for CTRL+H (or CMD+H on Mac) to trigger Hot Reload
+    if (key.getKeyCode() == 'h' || key.getKeyCode() == 'H')
+    {
+        if (key.getModifiers().isCtrlDown() || key.getModifiers().isCommandDown())
+        {
+            // Get the current skin folder from APVTS
+            const juce::String currentSkinFolder = Opt::getString(apvts, "optSkinFolder", "Classic");
+
+            // Reload the skin from disk
+            reloadSkinWithFolder(currentSkinFolder);
+
+            return true;  // Key press handled
+        }
+    }
+
+    return false;  // Key press not handled
+}
+
 void SlotMachineAudioProcessorEditor::updateStandaloneWindowTitle()
 {
 #if JUCE_STANDALONE_APPLICATION
