@@ -3370,8 +3370,10 @@ private:
     {
         skinCombo.clear();
 
-        // Get the Skins directory
-        juce::File skinsDir = juce::File::getCurrentWorkingDirectory().getChildFile("Skins");
+        // Get the Skins directory from user's Documents folder
+        juce::File skinsDir = juce::File::getSpecialLocation(juce::File::userDocumentsDirectory)
+                                  .getChildFile("SlotMachine")
+                                  .getChildFile("Skins");
 
         if (!skinsDir.exists() || !skinsDir.isDirectory())
         {
