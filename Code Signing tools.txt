@@ -1,0 +1,86 @@
+TARGET:  Slot-Machine-UI-Refactor
+C:\Users\Stever Leach\source\repos\Slot-Machine-UI-Refactor
+
+1) Open Windows Powershell
+2) CD C:\Beater\CodeSignTool-v1.3.2-windows
+
+GET CREDENTIALS:
+
+.\CodeSignTool.bat get_credential_ids -username="sleach100" -password="Sdl12012!"
+
+
+
+SIGN WITH CREDENTIALS:
+
+1) SlotMachine.exe:
+
+.\CodeSignTool.bat sign `
+  -credential_id=825bacf2-0f26-4f7f-8752-af218640e0ff `
+  -username="sleach100" `
+  -password="Sdl12012!" `
+  -totp_secret="ZP8jfsdMEkwNe4zImWbDAECcsG/h9eh7xWpcxnbWFIc=" `
+  -output_dir_path="C:\Users\Stever Leach\source\repos\Slot-Machine-UI-Refactor\Signed" `
+  -input_file_path="C:\Users\Stever Leach\source\repos\Slot-Machine-UI-Refactor\Builds\VisualStudio2022\x64\Release\Standalone Plugin\SlotMachine.exe"
+
+2) SlotMachineUpdater.exe:
+
+.\CodeSignTool.bat sign `
+  -credential_id=825bacf2-0f26-4f7f-8752-af218640e0ff `
+  -username="sleach100" `
+  -password="Sdl12012!" `
+  -totp_secret="ZP8jfsdMEkwNe4zImWbDAECcsG/h9eh7xWpcxnbWFIc=" `
+  -output_dir_path="C:\Users\Stever Leach\source\repos\Slot-Machine-UI-Refactor\Signed" `
+  -input_file_path="C:\Beater\Slot Machine\SlotMachineUpdater\NewProject\Builds\VisualStudio2022\x64\Release\App\SlotMachineUpdater.exe"
+
+3) 2) SlotMachine.vst3:
+
+$src = "C:\Users\Stever Leach\source\repos\Slot-Machine-UI-Refactor\Builds\VisualStudio2022\x64\Release\VST3\SlotMachine.vst3\Contents\x86_64-win\SlotMachine.vst3"
+$tmp = "C:\Users\Stever Leach\source\repos\Slot-Machine-UI-Refactor\Builds\VisualStudio2022\x64\Release\VST3\SlotMachine.vst3\Contents\x86_64-win\SlotMachine.dll"
+Copy-Item $src $tmp -Force
+.\CodeSignTool.bat sign `
+  -credential_id=825bacf2-0f26-4f7f-8752-af218640e0ff `
+  -username="sleach100" `
+  -password="Sdl12012!" `
+  -totp_secret="ZP8jfsdMEkwNe4zImWbDAECcsG/h9eh7xWpcxnbWFIc=" `
+  -output_dir_path="C:\Users\Stever Leach\source\repos\Slot-Machine-UI-Refactor\Signed" `
+  -input_file_path="C:\Users\Stever Leach\source\repos\Slot-Machine-UI-Refactor\Builds\VisualStudio2022\x64\Release\VST3\SlotMachine.vst3\Contents\x86_64-win\SlotMachine.dll"
+$src = "C:\Users\Stever Leach\source\repos\Slot-Machine-UI-Refactor\Signed\SlotMachine.dll"
+$tmp = "C:\Users\Stever Leach\source\repos\Slot-Machine-UI-Refactor\Signed\SlotMachine.vst3"
+Copy-Item $src $tmp -Force
+
+4) Inno Uninstaller
+
+.\CodeSignTool.bat sign `
+  -credential_id=825bacf2-0f26-4f7f-8752-af218640e0ff `
+  -username="sleach100" `
+  -password="Sdl12012!" `
+  -totp_secret="ZP8jfsdMEkwNe4zImWbDAECcsG/h9eh7xWpcxnbWFIc=" `
+  -output_dir_path="C:\Users\Stever Leach\source\repos\Slot-Machine-UI-Refactor\Signed" `
+  -input_file_path="C:\Users\Stever Leach\source\repos\Slot-Machine-UI-Refactor\{app}\uninst-6.5.4-a65597334b.exe"
+
+5) Inno Installer:
+
+.\CodeSignTool.bat sign `
+  -credential_id=825bacf2-0f26-4f7f-8752-af218640e0ff `
+  -username="sleach100" `
+  -password="Sdl12012!" `
+  -totp_secret="ZP8jfsdMEkwNe4zImWbDAECcsG/h9eh7xWpcxnbWFIc=" `
+  -output_dir_path="C:\Users\Stever Leach\source\repos\Slot-Machine-UI-Refactor\Signed" `
+  -input_file_path="C:\Users\Stever Leach\source\repos\Slot-Machine-UI-Refactor\SlotMachineSetup-01.01.00.exe"
+
+
+
+Inno Installer Script:
+
+
+
+[SignTools]
+Name: "eSigner"; Command: "C:\Beater\CodeSignTool-v1.3.2-windows\CodeSignTool.bat"; Parameters: "sign -credential_id=825bacf2-0f26-4f7f-8752-af218640e0ff -username=""sleach100"" -password=""Sdl12012!"" -totp_secret=""ZP8jfsdMEkwNe4zImWbDAECcsG/h9eh7xWpcxnbWFIc="" -input_file_path=$f -override"
+
+
+
+
+CREDENTIALS:
+825bacf2-0f26-4f7f-8752-af218640e0ff
+
+  -totp_secret="ZP8jfsdMEkwNe4zImWbDAECcsG/h9eh7xWpcxnbWFIc=" `
