@@ -597,6 +597,14 @@ public:
     }
 
 private:
+    // Helper function to get the Skins base directory from user's Documents folder
+    juce::File getSkinsDirectory() const
+    {
+        return juce::File::getSpecialLocation(juce::File::userDocumentsDirectory)
+                   .getChildFile("SlotMachine")
+                   .getChildFile("Skins");
+    }
+
     void loadSkinDefinition()
     {
         // Set defaults
@@ -634,8 +642,7 @@ private:
         midiListWidth = 0; // 0 = use default width
         buttonFontColor = ""; // Empty = use default
 
-        juce::File skinDefFile = juce::File::getCurrentWorkingDirectory()
-                                    .getChildFile("Skins")
+        juce::File skinDefFile = getSkinsDirectory()
                                     .getChildFile(skinFolderName)
                                     .getChildFile("SkinDef.txt");
 
@@ -868,8 +875,7 @@ private:
         // Clear filmstrip first to ensure proper reset
         knobFilmstrip = juce::Image();
 
-        juce::File knobFile = juce::File::getCurrentWorkingDirectory()
-                                .getChildFile("Skins")
+        juce::File knobFile = getSkinsDirectory()
                                 .getChildFile(skinFolderName)
                                 .getChildFile(knobFilename);
 
@@ -921,8 +927,7 @@ private:
         // Load normal background image
         if (backgroundFilename.isNotEmpty())
         {
-            juce::File bgFile = juce::File::getCurrentWorkingDirectory()
-                                   .getChildFile("Skins")
+            juce::File bgFile = getSkinsDirectory()
                                    .getChildFile(skinFolderName)
                                    .getChildFile(backgroundFilename);
 
@@ -943,8 +948,7 @@ private:
         // Load flash background image
         if (backgroundFlashFilename.isNotEmpty())
         {
-            juce::File bgFlashFile = juce::File::getCurrentWorkingDirectory()
-                                         .getChildFile("Skins")
+            juce::File bgFlashFile = getSkinsDirectory()
                                          .getChildFile(skinFolderName)
                                          .getChildFile(backgroundFlashFilename);
 
@@ -965,8 +969,7 @@ private:
         // Load sample loaded background image
         if (backgroundSampleLoadedFilename.isNotEmpty())
         {
-            juce::File bgSampleLoadedFile = juce::File::getCurrentWorkingDirectory()
-                                                .getChildFile("Skins")
+            juce::File bgSampleLoadedFile = getSkinsDirectory()
                                                 .getChildFile(skinFolderName)
                                                 .getChildFile(backgroundSampleLoadedFilename);
 
@@ -987,8 +990,7 @@ private:
         // Load textbox image
         if (textboxFilename.isNotEmpty())
         {
-            juce::File textboxFile = juce::File::getCurrentWorkingDirectory()
-                                         .getChildFile("Skins")
+            juce::File textboxFile = getSkinsDirectory()
                                          .getChildFile(skinFolderName)
                                          .getChildFile(textboxFilename);
 
@@ -1009,8 +1011,7 @@ private:
         // Load MIDI list panel background image
         if (midiListPanelBackgroundFilename.isNotEmpty())
         {
-            juce::File midiListPanelBgFile = juce::File::getCurrentWorkingDirectory()
-                                                 .getChildFile("Skins")
+            juce::File midiListPanelBgFile = getSkinsDirectory()
                                                  .getChildFile(skinFolderName)
                                                  .getChildFile(midiListPanelBackgroundFilename);
 
@@ -1040,8 +1041,7 @@ private:
         // Load button images
         if (buttonFilename.isNotEmpty())
         {
-            juce::File buttonFile = juce::File::getCurrentWorkingDirectory()
-                                        .getChildFile("Skins")
+            juce::File buttonFile = getSkinsDirectory()
                                         .getChildFile(skinFolderName)
                                         .getChildFile(buttonFilename);
 
@@ -1061,8 +1061,7 @@ private:
 
         if (buttonHoverFilename.isNotEmpty())
         {
-            juce::File buttonHoverFile = juce::File::getCurrentWorkingDirectory()
-                                             .getChildFile("Skins")
+            juce::File buttonHoverFile = getSkinsDirectory()
                                              .getChildFile(skinFolderName)
                                              .getChildFile(buttonHoverFilename);
 
@@ -1082,8 +1081,7 @@ private:
 
         if (buttonClickedFilename.isNotEmpty())
         {
-            juce::File buttonClickedFile = juce::File::getCurrentWorkingDirectory()
-                                               .getChildFile("Skins")
+            juce::File buttonClickedFile = getSkinsDirectory()
                                                .getChildFile(skinFolderName)
                                                .getChildFile(buttonClickedFilename);
 
@@ -1104,8 +1102,7 @@ private:
         // Load slider thumb image
         if (sliderThumbFilename.isNotEmpty())
         {
-            juce::File sliderThumbFile = juce::File::getCurrentWorkingDirectory()
-                                             .getChildFile("Skins")
+            juce::File sliderThumbFile = getSkinsDirectory()
                                              .getChildFile(skinFolderName)
                                              .getChildFile(sliderThumbFilename);
 
@@ -1126,8 +1123,7 @@ private:
         // Load slider track image
         if (sliderTrackFilename.isNotEmpty())
         {
-            juce::File sliderTrackFile = juce::File::getCurrentWorkingDirectory()
-                                             .getChildFile("Skins")
+            juce::File sliderTrackFile = getSkinsDirectory()
                                              .getChildFile(skinFolderName)
                                              .getChildFile(sliderTrackFilename);
 
@@ -1148,8 +1144,7 @@ private:
         // Load tab selected image
         if (tabSelectedFilename.isNotEmpty())
         {
-            juce::File tabSelectedFile = juce::File::getCurrentWorkingDirectory()
-                                             .getChildFile("Skins")
+            juce::File tabSelectedFile = getSkinsDirectory()
                                              .getChildFile(skinFolderName)
                                              .getChildFile(tabSelectedFilename);
 
@@ -1170,8 +1165,7 @@ private:
         // Load mute/solo button images
         if (muteOnFilename.isNotEmpty())
         {
-            juce::File muteOnFile = juce::File::getCurrentWorkingDirectory()
-                                        .getChildFile("Skins")
+            juce::File muteOnFile = getSkinsDirectory()
                                         .getChildFile(skinFolderName)
                                         .getChildFile(muteOnFilename);
             if (muteOnFile.existsAsFile())
@@ -1188,8 +1182,7 @@ private:
 
         if (muteOffFilename.isNotEmpty())
         {
-            juce::File muteOffFile = juce::File::getCurrentWorkingDirectory()
-                                         .getChildFile("Skins")
+            juce::File muteOffFile = getSkinsDirectory()
                                          .getChildFile(skinFolderName)
                                          .getChildFile(muteOffFilename);
             if (muteOffFile.existsAsFile())
@@ -1206,8 +1199,7 @@ private:
 
         if (soloOnFilename.isNotEmpty())
         {
-            juce::File soloOnFile = juce::File::getCurrentWorkingDirectory()
-                                        .getChildFile("Skins")
+            juce::File soloOnFile = getSkinsDirectory()
                                         .getChildFile(skinFolderName)
                                         .getChildFile(soloOnFilename);
             if (soloOnFile.existsAsFile())
@@ -1224,8 +1216,7 @@ private:
 
         if (soloOffFilename.isNotEmpty())
         {
-            juce::File soloOffFile = juce::File::getCurrentWorkingDirectory()
-                                         .getChildFile("Skins")
+            juce::File soloOffFile = getSkinsDirectory()
                                          .getChildFile(skinFolderName)
                                          .getChildFile(soloOffFilename);
             if (soloOffFile.existsAsFile())
@@ -1243,8 +1234,7 @@ private:
         // Load logo image
         if (logoFilename.isNotEmpty())
         {
-            juce::File logoFile = juce::File::getCurrentWorkingDirectory()
-                                      .getChildFile("Skins")
+            juce::File logoFile = getSkinsDirectory()
                                       .getChildFile(skinFolderName)
                                       .getChildFile(logoFilename);
             if (logoFile.existsAsFile())
@@ -1262,8 +1252,7 @@ private:
         // Load Master BPM label image
         if (masterBpmImageFilename.isNotEmpty())
         {
-            juce::File masterBpmFile = juce::File::getCurrentWorkingDirectory()
-                                           .getChildFile("Skins")
+            juce::File masterBpmFile = getSkinsDirectory()
                                            .getChildFile(skinFolderName)
                                            .getChildFile(masterBpmImageFilename);
             if (masterBpmFile.existsAsFile())
@@ -1281,8 +1270,7 @@ private:
         // Load custom font for numeric textboxes
         if (textboxFontFilename.isNotEmpty())
         {
-            juce::File fontFile = juce::File::getCurrentWorkingDirectory()
-                                      .getChildFile("Skins")
+            juce::File fontFile = getSkinsDirectory()
                                       .getChildFile(skinFolderName)
                                       .getChildFile(textboxFontFilename);
             if (fontFile.existsAsFile())

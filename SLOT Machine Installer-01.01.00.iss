@@ -103,7 +103,7 @@ Source: "{#MySourceRoot}\tutorialslotmachine.mp4"; DestDir: "{app}"; \
 ; --- VST3 single-file (Windows) ---
 ; Copy the built .vst3 file to Common Files\VST3 and overwrite no matter what.
 Source: "{#MyVST3File}"; DestDir: "{cf64}\VST3"; DestName: "SlotMachine.vst3"; \
-  Flags: ignoreversion restartreplace 64bit; Tasks: installvst3
+  Flags: ignoreversion restartreplace 64bit; 
 
 ; --- License Agreement ***  
 Source: "C:\Users\Stever Leach\source\repos\Slot-Machine-UI-Refactor\LonePearLogic-License_&_Terms_Agreement.rtf"; DestDir: "{app}"; Flags: ignoreversion
