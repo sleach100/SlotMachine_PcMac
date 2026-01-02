@@ -1049,6 +1049,10 @@
       .who-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
+
+      #skins .who-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
     }
 
     @media (max-width: 520px) {
@@ -1058,6 +1062,10 @@
 
       .feature-grid,
       .who-grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      #skins .who-grid {
         grid-template-columns: minmax(0, 1fr);
       }
 
@@ -1235,6 +1243,112 @@
         <div class="metric-value"><span>MIDI</span> &amp; audio export per project</div>
         <div class="metric-hint">Send clean stems and MIDI to your DAW with all your timing
           decisions baked in.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SKINS -->
+  <section class="section" id="skins">
+    <div class="section-inner">
+      <div class="section-header">
+        <div class="section-kicker">New Feature!</div>
+        <h2 class="section-title">Personalize with Skins</h2>
+        <p class="section-sub">
+          Choose from our beautifully crafted premade skins, or design your own custom interface.
+          Transform S.L.O.T. Machine to match your studio aesthetic and creative vibe.
+        </p>
+      </div>
+
+      <div class="who-grid" style="grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 20px;">
+        <div style="text-align: center;">
+          <div style="border-radius: 14px; overflow: hidden; border: 1px solid rgba(46, 230, 184, 0.2); background: radial-gradient(circle at top, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.98)); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4); transition: transform 0.2s ease, box-shadow 0.2s ease; cursor: pointer;">
+            <img
+              src="StudioSteel.png"
+              alt="Studio Steel Skin"
+              style="width: 100%; height: auto; display: block;"
+              onmouseover="this.parentElement.style.transform='translateY(-4px)'; this.parentElement.style.boxShadow='0 8px 30px rgba(46, 230, 184, 0.3)';"
+              onmouseout="this.parentElement.style.transform='translateY(0)'; this.parentElement.style.boxShadow='0 4px 20px rgba(0, 0, 0, 0.4)';"
+            />
+          </div>
+          <div style="margin-top: 10px; font-size: 14px; font-weight: 500; color: var(--text);">Studio Steel</div>
+        </div>
+
+        <div style="text-align: center;">
+          <div style="border-radius: 14px; overflow: hidden; border: 1px solid rgba(46, 230, 184, 0.2); background: radial-gradient(circle at top, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.98)); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4); transition: transform 0.2s ease, box-shadow 0.2s ease; cursor: pointer;">
+            <img
+              src="Oak.png"
+              alt="Oak Skin"
+              style="width: 100%; height: auto; display: block;"
+              onmouseover="this.parentElement.style.transform='translateY(-4px)'; this.parentElement.style.boxShadow='0 8px 30px rgba(46, 230, 184, 0.3)';"
+              onmouseout="this.parentElement.style.transform='translateY(0)'; this.parentElement.style.boxShadow='0 4px 20px rgba(0, 0, 0, 0.4)';"
+            />
+          </div>
+          <div style="margin-top: 10px; font-size: 14px; font-weight: 500; color: var(--text);">Oak</div>
+        </div>
+
+        <div style="text-align: center;">
+          <div style="border-radius: 14px; overflow: hidden; border: 1px solid rgba(46, 230, 184, 0.2); background: radial-gradient(circle at top, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.98)); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4); transition: transform 0.2s ease, box-shadow 0.2s ease; cursor: pointer;">
+            <img
+              src="MidnightForgeBlue.png"
+              alt="Midnight Forge Blue Skin"
+              style="width: 100%; height: auto; display: block;"
+              onmouseover="this.parentElement.style.transform='translateY(-4px)'; this.parentElement.style.boxShadow='0 8px 30px rgba(56, 189, 248, 0.4)';"
+              onmouseout="this.parentElement.style.transform='translateY(0)'; this.parentElement.style.boxShadow='0 4px 20px rgba(0, 0, 0, 0.4)';"
+            />
+          </div>
+          <div style="margin-top: 10px; font-size: 14px; font-weight: 500; color: var(--text);">Midnight Forge - Blue</div>
+        </div>
+
+        <div style="text-align: center;">
+          <div style="border-radius: 14px; overflow: hidden; border: 1px solid rgba(46, 230, 184, 0.2); background: radial-gradient(circle at top, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.98)); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4); transition: transform 0.2s ease, box-shadow 0.2s ease; cursor: pointer;">
+            <img
+              src="MidnightForgeRed.png"
+              alt="Midnight Forge Red Skin"
+              style="width: 100%; height: auto; display: block;"
+              onmouseover="this.parentElement.style.transform='translateY(-4px)'; this.parentElement.style.boxShadow='0 8px 30px rgba(251, 113, 133, 0.4)';"
+              onmouseout="this.parentElement.style.transform='translateY(0)'; this.parentElement.style.boxShadow='0 4px 20px rgba(0, 0, 0, 0.4)';"
+            />
+          </div>
+          <div style="margin-top: 10px; font-size: 14px; font-weight: 500; color: var(--text);">Midnight Forge - Red</div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top: 24px;">
+        <div class="ribbon">
+          <span class="ribbon-dot"></span>
+          Express yourself
+        </div>
+        <div class="card-title">
+          <span>Make it yours</span>
+        </div>
+        <p>
+          Skins aren't just about looks—they're about creating a workspace that inspires you.
+          Whether you prefer the sleek modern feel of Studio Steel, the warm organic texture of Oak,
+          or the bold futuristic edge of Midnight Forge, there's a skin that matches your creative energy.
+        </p>
+        <ul class="feature-list">
+          <li>
+            <div class="feature-bullet"></div>
+            <div class="feature-text">
+              <strong>Premade skins included.</strong>
+              <span> Four professionally designed skins ready to use right out of the box.</span>
+            </div>
+          </li>
+          <li>
+            <div class="feature-bullet"></div>
+            <div class="feature-text">
+              <strong>Custom skin support.</strong>
+              <span> Advanced users can create and share their own custom skins to match any aesthetic.</span>
+            </div>
+          </li>
+          <li>
+            <div class="feature-bullet"></div>
+            <div class="feature-text">
+              <strong>Switch on the fly.</strong>
+              <span> Change your skin anytime to match your mood, project, or studio lighting.</span>
+            </div>
+          </li>
+        </ul>
       </div>
     </div>
   </section>
