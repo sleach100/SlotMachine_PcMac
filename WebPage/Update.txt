@@ -1,0 +1,4 @@
+SlotMachineSetup-01.00.00.exe
+SlotMachineSetup-01.00.27.exe
+SlotMachineSetup-01.00.28.exe
+SlotMachineSetup-01.01.00.exe

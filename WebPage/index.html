@@ -1,0 +1,1863 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>S.L.O.T. Machine | Synchronized Loop Orchestration &amp; Timing</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="S.L.O.T. Machine is a 16-slot drum sequencer and loop engine for producers who love complex grooves, polyrhythms, and total timing control." />
+
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-KC0VF93MJ8"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-KC0VF93MJ8');
+  </script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+.creative {
+  margin: 14px 0 18px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: radial-gradient(circle at top, rgba(46,230,184,.08), rgba(15,23,42,.92));
+  border: 1px solid rgba(56,189,248,.35);
+  box-shadow: 0 10px 28px rgba(0,0,0,.35);
+}
+.creative-title {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: .02em;
+  margin: 0 0 6px;
+}
+.creative-body {
+  font-size: 14px;
+  color: var(--muted);
+  margin: 0 8px 8px 0;
+}
+.creative-points {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0,1fr));
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.creative-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(148,163,184,.35);
+  background: rgba(15,23,42,.9);
+}
+.creative-chip .dot {
+  width: 6px; height: 6px; border-radius: 999px;
+  background: var(--accent);
+  box-shadow: 0 0 10px rgba(46,230,184,.7);
+}
+@media (max-width: 720px){
+  .creative-points { grid-template-columns: 1fr; }
+}
+
+    :root {
+      --bg: #05070b;
+      --bg-alt: #0b1017;
+      --card: #111822;
+      --card-soft: #151d29;
+      --accent: #2ee6b8;
+      --accent-soft: rgba(46, 230, 184, 0.12);
+      --accent-strong: rgba(46, 230, 184, 0.25);
+      --accent2: #38bdf8;
+      --text: #f7fafc;
+      --muted: #94a3b8;
+      --border: #1e293b;
+      --danger: #fb7185;
+      --radius-lg: 18px;
+      --radius-xl: 26px;
+      --shadow-soft: 0 26px 60px rgba(0, 0, 0, 0.7);
+      --shadow-glow: 0 0 40px rgba(46, 230, 184, 0.35);
+      --max-width: 1120px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: radial-gradient(circle at top, #020617 0, #020617 40%, #000 100%);
+      color: var(--text);
+      font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body {
+      line-height: 1.6;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .page {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .nav {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      border-bottom: 1px solid rgba(15, 23, 42, 0.9);
+      backdrop-filter: blur(18px);
+      background: radial-gradient(circle at top left, rgba(46, 230, 184, 0.12), transparent 55%),
+                  radial-gradient(circle at top right, rgba(56, 189, 248, 0.14), transparent 55%),
+                  rgba(2, 6, 23, 0.94);
+    }
+
+    .nav-inner {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+    }
+
+    .nav-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-mark {
+      width: 34px;
+      height: 34px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 30% 20%, #e0f2fe, #22c55e 35%, #0f172a 100%);
+      box-shadow: 0 0 30px rgba(56, 189, 248, 0.55);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .brand-mark::after {
+      content: "";
+      position: absolute;
+      inset: 4px;
+      border-radius: inherit;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      box-shadow: inset 0 0 18px rgba(15, 23, 42, 0.85);
+    }
+
+    .nav-title {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .nav-title-main {
+      font-family: "Orbitron", system-ui, sans-serif;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      font-size: 11px;
+      color: #e5e7eb;
+    }
+
+    .nav-title-sub {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: var(--muted);
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .nav-links a {
+      position: relative;
+      padding-bottom: 2px;
+    }
+
+    .nav-links a::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      width: 0;
+      height: 1px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      transition: width 0.18s ease-out;
+    }
+
+    .nav-links a:hover::after {
+      width: 100%;
+    }
+
+    .nav-cta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-size: 13px;
+      padding: 8px 16px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: transform 0.12s ease-out, box-shadow 0.12s ease-out, border-color 0.12s ease-out,
+                  background 0.12s ease-out, color 0.12s ease-out;
+      font-weight: 500;
+    }
+
+    .btn-primary {
+      background: radial-gradient(circle at top left, #22c55e, #0ea5e9 65%, #111827 100%);
+      box-shadow: var(--shadow-glow);
+      color: #0b1120;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 0 36px rgba(46, 230, 184, 0.55);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      border-color: rgba(148, 163, 184, 0.28);
+      color: var(--muted);
+    }
+
+    .btn-ghost:hover {
+      border-color: rgba(148, 163, 184, 0.65);
+      color: #e2e8f0;
+      background: rgba(15, 23, 42, 0.85);
+    }
+
+    .btn-pill {
+      font-size: 12px;
+      padding: 6px 11px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      color: var(--muted);
+      background: radial-gradient(circle at top, rgba(46, 230, 184, 0.14), transparent 70%);
+    }
+
+    .btn-pill span {
+      color: var(--accent);
+      font-weight: 500;
+    }
+
+    .btn-buy {
+      display: inline-block;
+      padding: .6rem 1rem;
+      border-radius: 10px;
+      font-weight: 700;
+      text-decoration: none;
+      line-height: 1;
+      background: #6c3cf0;
+      color: #fff;
+      border: 1px solid transparent;
+      box-shadow: 0 6px 18px rgba(108, 60, 240, .25);
+      transition: transform .12s ease, box-shadow .12s ease, opacity .12s ease;
+    }
+
+    .btn-buy:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 26px rgba(108, 60, 240, .35);
+    }
+
+    .btn-buy:active {
+      transform: translateY(0);
+      opacity: .9;
+    }
+
+    .btn-buy-primary {
+      /* variant placeholder for future use */
+    }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      border-bottom: 1px solid #020617;
+    }
+
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at top, rgba(56, 189, 248, 0.26), transparent 60%),
+        radial-gradient(circle at bottom, rgba(15, 118, 110, 0.45), transparent 70%),
+        linear-gradient(180deg, #020617, #020617 40%, #020617 75%, #020617 100%);
+      pointer-events: none;
+      z-index: -3;
+    }
+
+    .hero-banner {
+      position: absolute;
+      inset: 0;
+      background-image: url("LPLlogosoundwave.jpg");
+      background-size: cover;
+      background-position: center;
+      opacity: 0.15;
+      mix-blend-mode: screen;
+      filter: saturate(120%);
+      z-index: -2;
+    }
+
+    .hero-gradient-overlay {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at center, rgba(15, 23, 42, 0.24), rgba(15, 23, 42, 0.94));
+      z-index: -1;
+    }
+
+    .hero-inner {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 0px 20px 56px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+      gap: 40px;
+      align-items: flex-start;
+    }
+
+    .eyebrow {
+      font-size: 11px;
+      letter-spacing: 0.26em;
+      text-transform: uppercase;
+      color: var(--accent2);
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+
+    .hero-title {
+      font-family: "Orbitron", system-ui, sans-serif;
+      font-size: clamp(28px, 3.15vw, 34px);
+      line-height: 1.15;
+      text-transform: uppercase;
+      letter-spacing: 0.28em;
+      margin: 0 0 12px;
+    }
+
+    .hero-sub {
+      font-size: 16px;
+      max-width: 32rem;
+      color: var(--muted);
+      margin-bottom: 18px;
+    }
+
+    .hero-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 22px;
+    }
+
+    .badge {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      color: var(--muted);
+      background: rgba(15, 23, 42, 0.85);
+    }
+
+    .badge strong {
+      color: var(--accent);
+    }
+
+    .hero-cta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .hero-note {
+      font-size: 12px;
+      color: var(--muted);
+      max-width: 26rem;
+    }
+
+    .hero-note span {
+      color: var(--accent);
+      font-weight: 500;
+    }
+
+    .hero-logo {
+      max-width: 1500px;
+      width: 249%;
+      height: auto;
+      margin-bottom: 12px;
+    }
+
+    .hero-right {               <!-- ********************************************************************************* ACTIVE PATTERN HEIGHT **************************************************** -->
+
+      position: relative;
+      align-self: flex-start;
+      margin-top: 160px;
+    }
+
+    .hero-card {
+      border-radius: var(--radius-xl);
+      background: radial-gradient(circle at top, rgba(46, 230, 184, 0.08), rgba(15, 23, 42, 0.96));
+      border: 1px solid rgba(15, 23, 42, 0.85);
+      box-shadow: var(--shadow-soft);
+      padding: 14px 14px 12px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-card::before {
+      content: "";
+      position: absolute;
+      inset: -40%;
+      background:
+        radial-gradient(circle at 10% 0, rgba(56, 189, 248, 0.14), transparent 55%),
+        radial-gradient(circle at 100% 30%, rgba(45, 212, 191, 0.22), transparent 55%);
+      opacity: 0.9;
+      pointer-events: none;
+    }
+
+    .hero-card-inner {
+      position: relative;
+      border-radius: calc(var(--radius-xl) - 6px);
+      border: 1px solid rgba(148, 163, 184, 0.5);
+      overflow: hidden;
+      background: radial-gradient(circle at top, rgba(15, 23, 42, 0.7), #020617);
+    }
+
+    .hero-card-top {
+      padding: 9px 14px 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      border-bottom: 1px solid rgba(15, 23, 42, 0.85);
+      background: linear-gradient(90deg, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.6));
+    }
+
+    .hero-card-top-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      color: #e5e7eb;
+      font-family: "Orbitron", system-ui, sans-serif;
+    }
+
+    .pill-soft {
+      font-size: 10px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      color: var(--muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .pill-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 999px;
+      background: var(--accent);
+      box-shadow: 0 0 10px rgba(46, 230, 184, 0.7);
+    }
+
+    .hero-card-screen {
+      border-top: 1px solid rgba(15, 23, 42, 0.85);
+      background: radial-gradient(circle at top, rgba(15, 23, 42, 0.85), #020617);
+      padding: 10px;
+    }
+
+    .app-screenshot-frame {
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid rgba(15, 23, 42, 0.95);
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.7);
+      background: #020617;
+    }
+
+    .app-screenshot {
+      display: block;
+      width: 100%;
+      height: auto;
+      object-fit: contain;
+    }
+
+    .hero-foot {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding-top: 9px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .hero-foot svg {
+      opacity: 0.6;
+    }
+
+    .metrics {
+      padding: 32px 20px 10px;
+    }
+
+    .metrics-inner {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .metric {
+      border-radius: var(--radius-lg);
+      background: radial-gradient(circle at top, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.95));
+      border: 1px solid rgba(15, 23, 42, 0.9);
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 13px;
+    }
+
+    .metric-label {
+      color: var(--muted);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+    }
+
+    .metric-value {
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .metric-value span {
+      color: var(--accent);
+    }
+
+    .metric-hint {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .section {
+      padding: 36px 20px;
+    }
+
+    .section-inner {
+      max-width: var(--max-width);
+      margin: 0 auto;
+    }
+
+    .section-header {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 18px;
+    }
+
+    .section-kicker {
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--accent2);
+    }
+
+    .section-title {
+      font-size: 22px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+    }
+
+    .section-sub {
+      font-size: 14px;
+      color: var(--muted);
+      max-width: 40rem;
+    }
+
+    .about-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.1fr);
+      gap: 26px;
+      align-items: flex-start;
+    }
+
+    .card {
+      background: radial-gradient(circle at top left, rgba(15, 23, 42, 0.88), rgba(15, 23, 42, 0.96));
+      border-radius: var(--radius-lg);
+      border: 1px solid rgba(15, 23, 42, 0.95);
+      padding: 18px 18px 16px;
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.9);
+    }
+
+    .card-title {
+      font-size: 16px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+
+    .card-title span.icon {
+      font-size: 18px;
+    }
+
+    .card p {
+      font-size: 14px;
+      color: var(--muted);
+      margin: 0 0 10px;
+    }
+
+    .feature-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 8px;
+      font-size: 13px;
+    }
+
+    .feature-list li {
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+      padding: 7px 8px;
+      border-radius: 12px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(15, 23, 42, 0.9);
+    }
+
+    .feature-bullet {
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      margin-top: 4px;
+      background: radial-gradient(circle, var(--accent), #0f172a);
+      box-shadow: 0 0 10px rgba(46, 230, 184, 0.7);
+      flex-shrink: 0;
+    }
+
+    .feature-text strong {
+      color: #e2e8f0;
+    }
+
+    .feature-text span {
+      color: var(--muted);
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
+      margin-top: 10px;
+    }
+
+    .feature-pill {
+      border-radius: 14px;
+      padding: 10px 11px 9px;
+      background: radial-gradient(circle at top, rgba(46, 230, 184, 0.08), rgba(15, 23, 42, 0.98));
+      border: 1px solid rgba(15, 23, 42, 0.9);
+      font-size: 13px;
+    }
+
+    .feature-pill-title {
+      font-weight: 500;
+      margin-bottom: 3px;
+      color: #e2e8f0;
+    }
+
+    .feature-pill-body {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .ribbon {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      border-radius: 999px;
+      padding: 4px 10px;
+      background: linear-gradient(90deg, rgba(56, 189, 248, 0.16), rgba(45, 212, 191, 0.16));
+      border: 1px solid rgba(56, 189, 248, 0.5);
+      color: #e5e7eb;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      margin-bottom: 8px;
+    }
+
+    .ribbon-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 999px;
+      background: var(--accent);
+      box-shadow: 0 0 12px rgba(46, 230, 184, 0.7);
+    }
+
+    .stack-grid {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 22px;
+    }
+
+    .stack-pill-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .stack-pill {
+      font-size: 11px;
+      border-radius: 999px;
+      padding: 4px 10px 4px 9px;
+      border: 1px solid rgba(51, 65, 85, 0.95);
+      background: rgba(15, 23, 42, 0.95);
+      color: var(--muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .stack-pill span {
+      width: 6px;
+      height: 6px;
+      border-radius: 999px;
+      background: var(--accent);
+    }
+
+    .price-card {
+      border-radius: var(--radius-xl);
+      padding: 18px 18px 16px;
+      border: 1px solid rgba(46, 230, 184, 0.35);
+      background: radial-gradient(circle at top, rgba(46, 230, 184, 0.14), rgba(15, 23, 42, 0.98));
+      box-shadow: var(--shadow-glow);
+    }
+
+    .price-heading {
+      font-size: 16px;
+      margin: 0 0 4px;
+    }
+
+    .price-sub {
+      font-size: 13px;
+      color: var(--muted);
+      margin: 0 0 10px;
+    }
+
+    .price-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .price-main {
+      font-size: 26px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+
+    .price-main span {
+      font-size: 14px;
+      color: var(--muted);
+      font-weight: 400;
+    }
+
+    .price-tagline {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .price-checklist {
+      list-style: none;
+      padding: 0;
+      margin: 10px 0 12px;
+      font-size: 12px;
+      display: grid;
+      gap: 6px;
+    }
+
+    .price-checklist li {
+      display: flex;
+      align-items: flex-start;
+      gap: 7px;
+    }
+
+    .checkmark {
+      font-size: 12px;
+      color: var(--accent);
+      margin-top: 1px;
+    }
+
+    .price-footer-note {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .who-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
+      margin-top: 10px;
+    }
+
+    .who-card {
+      border-radius: 14px;
+      background: radial-gradient(circle at top, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.98));
+      border: 1px solid rgba(15, 23, 42, 0.95);
+      padding: 11px 12px 10px;
+      font-size: 13px;
+    }
+
+    .who-title {
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+
+    .who-body {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .cta-section {
+      padding: 30px 20px 40px;
+    }
+
+    .cta-card {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      border-radius: var(--radius-xl);
+      border: 1px solid rgba(46, 230, 184, 0.4);
+      background:
+        radial-gradient(circle at top left, rgba(56, 189, 248, 0.2), transparent 60%),
+        radial-gradient(circle at bottom right, rgba(45, 212, 191, 0.2), transparent 60%),
+        linear-gradient(135deg, #020617, #020617 45%, #020617 100%);
+      box-shadow: var(--shadow-glow);
+      padding: 22px 22px 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cta-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+      gap: 22px;
+      align-items: center;
+    }
+
+    .cta-title {
+      font-size: 20px;
+      margin-bottom: 6px;
+    }
+
+    .cta-body {
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 14px;
+      max-width: 32rem;
+    }
+
+    .cta-mini {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 8px;
+    }
+
+    .cta-pear {
+      position: relative;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .cta-pear-img-wrap {
+      width: 220px;
+      max-width: 100%;
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid rgba(148, 163, 184, 0.5);
+      box-shadow: 0 0 40px rgba(56, 189, 248, 0.5);
+      background: radial-gradient(circle at center, rgba(15, 23, 42, 0.9), #020617);
+    }
+
+    .cta-pear-img {
+      display: block;
+      width: 100%;
+      height: auto;
+      object-fit: cover;
+      transform: scale(1.03);
+    }
+
+    .cta-badge {
+      position: absolute;
+      bottom: 10px;
+      left: 0;
+      font-size: 11px;
+      border-radius: 999px;
+      padding: 6px 10px;
+      background: rgba(15, 23, 42, 0.96);
+      border: 1px solid rgba(148, 163, 184, 0.6);
+      color: var(--muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .cta-badge span {
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: var(--accent);
+      box-shadow: 0 0 10px rgba(46, 230, 184, 0.7);
+    }
+
+    footer {
+      border-top: 1px solid #020617;
+      padding: 16px 20px 18px;
+      background: #020617;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .footer-inner {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .footer-links a {
+      color: var(--muted);
+      text-decoration: none;
+    }
+
+    .footer-links a:hover {
+      color: #e2e8f0;
+    }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      .hero-inner {
+        grid-template-columns: minmax(0, 1fr);
+        padding-top: 38px;
+        gap: 26px;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .hero-left {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .hero-eyebrow-wrap {
+        order: 1;
+      }
+
+      .hero-logo-wrap {
+        order: 2;
+      }
+
+      .hero-right {
+        order: 3;
+        margin-top: 20px;
+      }
+
+      .hero-content-wrap {
+        order: 4;
+      }
+
+      .hero-logo {
+        max-width: 100%;
+        width: 100%;
+      }
+
+      .metrics-inner {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .about-grid,
+      .stack-grid,
+      .cta-grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .cta-pear {
+        justify-content: flex-start;
+      }
+
+      .cta-pear-img-wrap {
+        width: 200px;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .nav-inner {
+        flex-wrap: wrap;
+        justify-content: space-between;
+      }
+
+      .nav-links {
+        display: none;
+      }
+
+      .hero-inner {
+        padding-inline: 16px;
+      }
+
+      .metrics-inner {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .feature-grid,
+      .who-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 520px) {
+      .metrics-inner {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .feature-grid,
+      .who-grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .hero-cta-row {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .nav-cta {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+  <!-- NAV -->
+  <header class="nav">
+    <div class="nav-inner">
+      <div class="nav-left">
+        <div class="brand-mark"></div>
+        <div class="nav-title">
+          <div class="nav-title-main">S.L.O.T. MACHINE</div>
+          <div class="nav-title-sub">Synchronized Loop Orchestration &amp; Timing</div>
+        </div>
+      </div>
+      <nav class="nav-links">
+        <a href="#about">Overview</a>
+        <a href="#features">Features</a>
+        <a href="#pricing">Pricing</a>
+        <a href="#who">Who is it for?</a>
+      </nav>
+      <div class="nav-cta">
+        <a
+          href="https://lonepearlogic.lemonsqueezy.com/buy/2f0c6beb-ca43-4e44-a08c-a0d1b3066859?utm_source=site&utm_medium=header_cta&utm_campaign=slot_v1"
+          class="btn-buy btn-buy-primary lemonsqueezy-button"
+          onclick="window.gtag && gtag('event','purchase_click',{event_category:'Checkout',event_label:'Header CTA'});"
+        >Buy Now — $39.99</a>
+        <a href="SlotMachineSetup-01.01.00.exe" download class="btn btn-primary">Download Free Trial</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- HERO -->
+  <section class="hero" id="top">
+    <div class="hero-bg"></div>
+    <div class="hero-banner"></div>
+    <div class="hero-gradient-overlay"></div>
+
+    <div class="hero-inner">
+      <div class="hero-left">
+        <div class="hero-eyebrow-wrap">
+          <div class="eyebrow">Build rhythms fast</div>
+        </div>
+        <div class="hero-logo-wrap">
+          <img src="sm5.png" alt="S.L.O.T. Machine" class="hero-logo" />
+        </div>
+        <div class="hero-content-wrap">
+        <p class="hero-sub">
+          A 16-slot drum sequencer built for producers who love tight grooves, polyrhythms,
+          and absolute timing control. Sculpt entire songs from one screen, then export
+          pristine audio or MIDI in a couple of clicks.
+        </p>
+<div class="creative">
+  <div class="creative-title">Unleash your creativity with S.L.O.T. Machine</div>
+  <p class="creative-body">
+    S.L.O.T. Machine naturally pushes you to experiment—swapping sounds, tweaking Counts and Decays,
+    stacking variations—until you stumble into <em>those</em> happy accidents traditional step
+    sequencers rarely deliver. It especially thrives at <strong>polyrhythms</strong>:
+    quickly build complex, musical polyrhythms that still feel natural and sit tight in the pocket.
+  </p>
+  <div class="creative-points">
+    <div class="creative-chip"><span class="dot"></span> Count-based timing (not guessy note values)</div>
+    <div class="creative-chip"><span class="dot"></span> Playthrough turns patterns into songs fast</div>
+    <div class="creative-chip"><span class="dot"></span> Visualizer makes groove feel visible</div>
+    <div class="creative-chip"><span class="dot"></span> Mute/Solo for instant “what if?” auditioning</div>
+  </div>
+</div>
+
+
+        <div class="hero-badges">
+          <div class="badge"><strong>Standalone</strong> + VST3 plugin (BETA)</div>
+          <div class="badge">16 slots &middot; Unlimited tabs &middot; Playthrough</div>
+          <div class="badge">Embedded drum kit included</div>
+        </div>
+
+        <div class="hero-cta-row">
+          <a href="SlotMachineSetup-01.01.00.exe" download class="btn btn-primary">
+            Download Free Trial
+          </a>
+          <a href="#tutorial" class="btn btn-ghost">
+            Watch Pattern-Building Tutorial
+          </a>
+        </div>
+
+        <p class="hero-note">
+          <span>Try it free.</span> Build and save as many projects as you want. When you're ready to
+          unlock loading and export (MIDI + audio), grab a license key and keep every groove.
+        </p>
+        </div>
+      </div>
+
+      <div class="hero-right">
+        <div class="hero-card">
+          <div class="hero-card-inner">
+            <div class="hero-card-top">
+              <div class="hero-card-top-left">
+                <span>ACTIVE PATTERN</span>
+              </div>
+              <div class="pill-soft">
+                <span class="pill-dot"></span>
+                <span>BPM 128.0</span>
+              </div>
+            </div>
+            <div class="hero-card-screen">
+              <div class="app-screenshot-frame">
+                <!-- App UI screenshot -->
+                <video
+  class="app-screenshot"
+  src="webloop.mp4"
+  autoplay
+  muted
+  loop
+  playsinline
+></video>
+
+              </div>
+              <div class="hero-foot">
+                <div>16 slots &middot; Per-slot Count / Vol / Decay &middot; Per-slot MIDI channel</div>
+                <div>Unlimited Tabs &middot; Playthrough &amp; loopable song mode</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="hero-card" style="margin-top: 20px;">
+          <div class="hero-card-inner">
+            <div class="hero-card-top">
+              <div class="hero-card-top-left">
+                <span>WORKSTATION VIEW</span>
+              </div>
+            </div>
+            <div class="hero-card-screen">
+              <div class="app-screenshot-frame">
+                <img
+                  class="app-screenshot"
+                  src="workstation.png"
+                  alt="S.L.O.T. Machine Workstation"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div> <!-- /hero-right -->
+    </div>
+  </section>
+
+  <!-- QUICK METRICS -->
+  <section class="metrics">
+    <div class="metrics-inner">
+      <div class="metric">
+        <div class="metric-label">Timing engine</div>
+        <div class="metric-value"><span>Sample-accurate</span> loop scheduling</div>
+        <div class="metric-hint">Each slot can run its own count, sound sample, beat-mask and decay
+          while locking to the master BPM.</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Song building</div>
+        <div class="metric-value">Unlimited <span>pattern tabs</span> with Playthrough</div>
+        <div class="metric-hint">Chain patterns into full arrangements, repeat tabs,
+          and loop entire songs from one button.</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Export ready</div>
+        <div class="metric-value"><span>MIDI</span> &amp; audio export per project</div>
+        <div class="metric-hint">Send clean stems and MIDI to your DAW with all your timing
+          decisions baked in.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ABOUT -->
+  <section class="section" id="about">
+    <div class="section-inner">
+      <div class="section-header">
+        <div class="section-kicker">What is S.L.O.T. Machine?</div>
+        <h2 class="section-title">A workstation that thinks like a drummer, not a sequencer.</h2>
+        <p class="section-sub">
+          S.L.O.T. Machine (Synchronized Loop Orchestration &amp; Timing) is an intuative, performance-ready, 
+          polyrhythmic drum sequencer. Load up to 16 samples, dial in the Count, Beat-Mask and Decay for each 
+          one, and let the engine handle rock-solid timing while you focus on the groove.
+        </p>
+      </div>
+
+      <div class="about-grid">
+        <div class="card">
+          <div class="card-title">
+            
+            <span>16 slots, one brain.</span>
+          </div>
+          <p>
+            Every slot has its own Count, Beat-Mask, Volume, Decay, mute/solo, and MIDI channel.
+            Need straight 4-on-the-floor kicks with triplet hats and a snare that lands
+            every 3rd bar? Go for it. S.L.O.T. Machine keeps everything locked to the
+            master tempo so your weird ideas still hit tight.
+          </p>
+          <ul class="feature-list">
+            <li>
+              <div class="feature-bullet"></div>
+              <div class="feature-text">
+                <strong>Count-driven timing.</strong>
+                <span> Choose how many hits per loop instead of guessing note values.</span>
+              </div>
+            </li>
+            <li>
+              <div class="feature-bullet"></div>
+              <div class="feature-text">
+                <strong>Beat-Masking.</strong>
+                <span> Turn individual hits on/off. In an 8 beat loop, you could turn off beats 5 and 7, completely changing the feel of the loop. This is a game changer.</span>
+              </div>
+            </li>
+            <li>
+              <div class="feature-bullet"></div>
+              <div class="feature-text">
+                <strong>Per-slot Decay.</strong>
+                <span> Tighten kicks, open hats, or create gated percussion without touching a compressor.</span>
+              </div>
+            </li>
+            <li>
+              <div class="feature-bullet"></div>
+              <div class="feature-text">
+                <strong>Embedded drum kit.</strong>
+                <span> Get started instantly with built-in kicks, snares, hats and more, or drag in your own samples.</span>
+              </div>
+            </li>
+            <li>
+              <div class="feature-bullet"></div>
+              <div class="feature-text">
+                <strong>Per-slot MIDI channels.</strong>
+                <span> Trigger external instruments, layer hardware, or route drums to separate DAW tracks.</span>
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            
+            <span>From patterns to full songs.</span>
+          </div>
+          <p>
+            You have unlimited Tabs - each Tab holds it's own 16-slot pattern. With Playthrough mode, S.L.O.T. Machine
+            will walk down the tabs, repeat each one as many times as you choose, and optionally
+            loop the entire sequence. It’s like having an arrangement view built straight into
+            your drum machine.
+          </p>
+
+          <div class="feature-grid">
+            <div class="feature-pill">
+              <div class="feature-pill-title">Tab Playthrough</div>
+              <div class="feature-pill-body">
+                Tell each tab how many times to repeat, then hit Playthrough to hear the whole song.
+              </div>
+            </div>
+            <div class="feature-pill">
+              <div class="feature-pill-title">Loopable arrangements</div>
+              <div class="feature-pill-body">
+                Enable looped Playthrough for endless practice jams or live performance.
+              </div>
+            </div>
+            <div class="feature-pill">
+              <div class="feature-pill-title">Visualizer ready</div>
+              <div class="feature-pill-body">
+                Optional visualizer lets you “see” pattern motion while you dial in the feel.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div> <!-- /about-grid -->
+    </div>
+  </section>
+
+  <!-- FEATURES / STACK / PRICING -->
+  <section class="section" id="features">
+    <div class="section-inner">
+      <div class="section-header">
+        <div class="section-kicker">Under the hood</div>
+        <h2 class="section-title">Studio Grade, rock solid timing</h2>
+        <p class="section-sub">
+          S.L.O.T. Machine is designed to live in real workflows: practice rigs, songwriting setups,
+          and full DAW sessions. Tight clocking, predictable behavior, easy saving and loading,
+          and clean export paths are baked in.
+        </p>
+      </div>
+
+      <div class="stack-grid">
+        <div>
+          <div class="card">
+            <div class="ribbon">
+              <span class="ribbon-dot"></span>
+              Engineered for real-world sessions
+            </div>
+            <h3 class="card-title">
+              
+              <span>Timing, routing, and export done right.</span>
+            </h3>
+            <p>
+              S.L.O.T. Machine keeps your grooves steady whether you’re running the standalone app
+              for live jamming or the VST3 inside your favorite DAW.
+            </p>
+
+            <ul class="feature-list">
+              <li>
+                <div class="feature-bullet"></div>
+                <div class="feature-text">
+                  <strong>Master BPM slider.</strong>
+                  <span> Global tempo control from slow and swung to machine-gun fast.</span>
+                </div>
+              </li>
+              <li>
+                <div class="feature-bullet"></div>
+                <div class="feature-text">
+                  <strong>Slot mute &amp; solo.</strong>
+                  <span> A one-click way to audition layers, build drops, or troubleshoot a busy pattern.</span>
+                </div>
+              </li>
+              <li>
+                <div class="feature-bullet"></div>
+                <div class="feature-text">
+                  <strong>Project saving &amp; loading.</strong>
+                  <span> Keep your patterns, tab structure, and mixer settings together in one file.</span>
+                </div>
+              </li>
+              <li>
+                <div class="feature-bullet"></div>
+                <div class="feature-text">
+                  <strong>Export MIDI + audio.</strong>
+                  <span> Print stems or MIDI clips and finish the track in your DAW with zero guesswork.</span>
+                </div>
+              </li>
+            </ul>
+
+            <div class="stack-pill-row">
+              <div class="stack-pill">
+                <span></span>
+                Standalone + VST3 plugin
+              </div>
+              <div class="stack-pill">
+                <span></span>
+                Per-slot MIDI channels
+              </div>
+              <div class="stack-pill">
+                <span></span>
+                Embedded sample library
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="pricing">
+          <div class="price-card">
+            <img
+              src="IntroductoryPrice.jpg"
+              alt="Introductory Price $39.99"
+              style="width: 100%; max-width: 400px; height: auto; display: block; margin: 0 auto 20px; border-radius: 12px;"
+            />
+            <h3 class="price-heading">One-time purchase. Lifetime grooves.</h3>
+            <p class="price-sub">
+              Try the full timing and pattern engine for free. When you’re ready to commit,
+              unlock audio and MIDI export with a license key.
+            </p>
+
+            <div class="price-row">
+              <div class="price-main">
+                $39.99 <span>intro price</span>
+              </div>
+            </div>
+
+            <ul class="price-checklist">
+              <li>
+                <span class="checkmark">✓</span>
+                Full access to all 16 slots, tabs, timing features and Visualizer in the free trial.
+              </li>
+              <li>
+                <span class="checkmark">✓</span>
+                Create unlimited projects in the free trial.
+              </li>
+              <li>
+                <span class="checkmark">✓</span>
+                License unlocks exporting Audio & MIDI and gives access to the Beta VST3 Builid.
+              </li>
+              <li>
+                <span class="checkmark">✓</span>
+                Free updates for the 1.x series
+              </li>
+            </ul>
+
+            <a
+              href="https://lonepearlogic.lemonsqueezy.com/buy/2f0c6beb-ca43-4e44-a08c-a0d1b3066859?utm_source=site&utm_medium=pricing_card&utm_campaign=slot_v1"
+              class="btn-buy lemonsqueezy-button"
+              style="width:100%; justify-content:center; margin-bottom:12px; display:inline-flex; align-items:center;"
+              onclick="window.gtag && gtag('event','purchase_click',{event_category:'Checkout',event_label:'Pricing Card'});"
+            >Buy Now — $39.99</a>
+
+            <a href="SlotMachineSetup-01.01.00.exe" download class="btn btn-primary" style="width:100%; justify-content:center; margin-bottom:8px;">
+              Get the Free Trial
+            </a>
+          </div>
+        </div>
+      </div> <!-- /stack-grid -->
+    </div>
+  </section>
+
+  <!-- WHO IT'S FOR -->
+  <section class="section" id="who">
+    <div class="section-inner">
+      <div class="section-header">
+        <div class="section-kicker">Who is it for?</div>
+        <h2 class="section-title">Anyone who lives and dies by the groove.</h2>
+        <p class="section-sub">
+          If you care about timing, layering, and variation more than pretending to be a
+          tape machine, S.L.O.T. Machine was built for you.
+        </p>
+      </div>
+
+      <div class="card" style="margin-bottom: 24px;">
+        <div class="card-title">
+          
+          <span>VST3 Plugin</span>
+        </div>
+        <p>
+          While we feel that S.L.O.T. Machine is best used as a Stand Alone App, we understand that many users like the VST3 plugin integration. Therefore, we have compiled a VST3 Plugin version that will be available to <strong>REGISTERED USERS ONLY</strong>. At this time, the VST3 has not been thoroughly tested, and is only being released as a courtesy to registered users for <strong>BETA TESTING</strong> to those interested. If you use it, and find any bugs, please report them.
+        </p>
+      </div>
+
+      <div class="who-grid">
+        <div class="who-card">
+          <div class="who-title">Producers &amp; beatmakers</div>
+          <div class="who-body">
+            Sketch ideas faster than a piano roll. Lock in the drums, then bounce MIDI
+            to your DAW when it’s time to mix.
+          </div>
+        </div>
+        <div class="who-card">
+          <div class="who-title">Live performers</div>
+          <div class="who-body">
+            Build repeatable patterns with Playthrough and loop mode, tweak slots on the fly,
+            and keep everything in tempo with one BPM slider.
+          </div>
+        </div>
+        <div class="who-card">
+          <div class="who-title">Practice rigs &amp; instructors</div>
+          <div class="who-body">
+            Create evolving drum beds for players to jam over, from simple metronome-plus-kick
+            to full mini arrangements.
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- VISUALIZER -->
+  <section class="section" id="visualizer">
+    <div class="section-inner">
+      <div class="section-header">
+        <div class="section-kicker">Where rhythm becomes light</div>
+        <h2 class="section-title">The S.L.O.T. Machine Visualizer</h2>
+        <p class="section-sub">
+          The S.L.O.T. Machine Visualizer isn't just eye-candy.
+          It's a living, breathing extension of your music -
+          a reactive art engine that transforms every groove, pulse, and polyrhythm into motion.
+        </p>
+      </div>
+
+      <div class="stack-grid">
+        <div>
+          <div class="card">
+            <p>
+              Designed for both clarity and beauty, every mode brings your beats to life in a completely unique way:
+            </p>
+
+            <h3 style="font-size: 16px; font-weight: 600; margin: 20px 0 10px 0; color: var(--accent);">
+              Visualizer Modes
+            </h3>
+            <ul class="feature-list">
+              <li>
+                <div class="feature-bullet"></div>
+                <div class="feature-text">
+                  <strong>Beads: Orbit</strong>
+                </div>
+              </li>
+              <li>
+                <div class="feature-bullet"></div>
+                <div class="feature-text">
+                  <strong>Beads: Edge Walk</strong>
+                </div>
+              </li>
+              <li>
+                <div class="feature-bullet"></div>
+                <div class="feature-text">
+                  <strong>Beads: Mixed</strong>
+                </div>
+              </li>
+            </ul>
+
+            <h3 style="font-size: 16px; font-weight: 600; margin: 20px 0 10px 0; color: var(--accent);">
+              Special Effects
+            </h3>
+            <ul class="feature-list">
+              <li>
+                <div class="feature-bullet"></div>
+                <div class="feature-text">
+                  <strong>Master Pulse</strong>
+                </div>
+              </li>
+              <li>
+                <div class="feature-bullet"></div>
+                <div class="feature-text">
+                  <strong>Breathe</strong>
+                </div>
+              </li>
+              <li>
+                <div class="feature-bullet"></div>
+                <div class="feature-text">
+                  <strong>Neural Chaos</strong>
+                </div>
+              </li>
+              <li>
+                <div class="feature-bullet"></div>
+                <div class="feature-text">
+                  <strong>Starlight Twinkle</strong>
+                </div>
+              </li>
+              <li>
+                <div class="feature-bullet"></div>
+                <div class="feature-text">
+                  <strong>Alternating Rotation</strong>
+                </div>
+              </li>
+              <li>
+                <div class="feature-bullet"></div>
+                <div class="feature-text">
+                  <strong>Colorwave</strong>
+                </div>
+              </li>
+	      <li>
+                <div class="feature-bullet"></div>
+                <div class="feature-text">
+                  <strong>Nebula Drift</strong>
+                </div>
+              </li>
+	      <li>
+                <div class="feature-bullet"></div>
+                <div class="feature-text">
+                  <strong>Neon Sweep</strong>
+                </div>
+              </li>
+
+            </ul>
+
+            <h3 style="font-size: 16px; font-weight: 600; margin: 20px 0 10px 0; color: var(--accent);">
+              Why it matters
+            </h3>
+            <p style="margin-bottom: 16px;">
+              The visualizer isn't decoration.
+              It's a true musical insight tool - a way to see polyrhythms, understand structure, and feel your groove in a whole new way.
+              It turns composition into exploration, and performance into art.
+            </p>
+
+            <h3 style="font-size: 16px; font-weight: 600; margin: 20px 0 10px 0; color: var(--accent);">
+              A Visual Instrument
+            </h3>
+            <p>
+              Whether you're producing, experimenting, or just vibing,
+              the visualizer transforms S.L.O.T. Machine from a rhythm engine into an experience.
+            </p>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; justify-content: center;">
+          <img
+            src="Visualizer1.png"
+            alt="S.L.O.T. Machine Visualizer"
+            style="width: 100%; border-radius: 12px; border: 1px solid rgba(46, 230, 184, 0.2); box-shadow: 0 4px 20px rgba(46, 230, 184, 0.15);"
+          />
+        </div>
+      </div>
+
+      <!-- Polyrhythms Card -->
+      <div class="stack-grid" style="margin-top: 40px;">
+        <div>
+          <div class="card">
+            <div class="card-title">
+              <span>Polyrhythms Made Easy</span>
+            </div>
+            <p style="font-size: 15px; font-weight: 500; color: var(--accent); margin-bottom: 16px;">
+              Complex grooves, beautifully simple.
+            </p>
+
+            <p>
+              Polyrhythms can feel intimidating—
+              3 against 5, 4 against 7, mixed subdivisions, shifting pulses…
+              most tools make you think like a mathematician just to make them work.
+            </p>
+
+            <p style="margin-top: 14px; font-weight: 600;">
+              S.L.O.T. Machine flips that on its head.
+            </p>
+
+            <p style="margin-top: 14px;">
+              Instead of burying you in grids and fractions, it gives every rhythm its own polygonal loop, each spinning in perfect time with the others.
+            </p>
+
+            <p style="margin-top: 14px; font-weight: 600;">
+              You don't <em style="color: white;">calculate</em> polyrhythms here…<br/>
+              you <em style="color: white;">see</em> them.
+            </p>
+
+            <ul class="feature-list" style="margin-top: 16px;">
+              <li>
+                <div class="feature-bullet"></div>
+                <div class="feature-text">
+                  <span>Each loop is its own shape</span>
+                </div>
+              </li>
+              <li>
+                <div class="feature-bullet"></div>
+                <div class="feature-text">
+                  <span>Each shape pulses with its own timing</span>
+                </div>
+              </li>
+              <li>
+                <div class="feature-bullet"></div>
+                <div class="feature-text">
+                  <span>Their relationships emerge naturally as motion</span>
+                </div>
+              </li>
+              <li>
+                <div class="feature-bullet"></div>
+                <div class="feature-text">
+                  <span>Complex patterns feel intuitive in seconds</span>
+                </div>
+              </li>
+            </ul>
+
+            <p style="margin-top: 16px;">
+              And because the visualizer shows the entire structure moving together, you can instantly understand how your grooves interact—
+              which ones push, which ones pull, and where the magic of overlap happens.
+            </p>
+
+            <p style="margin-top: 16px;">
+              Want 5 against 4?<br/>
+              <strong>Done.</strong><br/>
+              How about 7 against 3 against 9?<br/>
+              <strong>Easy.</strong><br/>
+              Even wildly asymmetric patterns become playful instead of stressful.
+            </p>
+
+            <p style="margin-top: 16px; font-weight: 600; font-size: 15px;">
+              With S.L.O.T. Machine, polyrhythms aren't a puzzle.<br/>
+              They're a playground.
+            </p>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; justify-content: center;">
+          <img
+            src="Visualizer2.png"
+            alt="S.L.O.T. Machine Polyrhythms Visualization"
+            style="width: 100%; border-radius: 12px; border: 1px solid rgba(46, 230, 184, 0.2); box-shadow: 0 4px 20px rgba(46, 230, 184, 0.15);"
+          />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA / DOWNLOAD -->
+  <section class="cta-section" id="download">
+    <div class="cta-card">
+      <div class="cta-grid">
+        <div>
+          <h2 class="cta-title">Ready to see what drops out of the S.L.O.T.s?</h2>
+          <p class="cta-body">
+            Download the free trial, load a few embedded drums, and start dialing in Counts, Decays,
+            and tabs. In ten minutes you’ll know exactly why S.L.O.T. Machine wants to be the
+            center of your rhythm world.
+          </p>
+
+          <div class="hero-cta-row" style="margin-bottom:8px;">
+            <a href="SlotMachineSetup-01.01.00.exe" download class="btn btn-primary">Download Windows Trial</a>
+            <a href="#tutorial" class="btn btn-ghost">View User Manual &amp; Tutorials</a>
+          </div>
+
+          <p class="cta-mini">
+            No sign-up required. The trial lets you explore the entire engine, save projects,
+            and decide if the workflow clicks with you before unlocking export.
+          </p>
+        </div>
+
+        <div class="cta-pear">
+          <div class="cta-pear-img-wrap">
+            <!-- Lone Pear Logic image -->
+            <img
+              src="lpl.jpg"
+              alt="Lone Pear Logic"
+              class="cta-pear-img"
+            />
+          </div>
+          <div class="cta-badge">
+            <span></span>
+            Powered by Lone Pear Logic
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TUTORIAL ANCHOR (placeholder) -->
+  <section class="section" id="tutorial">
+    <div class="section-inner">
+      <div class="section-header">
+        <div class="section-kicker">Learn the workflow</div>
+        <h2 class="section-title">Tutorials &amp; user manual</h2>
+        <p class="section-sub">
+          Video walkthroughs and a full written manual will guide you from “first click”
+          to building complete songs with Playthrough, exports, and more.
+        </p>
+      </div>
+      <div class="card">
+        <div style="margin-bottom:16px;">
+          <video
+            style="width:100%; border-radius:12px; border:1px solid rgba(15,23,42,0.95);"
+            src="tutorial.mp4"
+            controls
+            playsinline
+          ></video>
+        </div>
+        <p style="font-size:14px; color:var(--muted); margin-bottom:8px;">
+          Watch the tutorial above to learn how to use S.L.O.T. Machine.
+        </p>
+        <ul class="price-checklist" style="margin-top:0;">
+          <li>
+            <span class="checkmark">▶</span>
+            <span>Building your first 8-bar beat from scratch</span>
+          </li>
+          <li>
+            <span class="checkmark">▶</span>
+            <span>Using tabs and Playthrough to create full songs</span>
+          </li>
+          <li>
+            <span class="checkmark">▶</span>
+            <span>Exporting audio &amp; MIDI and finishing in your DAW</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-inner">
+      <div>&copy; <span id="year"></span> Lone Pear Logic. All rights reserved.</div>
+      <div class="footer-links">
+        <a href="#top">Back to top</a>
+        <a href="#pricing">Pricing</a>
+        <a href="#tutorial">Manual</a>
+      </div>
+    </div>
+    <noscript>
+      <p style="text-align: center; margin-top: 12px; font-size: 12px;">
+        <a href="https://lonepearlogic.lemonsqueezy.com/buy/2f0c6beb-ca43-4e44-a08c-a0d1b3066859">Buy Now — $39.99</a>
+      </p>
+    </noscript>
+  </footer>
+</div>
+
+<script>
+  // Keep year current
+  document.getElementById("year").textContent = new Date().getFullYear();
+
+  // Track download clicks
+  document.addEventListener('DOMContentLoaded', function() {
+    // Get all download links
+    const downloadLinks = document.querySelectorAll('a[href="SlotMachineSetup-01.01.00.exe"]');
+
+    downloadLinks.forEach(function(link) {
+      link.addEventListener('click', function(e) {
+        // Track the download event in Google Analytics
+        if (typeof gtag !== 'undefined') {
+          gtag('event', 'download', {
+            'event_category': 'file_download',
+            'event_label': 'SlotMachineSetup-01.01.00.exe',
+            'value': 1
+          });
+        }
+      });
+    });
+  });
+</script>
+
+<script src="https://assets.lemonsqueezy.com/lemon.js" defer></script>
+</body>
+</html>
