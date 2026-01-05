@@ -3983,6 +3983,11 @@ SlotMachineAudioProcessorEditor::SlotMachineAudioProcessorEditor(SlotMachineAudi
     const float slotScaleBeforeOptionsLoad = slotScale;
     loadOptionsFromDiskIfNoHostState(apvts);
 
+    // After loadOptionsFromDiskIfNoHostState, reload skin to ensure it matches Options.xml
+    // This fixes intermittent skin loading failures when host doesn't restore optSkinFolder
+    const juce::String skinFolderAfterLoad = Opt::getString(apvts, "optSkinFolder", "Classic");
+    reloadSkinWithFolder(skinFolderAfterLoad);
+
     const float startupSlotScale = Opt::getFloat(apvts, "optSlotScale", slotScaleBeforeOptionsLoad);
     if (std::abs(startupSlotScale - slotScaleBeforeOptionsLoad) < 0.0001f)
     {
