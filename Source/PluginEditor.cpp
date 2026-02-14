@@ -161,8 +161,6 @@ namespace
                                private juce::TextEditor::Listener
     {
     public:
-        class ToggleLabel;
-
         using ConfirmHandler = std::function<void(int, bool, bool)>;  // cycles, playthrough, useFixedNoteLength
         using CancelHandler = std::function<void()>;
 

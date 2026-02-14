@@ -448,7 +448,9 @@ void UpdateChecker::checkForUpdatesAsync(CheckCallback callback, bool forceCheck
         bool updateDeferred = forceCheck ? false : isUpdateDeferred();
 
         // Fetch latest version from server
-        auto [fetchResult, latestVersion] = fetchLatestVersion();
+        auto fetchPair    = fetchLatestVersion();
+        auto fetchResult  = fetchPair.first;
+        auto latestVersion = fetchPair.second;
 
         // Determine final result on message thread
         juce::MessageManager::callAsync([callback, fetchResult, latestVersion, declinedRecently, updateDeferred]()
