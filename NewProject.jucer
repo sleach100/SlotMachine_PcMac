@@ -171,5 +171,46 @@
         <MODULEPATH id="juce_gui_extra" path="../../../JUCE/modules"/>
       </MODULEPATHS>
     </VS2022>
+    <XCODE_MAC targetFolder="Builds/MacOSX"
+               vstFolder="/Library/Audio/Plug-Ins/VST"
+               vst3Folder="/Library/Audio/Plug-Ins/VST3"
+               auFolder="/Library/Audio/Plug-Ins/Components"
+               aaxFolder="/Library/Application Support/Avid/Audio/Plug-Ins"
+               buildVST="0"
+               buildVST3="0"
+               buildAU="0"
+               buildAUv3="0"
+               buildAAX="0"
+               buildStandalone="1"
+               buildUnity="0"
+               enableARC="1"
+               macOSDeploymentTarget="10.15"
+               appSandboxEnabled="0"
+               hardenedRuntimeEnabled="0"
+               microphonePermissionsEnabled="1"
+               microphonePermissionsText="SlotMachine needs microphone access for audio input."
+               bluetoothPermissionsEnabled="0">
+      <CONFIGURATIONS>
+        <CONFIGURATION isDebug="1" name="Debug" targetName="SlotMachine"
+                       macOSDeploymentTarget="10.15"/>
+        <CONFIGURATION isDebug="0" name="Release" targetName="SlotMachine"
+                       macOSDeploymentTarget="10.15"
+                       enablePluginBinaryCopyStep="0"/>
+      </CONFIGURATIONS>
+      <MODULEPATHS>
+        <MODULEPATH id="juce_audio_basics" path="../../../JUCE/modules"/>
+        <MODULEPATH id="juce_audio_devices" path="../../../JUCE/modules"/>
+        <MODULEPATH id="juce_audio_formats" path="../../../JUCE/modules"/>
+        <MODULEPATH id="juce_audio_plugin_client" path="../../../JUCE/modules"/>
+        <MODULEPATH id="juce_audio_processors" path="../../../JUCE/modules"/>
+        <MODULEPATH id="juce_audio_utils" path="../../../JUCE/modules"/>
+        <MODULEPATH id="juce_core" path="../../../JUCE/modules"/>
+        <MODULEPATH id="juce_data_structures" path="../../../JUCE/modules"/>
+        <MODULEPATH id="juce_events" path="../../../JUCE/modules"/>
+        <MODULEPATH id="juce_graphics" path="../../../JUCE/modules"/>
+        <MODULEPATH id="juce_gui_basics" path="../../../JUCE/modules"/>
+        <MODULEPATH id="juce_gui_extra" path="../../../JUCE/modules"/>
+      </MODULEPATHS>
+    </XCODE_MAC>
   </EXPORTFORMATS>
 </JUCERPROJECT>
