@@ -13,6 +13,17 @@
 *.exe
 
 
+# JUCE Source Files
+JUCE/
+
+#Xcode Specifics
+# Xcode
+*.xcuserdata
+*.DS_Store
+xcuserdata/
+DerivedData/
+Builds/MacOSX/
+
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 
