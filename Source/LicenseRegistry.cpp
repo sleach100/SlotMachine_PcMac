@@ -129,11 +129,11 @@ namespace
                 const juce::String encodedValue = line.substring (eq + 1).trim();
                 if (key.isNotEmpty())
                 {
-                    juce::MemoryBlock valueBytes;
-                    juce::Base64::convertFromBase64 (valueBytes, encodedValue);
-                    valueBytes.append ("\0", 1);
+                    juce::MemoryOutputStream mos;
+                    juce::Base64::convertFromBase64 (mos, encodedValue);
                     pairs.set (key, juce::String::fromUTF8 (
-                        static_cast<const char*> (valueBytes.getData())));
+                        static_cast<const char*> (mos.getData()),
+                        static_cast<int> (mos.getDataSize())));
                 }
             }
         }
