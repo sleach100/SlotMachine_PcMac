@@ -6729,7 +6729,6 @@ void SlotMachineAudioProcessorEditor::buttonClicked(juce::Button* b)
 
     if (b == &btnLock)
     {
-#if JUCE_WINDOWS
         if (!clearLicenseFromRegistry())
         {
             juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
@@ -6737,10 +6736,6 @@ void SlotMachineAudioProcessorEditor::buttonClicked(juce::Button* b)
                 "Unable to remove the saved license information from the registry.");
         }
         LemonSqueezyCache::clearLicenseCache();
-#else
-        clearLicenseFromRegistry();
-        LemonSqueezyCache::clearLicenseCache();
-#endif
 
         storedFirstName.clear();
         storedLastName.clear();
@@ -6945,7 +6940,6 @@ void SlotMachineAudioProcessorEditor::buttonClicked(juce::Button* b)
                     juce::ignoreUnused(apiSuccess);
 
                     // Clear local cache regardless of API result
-#if JUCE_WINDOWS
                     if (!clearLicenseFromRegistry())
                     {
                         juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
@@ -6953,10 +6947,6 @@ void SlotMachineAudioProcessorEditor::buttonClicked(juce::Button* b)
                             "Unable to remove the saved license information from the registry.");
                     }
                     LemonSqueezyCache::clearLicenseCache();
-#else
-                    clearLicenseFromRegistry();
-                    LemonSqueezyCache::clearLicenseCache();
-#endif
 
                     // Clear instance ID
                     InstanceIdentifier::clearInstanceID();
@@ -7638,7 +7628,15 @@ void SlotMachineAudioProcessorEditor::handleVisualizerWindowCloseRequest()
 void SlotMachineAudioProcessorEditor::openTutorialVideo()
 {
     const auto executable = juce::File::getSpecialLocation(juce::File::currentExecutableFile);
+#if JUCE_MAC
+    // In a macOS .app bundle the executable is at Contents/MacOS/<app>;
+    // resources are bundled into Contents/Resources/.
+    auto tutorialFile = executable.getParentDirectory()
+                                   .getParentDirectory()
+                                   .getChildFile("Resources/tutorialslotmachine.mp4");
+#else
     auto tutorialFile = executable.getParentDirectory().getChildFile("tutorialslotmachine.mp4");
+#endif
 
     if (!tutorialFile.existsAsFile())
     {
