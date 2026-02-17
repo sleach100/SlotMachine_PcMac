@@ -161,8 +161,6 @@ namespace
                                private juce::TextEditor::Listener
     {
     public:
-        class ToggleLabel;
-
         using ConfirmHandler = std::function<void(int, bool, bool)>;  // cycles, playthrough, useFixedNoteLength
         using CancelHandler = std::function<void()>;
 
@@ -3649,7 +3647,12 @@ SlotMachineAudioProcessorEditor::SlotMachineAudioProcessorEditor(SlotMachineAudi
         ? appLF.getLogoImage()
         : juce::ImageCache::getFromMemory(BinaryData::SM5_png, BinaryData::SM5_pngSize);
 
-    slotScale = juce::jlimit(0.75f, 1.0f, Opt::getFloat(apvts, "optSlotScale", 0.8f));
+   #if JUCE_MAC
+    const float defaultSlotScale = 0.65f;
+   #else
+    const float defaultSlotScale = 0.8f;
+   #endif
+    slotScale = juce::jlimit(0.5f, 1.0f, Opt::getFloat(apvts, "optSlotScale", defaultSlotScale));
     const int initialTimingMode = Opt::getInt(apvts, "optTimingMode", 1);
     lastTimingMode = initialTimingMode;
 
@@ -3660,7 +3663,23 @@ SlotMachineAudioProcessorEditor::SlotMachineAudioProcessorEditor(SlotMachineAudi
     const int slotRows = juce::jmax(1, (kNumSlots + slotColumns - 1) / slotColumns);
     const int slotRowHeight = scaleDimension(220);
     const int chromeHeight = scaleDimension(160) + kMasterControlsYOffset; // top/bottom padding + master row + tabs space
-    setSize(1280, chromeHeight + slotRows * slotRowHeight);
+    setSize(scaleDimension(1280), chromeHeight + slotRows * slotRowHeight);
+
+   #if JUCE_MAC
+    {
+        if (auto* display = juce::Desktop::getInstance().getDisplays().getPrimaryDisplay())
+        {
+            const int screenH = display->userArea.getHeight();
+            if (getHeight() > screenH - 40)
+            {
+                const int rows = juce::jmax(1, (kNumSlots + 3) / 4);
+                const float fittingScale = float (screenH - 40 - kMasterControlsYOffset) / float (160 + rows * 220);
+                slotScale = juce::jlimit(0.5f, slotScale, fittingScale);
+                refreshSizeForSlotScale();
+            }
+        }
+    }
+   #endif
 
     if (processor.consumeInitialiseOnFirstEditor())
         processor.initialiseStateForFirstEditor();
@@ -5116,7 +5135,7 @@ void SlotMachineAudioProcessorEditor::paintOverChildren(juce::Graphics& g)
             {
                 int customWidth = lf->getProgressBarWidth();
                 if (customWidth > 0)
-                    barWidth = (float)customWidth;
+                    barWidth = (float)scaleDimension(customWidth);
             }
 
             // Center the progress bar horizontally
@@ -5187,7 +5206,7 @@ void SlotMachineAudioProcessorEditor::resized()
     {
         const int sliderHeight = 32;
         const int sliderGap = 12;
-        const int buttonHeight = 36;
+        const int buttonHeight = scaleDimension(36);
         const int buttonInsetY = 8;
         const int bottomMargin = 6 + kMasterControlsYOffset;
         const int buttonRowGap = 4;
@@ -5196,8 +5215,8 @@ void SlotMachineAudioProcessorEditor::resized()
 
         auto top = area.removeFromTop(masterHeight);
 
-        auto labelArea = top.removeFromLeft(170);
-        auto sliderArea = top.removeFromLeft(420);
+        auto labelArea = top.removeFromLeft(scaleDimension(170));
+        auto sliderArea = top.removeFromLeft(scaleDimension(420));
 
         auto buttonArea = top.reduced(10, buttonInsetY);
         const int numButtons = 10; // Start/Save/Load/Reset Loop/Reset UI/Initialize/Options/Export MIDI/Export Audio/Visualizer (Tutorial, User Manual, About, Lock, and Unlock below)
@@ -5290,7 +5309,7 @@ void SlotMachineAudioProcessorEditor::resized()
     masterSectionBottom = juce::jmax(masterSectionBottom, masterBPM.getBottom());
     const int tabsLift = 110;
 
-    auto tabsRow = area.removeFromTop(36);
+    auto tabsRow = area.removeFromTop(scaleDimension(36));
     tabsRow.translate(0, -tabsLift);
     auto warningArea = tabsRow.removeFromRight(220).reduced(10, 4);
     patternWarningLabel.setBounds(warningArea);
@@ -5365,7 +5384,7 @@ void SlotMachineAudioProcessorEditor::resized()
 
         // Load button: use custom width from skin if set, anchor right edge
         const int skinLoadW = appLF.getLoadButtonWidth();
-        const int loadW = (skinLoadW > 0) ? skinLoadW : defaultLoadW;
+        const int loadW = (skinLoadW > 0) ? scaleDimension(skinLoadW) : defaultLoadW;
 
         // Anchor right edge at default position, adjust left edge based on width
         const int loadRightEdge = ix + defaultLoadW;
@@ -5377,7 +5396,7 @@ void SlotMachineAudioProcessorEditor::resized()
         // filename label: use custom width from skin if set, otherwise fills the rest
         const int labelX = loadX + loadW + gap + clearW + gap;
         const int skinFileNameWidth = appLF.getFileNameWidth();
-        const int labelW = (skinFileNameWidth > 0) ? skinFileNameWidth : juce::jmax(0, iw - (labelX - ix));
+        const int labelW = (skinFileNameWidth > 0) ? scaleDimension(skinFileNameWidth) : juce::jmax(0, iw - (labelX - ix));
         ui.fileLabel.setBounds(labelX, iy, labelW, fileRowH);
 
 
@@ -5409,7 +5428,7 @@ void SlotMachineAudioProcessorEditor::resized()
         {
             int customWidth = lf->getMidiListWidth();
             if (customWidth > 0)
-                midiComboW = customWidth;
+                midiComboW = scaleDimension(customWidth);
         }
         const int midiComboH = scaleDimensionWithMax(22, 0.95f);
         const int controlBlockHeight = juce::jmax(midiComboH, buttonH + labelGapY + labelHeight);
@@ -5489,19 +5508,20 @@ void SlotMachineAudioProcessorEditor::refreshSizeForSlotScale()
     constexpr int slotColumns = 4;
     const int slotRows = juce::jmax(1, (kNumSlots + slotColumns - 1) / slotColumns);
     const int slotRowHeight = scaleDimension(220);
-    const int chromeHeight = 200 + kMasterControlsYOffset;
+    const int chromeHeight = scaleDimension(160) + kMasterControlsYOffset;
     const int newHeight = chromeHeight + slotRows * slotRowHeight;
-    const int currentWidth = juce::jmax(1, getWidth());
-    setSize(currentWidth, newHeight);
+    setSize(scaleDimension(1280), newHeight);
 }
 
 void SlotMachineAudioProcessorEditor::applySlotScale(float newScale)
 {
-    const float clamped = juce::jlimit(0.75f, 1.0f, newScale);
+    const float clamped = juce::jlimit(0.5f, 1.0f, newScale);
     if (std::abs(clamped - slotScale) < 0.0001f)
         return;
 
     slotScale = clamped;
+    appLF.setFontScale(slotScale);
+    appLF.reloadSkin();
     refreshSizeForSlotScale();
     resized();
     repaint();

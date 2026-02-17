@@ -13,6 +13,17 @@
 *.exe
 
 
+# JUCE Source Files
+JUCE/
+
+#Xcode Specifics
+# Xcode
+*.xcuserdata
+*.DS_Store
+xcuserdata/
+DerivedData/
+Builds/MacOSX/
+
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 
@@ -364,3 +375,12 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+# macOS system files
+.DS_Store
+
+# Projucer generated build files
+Builds/VisualStudio2022/
+Builds/MacOSX/build/
+
+# JUCE generated files
+JuceLibraryCode/

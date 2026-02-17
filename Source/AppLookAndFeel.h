@@ -555,6 +555,9 @@ public:
     // Get MIDI list width from skin (0 = use default width)
     int getMidiListWidth() const { return midiListWidth; }
 
+    // Set the font scale factor applied when reloading skin fonts
+    void setFontScale(float scale) { fontScale = juce::jlimit(0.5f, 2.0f, scale); }
+
     // Get mute/solo button images from skin
     const juce::Image& getMuteOnImage() const { return muteOnImage; }
     const juce::Image& getMuteOffImage() const { return muteOffImage; }
@@ -1281,7 +1284,7 @@ private:
                     juce::Typeface::Ptr typeface = juce::Typeface::createSystemTypefaceFor(fontData.getData(), fontData.getSize());
                     if (typeface != nullptr)
                     {
-                        float fontSize = textboxFontSize > 0 ? (float)textboxFontSize : 14.0f;
+                        float fontSize = (textboxFontSize > 0 ? (float)textboxFontSize : 14.0f) * fontScale;
                         textboxCustomFont = juce::Font(typeface).withHeight(fontSize);
                         DBG("Successfully loaded custom font: " + fontFile.getFullPathName());
                     }
@@ -1590,6 +1593,7 @@ private:
     juce::String masterBpmImageFilename;
     juce::String textboxFontFilename;
     int textboxFontSize = 0; // 0 = use default
+    float fontScale = 1.0f; // applied on top of textboxFontSize when reloadSkin is called
     juce::String textboxFontColor; // Hex RGB color (e.g., "#D0D0D0")
     juce::String midiSelectorFontColor; // Hex RGB color for MIDI selector (overrides TextBoxFontColor)
     int progressBarWidth = 0; // 0 = use default full width
