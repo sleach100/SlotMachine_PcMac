@@ -4657,6 +4657,12 @@ SlotMachineAudioProcessorEditor::~SlotMachineAudioProcessorEditor()
     shutdownStandalonePowerMonitor();
     #endif
 
+#if JUCE_MAC && JUCE_STANDALONE_APPLICATION
+    // Shut down macOS sleep/wake monitor before child components are torn down.
+    extern void shutdownMacStandalonePowerMonitor();
+    shutdownMacStandalonePowerMonitor();
+    #endif
+
 #if JUCE_MAC
     // Unregister VBlankAttachment before child components are destroyed to prevent
     // timerCallback() from firing against partially-destroyed state.
@@ -4678,6 +4684,12 @@ void SlotMachineAudioProcessorEditor::parentHierarchyChanged()
     // Forward declare the initialization function from StandaloneInit.cpp
     extern void initializeStandalonePowerMonitor(SlotMachineAudioProcessorEditor* editor);
     initializeStandalonePowerMonitor(this);
+    #endif
+
+    #if JUCE_MAC && JUCE_STANDALONE_APPLICATION
+    // Forward declare the initialization function from MacStandaloneInit.mm
+    extern void initializeMacStandalonePowerMonitor(SlotMachineAudioProcessorEditor* editor);
+    initializeMacStandalonePowerMonitor(this);
     #endif
 }
 
