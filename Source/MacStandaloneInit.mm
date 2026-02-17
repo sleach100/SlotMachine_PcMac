@@ -17,14 +17,17 @@
 #else
     #define JUCE_MAC_STANDALONE_HEADER_FOUND 0
 
-    // Forward declaration fallback if the header is not available
-    class StandalonePluginHolder
-    {
-    public:
-        static StandalonePluginHolder* getInstance();
-        juce::AudioDeviceManager deviceManager;
-        std::unique_ptr<juce::AudioProcessor> processor;
-    };
+    // Forward declaration fallback — placed inside namespace juce to match the
+    // real class location so all call-sites can use juce::StandalonePluginHolder.
+    namespace juce {
+        class StandalonePluginHolder
+        {
+        public:
+            static StandalonePluginHolder* getInstance();
+            AudioDeviceManager deviceManager;
+            std::unique_ptr<AudioProcessor> processor;
+        };
+    }
 #endif
 
 // ---------------------------------------------------------------------------
@@ -205,7 +208,7 @@ struct MacStandaloneInitializer : public juce::Timer
             return;
         }
 
-        auto* holder = StandalonePluginHolder::getInstance();
+        auto* holder = juce::StandalonePluginHolder::getInstance();
         if (!holder)
         {
             if (checkCount % 4 == 0)
