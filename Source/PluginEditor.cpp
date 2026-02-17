@@ -7699,7 +7699,7 @@ void SlotMachineAudioProcessorEditor::setMasterRun(bool shouldRun)
 
     if (shouldRun)
     {
-        animateStartButton(glowColour, pulseColour);
+        animateStartButton(glowColour, pulseColour, 1.0f);
     }
     else
     {
