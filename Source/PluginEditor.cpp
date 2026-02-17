@@ -7148,6 +7148,17 @@ void SlotMachineAudioProcessorEditor::buttonClicked(juce::Button* b)
     // ===== Export Audio (user-selected cycles) =====
     if (b == &btnExportAudio)
     {
+        bool anySamples = false;
+        for (int i = 0; i < kNumSlots; ++i)
+            if (processor.slotHasSample(i)) { anySamples = true; break; }
+        if (!anySamples)
+        {
+            juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
+                "Export Audio",
+                "No samples are loaded. Please load at least one sample before exporting.");
+            return;
+        }
+
         promptForExportCycles("Export Audio", 1,
             [this](int cycles, bool exportPlaythrough, bool /*useFixedNoteLength*/)
             {
@@ -7162,6 +7173,17 @@ void SlotMachineAudioProcessorEditor::buttonClicked(juce::Button* b)
     // ===== Export MIDI (user-selected cycles) =====
     if (b == &btnExportMidi)
     {
+        bool anySamples = false;
+        for (int i = 0; i < kNumSlots; ++i)
+            if (processor.slotHasSample(i)) { anySamples = true; break; }
+        if (!anySamples)
+        {
+            juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
+                "Export MIDI",
+                "No samples are loaded. Please load at least one sample before exporting.");
+            return;
+        }
+
         promptForExportCycles("Export MIDI", 1,
             [this](int cycles, bool exportPlaythrough, bool useFixedNoteLength)
             {
