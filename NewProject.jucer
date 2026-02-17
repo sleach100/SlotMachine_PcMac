@@ -131,6 +131,10 @@
     <FILE id="uKTD9u" name="MuteON.png" compile="0" resource="1" file="Resources/Images/MuteON.png"/>
     <FILE id="VmtIB1" name="SlotMachine-UserManual.html" compile="0" resource="1"
           file="Resources/SlotMachine-UserManual.html"/>
+    <FILE id="VR0001" name="version.txt" compile="0" resource="0"
+          file="Resources/version.txt" xcodeResource="1"/>
+    <FILE id="VR0002" name="tutorialslotmachine.mp4" compile="0" resource="0"
+          file="Resources/tutorialslotmachine.mp4" xcodeResource="1"/>
     <FILE id="Z2Y83E" name="SlotMachine.ico" compile="0" resource="1" file="Resources/SlotMachine.ico"/>
     <FILE id="n4aJ0r" name="SM5.png" compile="0" resource="1" file="Resources/Images/SM5.png"/>
     <FILE id="n8iawq" name="SoloOFF.png" compile="0" resource="1" file="Resources/Images/SoloOFF.png"/>
