@@ -10,6 +10,8 @@ namespace reg
     inline constexpr const wchar_t* kRegistrySubkey = L"";
 #endif
 
+    bool readQWORD(const wchar_t* subkey, const wchar_t* name, int64_t& out);
+    bool writeQWORD(const wchar_t* subkey, const wchar_t* name, int64_t value);
     bool readString(const wchar_t* subkey, const wchar_t* name, std::wstring& out);
     bool writeString(const wchar_t* subkey, const wchar_t* name, const std::wstring& value);
     bool keyExists(const wchar_t* subkey);
