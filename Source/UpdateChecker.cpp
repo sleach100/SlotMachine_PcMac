@@ -619,7 +619,7 @@ bool UpdateChecker::launchUpdaterAndTerminate()
     // On macOS there is no bundled updater application.
     // Open the downloads page so the user can grab the latest .dmg / .pkg.
     DBG("UpdateChecker: macOS — opening download page in default browser");
-    juce::URL("https://lonepearlogic.com/slotmachine").launchInDefaultBrowser();
+    juce::URL("https://www.lonepearlogic.com").launchInDefaultBrowser();
     return true;
 #else
     // Get the path to the updater executable
