@@ -68,7 +68,14 @@ PolyrhythmVizComponent::PolyrhythmVizComponent(SlotMachineAudioProcessor& proc, 
     : processor(proc), apvts(state)
 {
     setOpaque(true);
-    startTimerHz(60);
+#if JUCE_MAC
+    // macOS: VBlankAttachment (backed by CVDisplayLink) fires at the hardware vsync rate,
+    // eliminating the NSTimer run-loop jitter that causes the visualizer to lag behind hits.
+    vblankAttachment = std::make_unique<juce::VBlankAttachment>(this, [this] { timerCallback(); });
+#else
+    // Windows/other: 120 Hz timer.
+    startTimerHz(120);
+#endif
 
     lastPhase = processor.getMasterPhase();
     masterPhase = lastPhase;
@@ -83,6 +90,10 @@ PolyrhythmVizComponent::PolyrhythmVizComponent(SlotMachineAudioProcessor& proc, 
 
 PolyrhythmVizComponent::~PolyrhythmVizComponent()
 {
+#if JUCE_MAC
+    // Unregister VBlankAttachment first so no callbacks fire after shuttingDown is set.
+    vblankAttachment.reset();
+#endif
     shuttingDown = true;
     stopTimer();
 }
@@ -695,6 +706,12 @@ void PolyrhythmVizComponent::mouseDown(const juce::MouseEvent& e)
 void PolyrhythmVizComponent::timerCallback()
 {
     const int64_t nowMs = juce::Time::getMillisecondCounter();
+    const float dt = (lastCallbackMs == 0)
+        ? 1.0f
+        : juce::jlimit(0.0f, 5.0f, (float)(nowMs - lastCallbackMs) * (60.0f / 1000.0f));
+    lastCallbackMs = nowMs;
+    juce::ignoreUnused(dt);
+
     const double currentPhase = processor.getMasterPhase();
     const bool wrapped = (currentPhase + 0.02) < lastPhase;
     if (wrapped)

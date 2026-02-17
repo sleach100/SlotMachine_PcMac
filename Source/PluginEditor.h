@@ -597,6 +597,16 @@ private:
     bool lastAudioExportPlaythrough = false;
     bool lastMidiExportPlaythrough = false;
 
+    // Display-sync repaint (macOS): VBlankAttachment fires at hardware vsync rate via
+    // CVDisplayLink, eliminating timer-to-display phase jitter.
+    // Windows uses startTimerHz() instead (see constructor).
+#if JUCE_MAC
+    std::unique_ptr<juce::VBlankAttachment> vblankAttachment;
+#endif
+    // Timestamp of the previous timerCallback() invocation, used to compute dt
+    // (elapsed time normalised to one 60 Hz frame) for frame-rate-independent decay.
+    int64_t lastCallbackMs = 0;
+
     // Update checker (standalone only)
     UpdateChecker updateChecker;
 

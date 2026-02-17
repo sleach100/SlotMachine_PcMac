@@ -3982,7 +3982,17 @@ SlotMachineAudioProcessorEditor::SlotMachineAudioProcessorEditor(SlotMachineAudi
     lastBeatsPerBar = processor.getBeatsPerBar();
     refreshSamplesPerBar();
 
-    startTimerHz(60);
+#if JUCE_MAC
+    // macOS: VBlankAttachment (backed by CVDisplayLink) fires at the hardware vsync rate,
+    // eliminating the NSTimer run-loop jitter that causes the UI to lag behind audio hits.
+    // Automatically follows the display if the plugin window moves to a different monitor.
+    vblankAttachment = std::make_unique<juce::VBlankAttachment>(this, [this] { timerCallback(); });
+#else
+    // Windows/other: 120 Hz timer halves maximum hit-detection polling lag (8.3 ms vs
+    // 16.7 ms at 60 Hz).  JUCE coalesces repaint() calls so actual paint rate matches the
+    // display refresh rate.
+    startTimerHz(120);
+#endif
     lastPhase = (float)processor.getMasterPhase();
 
     lastStartToggleState = startToggle.getToggleState();
@@ -4647,6 +4657,11 @@ SlotMachineAudioProcessorEditor::~SlotMachineAudioProcessorEditor()
     shutdownStandalonePowerMonitor();
     #endif
 
+#if JUCE_MAC
+    // Unregister VBlankAttachment before child components are destroyed to prevent
+    // timerCallback() from firing against partially-destroyed state.
+    vblankAttachment.reset();
+#endif
     setLookAndFeel(nullptr);
     closeVisualizerWindow();
     apvts.removeParameterListener("optTimingMode", this);
@@ -8326,6 +8341,13 @@ void SlotMachineAudioProcessorEditor::paintMasterWaveform(juce::Graphics& g, juc
 
 void SlotMachineAudioProcessorEditor::timerCallback()
 {
+    const int64_t nowCallbackMs = juce::Time::getMillisecondCounter();
+    const float dt = (lastCallbackMs == 0)
+        ? 1.0f
+        : juce::jlimit(0.0f, 5.0f, (float)(nowCallbackMs - lastCallbackMs) * (60.0f / 1000.0f));
+    lastCallbackMs = nowCallbackMs;
+    juce::ignoreUnused(dt);
+
     const float currentScaleParam = Opt::getFloat(apvts, "optSlotScale", slotScale);
     if (std::abs(currentScaleParam - slotScale) > 0.0001f)
         applySlotScale(currentScaleParam);
