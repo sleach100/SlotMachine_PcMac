@@ -710,7 +710,6 @@ void PolyrhythmVizComponent::timerCallback()
         ? 1.0f
         : juce::jlimit(0.0f, 5.0f, (float)(nowMs - lastCallbackMs) * (60.0f / 1000.0f));
     lastCallbackMs = nowMs;
-    juce::ignoreUnused(dt);
 
     const double currentPhase = processor.getMasterPhase();
     const bool wrapped = (currentPhase + 0.02) < lastPhase;
@@ -723,14 +722,14 @@ void PolyrhythmVizComponent::timerCallback()
 
     lastPhase = currentPhase;
     masterPhase = currentPhase;
-    wrapFlash = juce::jmax(0.0f, wrapFlash * 0.88f - 0.01f);
-    masterPulse = juce::jmax(0.0f, masterPulse * 0.88f - 0.01f);  // Same decay as wrapFlash
+    wrapFlash = juce::jmax(0.0f, wrapFlash * std::pow(0.88f, dt) - 0.01f * dt);
+    masterPulse = juce::jmax(0.0f, masterPulse * std::pow(0.88f, dt) - 0.01f * dt);  // Same decay as wrapFlash
 
-    // Nebula Drift: advance time for continuous animation (60 FPS timer)
-    nebulaTime += 1.0f / 60.0f;
+    // Nebula Drift: advance time for continuous animation (dt-normalised for display-rate independence)
+    nebulaTime += dt / 60.0f;
 
     // Nebula energy: very slow decay (~2-3 second half-life), will be boosted by hits below
-    nebulaEnergy = juce::jmax(0.0f, nebulaEnergy * 0.988f - 0.001f);
+    nebulaEnergy = juce::jmax(0.0f, nebulaEnergy * std::pow(0.988f, dt) - 0.001f * dt);
 
     std::array<bool, kNumSlots> soloMask{};
     bool anySolo = false;
@@ -790,7 +789,7 @@ void PolyrhythmVizComponent::timerCallback()
         if (!renderable)
         {
             slot.active = false;
-            slot.flash = juce::jmax(0.0f, slot.flash - kFlashDecay);
+            slot.flash = juce::jmax(0.0f, slot.flash - kFlashDecay * dt);
             slot.arcIntensity = 0.0f;
             slot.lastArcRebuildTime = 0;
             slot.lastArcIntensityQuantized = 0.0f;
@@ -871,15 +870,15 @@ void PolyrhythmVizComponent::timerCallback()
         }
         else
         {
-            slot.flash = juce::jmax(0.0f, slot.flash - kFlashDecay);
-            slot.sweepGain = juce::jmax(0.0f, slot.sweepGain * 0.88f - 0.015f);  // Fast decay for sweep boost
+            slot.flash = juce::jmax(0.0f, slot.flash - kFlashDecay * dt);
+            slot.sweepGain = juce::jmax(0.0f, slot.sweepGain * std::pow(0.88f, dt) - 0.015f * dt);  // Fast decay for sweep boost
         }
 
         // Decay starlight twinkle brightness for all vertices (even when hit, for independent decay)
         if (starlightTwinkleEnabled && !slot.twinkleBrightness.empty())
         {
             for (auto& brightness : slot.twinkleBrightness)
-                brightness = juce::jmax(0.0f, brightness - kTwinkleDecay);
+                brightness = juce::jmax(0.0f, brightness - kTwinkleDecay * dt);
         }
 
         if (!electricArcEnabled)
@@ -948,7 +947,7 @@ void PolyrhythmVizComponent::timerCallback()
             if (!slot.active)
                 continue;
 
-            slot.arcIntensity = juce::jmax(0.0f, slot.arcIntensity - kFlashDecay);
+            slot.arcIntensity = juce::jmax(0.0f, slot.arcIntensity - kFlashDecay * dt);
 
             bool shouldRebuild = false;
 

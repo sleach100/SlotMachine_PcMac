@@ -473,7 +473,7 @@ private:
         juce::Colour pulseColour,
         float glowAlpha,
         float glowWidth);
-    void animateStartButton(juce::Colour glowColour, juce::Colour pulseColour);
+    void animateStartButton(juce::Colour glowColour, juce::Colour pulseColour, float dt);
     void updateSliderKnobColours(juce::Colour pulseColour);
     void doSavePreset();
     void doLoadPreset();

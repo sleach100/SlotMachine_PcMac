@@ -7753,9 +7753,9 @@ void SlotMachineAudioProcessorEditor::updateStartButtonVisuals(bool shouldRun,
     btnStart.repaint();
 }
 
-void SlotMachineAudioProcessorEditor::animateStartButton(juce::Colour glowColour, juce::Colour pulseColour)
+void SlotMachineAudioProcessorEditor::animateStartButton(juce::Colour glowColour, juce::Colour pulseColour, float dt)
 {
-    startButtonAnimPhase += 0.04f;
+    startButtonAnimPhase += 0.04f * dt;
     if (startButtonAnimPhase > juce::MathConstants<float>::twoPi)
         startButtonAnimPhase -= juce::MathConstants<float>::twoPi;
 
@@ -8358,7 +8358,6 @@ void SlotMachineAudioProcessorEditor::timerCallback()
         ? 1.0f
         : juce::jlimit(0.0f, 5.0f, (float)(nowCallbackMs - lastCallbackMs) * (60.0f / 1000.0f));
     lastCallbackMs = nowCallbackMs;
-    juce::ignoreUnused(dt);
 
     const float currentScaleParam = Opt::getFloat(apvts, "optSlotScale", slotScale);
     if (std::abs(currentScaleParam - slotScale) > 0.0001f)
@@ -8405,7 +8404,7 @@ void SlotMachineAudioProcessorEditor::timerCallback()
     }
 
     if (isRunning)
-        animateStartButton(glowColour, pulseColour);
+        animateStartButton(glowColour, pulseColour, dt);
 
     // 0..1 over full polyrhythmic cycle
     const float p = juce::jlimit(0.0f, 1.0f, (float)processor.getMasterPhase());
@@ -8581,8 +8580,8 @@ void SlotMachineAudioProcessorEditor::timerCallback()
         }
     }
 
-    // Decay flash envelope @ ~60 Hz
-    cycleFlash = juce::jmax(0.0f, cycleFlash * 0.88f - 0.01f);
+    // Decay flash envelope (dt-normalised for display-rate independence)
+    cycleFlash = juce::jmax(0.0f, cycleFlash * std::pow(0.88f, dt) - 0.01f * dt);
 
     lastPhase = p;
     masterPhase = p; // used by paint() for the master bar
@@ -8635,7 +8634,7 @@ void SlotMachineAudioProcessorEditor::timerCallback()
         // Calculate decay rate: base * sqrt(count) for proportional scaling
         // count=1: 0.03, count=4: 0.06, count=16: 0.12, count=64: 0.24
         const float decayRate = 0.03f * std::sqrt((float)count);
-        ui->glow = juce::jmax(0.0f, ui->glow - decayRate);
+        ui->glow = juce::jmax(0.0f, ui->glow - decayRate * dt);
 
         // Update group component flash state for skinning
         ui->group.getProperties().set("flashState", ui->glow);
