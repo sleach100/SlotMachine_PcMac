@@ -191,7 +191,8 @@
                hardenedRuntimeEnabled="0"
                microphonePermissionsEnabled="1"
                microphonePermissionsText="SlotMachine needs microphone access for audio input."
-               bluetoothPermissionsEnabled="0">
+               bluetoothPermissionsEnabled="0"
+               extraFrameworks="IOKit">
       <CONFIGURATIONS>
         <CONFIGURATION isDebug="1" name="Debug" targetName="SlotMachine"
                        macOSDeploymentTarget="10.15"/>

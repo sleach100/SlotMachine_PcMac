@@ -6,6 +6,10 @@
  #include <vector>
 #endif
 
+#if JUCE_MAC
+ #include <IOKit/IOKitLib.h>
+#endif
+
 namespace InstanceIdentifier
 {
 
@@ -87,17 +91,72 @@ juce::String getOrCreateInstanceID()
 
     return machineGuid;
 #else
-    // For non-Windows platforms (future support)
-    juce::Uuid uuid;
-    return uuid.toDashedString();
+    // Step 1: Return a previously stored ID from the encrypted file (LicenseRegistry backend).
+    std::wstring storedW;
+    if (reg::readString(reg::kRegistrySubkey, L"InstanceID", storedW) && !storedW.empty())
+    {
+        juce::String stored(juce::CharPointer_UTF32(
+            reinterpret_cast<const juce::CharPointer_UTF32::CharType*>(storedW.c_str())));
+        if (stored.isNotEmpty())
+            return stored;
+    }
+
+    // Step 2: Read the IOKit hardware UUID — the macOS equivalent of the Windows MachineGuid.
+    juce::String machineId;
+
+  #if JUCE_MAC
+    {
+        // kIOMainPortDefault replaces kIOMasterPortDefault in macOS 12+.
+        // Guard with #ifdef so the binary still runs on 10.15+ without a deprecation warning.
+      #ifdef kIOMainPortDefault
+        const mach_port_t masterPort = kIOMainPortDefault;
+      #else
+        const mach_port_t masterPort = kIOMasterPortDefault;
+      #endif
+
+        io_service_t expert = IOServiceGetMatchingService(
+            masterPort, IOServiceMatching("IOPlatformExpertDevice"));
+
+        if (expert != IO_OBJECT_NULL)
+        {
+            CFStringRef uuidRef = static_cast<CFStringRef>(
+                IORegistryEntryCreateCFProperty(expert, CFSTR(kIOPlatformUUIDKey),
+                                                kCFAllocatorDefault, 0));
+            if (uuidRef != nullptr)
+            {
+                char buf[128] = {};
+                if (CFStringGetCString(uuidRef, buf, sizeof(buf), kCFStringEncodingUTF8))
+                    machineId = juce::String::fromUTF8(buf);
+                CFRelease(uuidRef);
+            }
+            IOObjectRelease(expert);
+        }
+    }
+  #endif
+
+    // Step 3: Fall back to a random UUID if IOKit is unavailable or fails.
+    if (machineId.isEmpty())
+    {
+        juce::Uuid uuid;
+        machineId = uuid.toDashedString();
+    }
+
+    // Step 4: Persist for future calls so the ID is stable across launches.
+    {
+        std::wstring idW;
+        idW.reserve(static_cast<size_t>(machineId.length()));
+        for (auto cp = machineId.getCharPointer(); !cp.isEmpty(); ++cp)
+            idW.push_back(static_cast<wchar_t>(*cp));
+        reg::writeString(reg::kRegistrySubkey, L"InstanceID", idW);
+    }
+
+    return machineId;
 #endif
 }
 
 void clearInstanceID()
 {
-#if JUCE_WINDOWS
     reg::deleteValue(reg::kRegistrySubkey, L"InstanceID");
-#endif
 }
 
 } // namespace InstanceIdentifier
