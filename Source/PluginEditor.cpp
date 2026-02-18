@@ -7629,11 +7629,14 @@ void SlotMachineAudioProcessorEditor::openTutorialVideo()
 {
     const auto executable = juce::File::getSpecialLocation(juce::File::currentExecutableFile);
 #if JUCE_MAC
-    // In a macOS .app bundle the executable is at Contents/MacOS/<app>;
-    // resources are bundled into Contents/Resources/.
-    auto tutorialFile = executable.getParentDirectory()
-                                   .getParentDirectory()
-                                   .getChildFile("Resources/tutorialslotmachine.mp4");
+    // In a proper .app bundle the executable lives at Contents/MacOS/<app>.
+    // In an Xcode Debug flat build the executable sits next to Contents/ directly.
+    // Detect which layout we're in by checking the parent folder name.
+    auto exeParent = executable.getParentDirectory();
+    auto contentsDir = (exeParent.getFileName() == "MacOS")
+                           ? exeParent.getParentDirectory()   // proper bundle: go up to Contents/
+                           : exeParent;                        // flat build:   exe is beside Contents/
+    auto tutorialFile = contentsDir.getChildFile("Resources/tutorialslotmachine.mp4");
 #else
     auto tutorialFile = executable.getParentDirectory().getChildFile("tutorialslotmachine.mp4");
 #endif
