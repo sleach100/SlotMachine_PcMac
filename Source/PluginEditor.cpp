@@ -5431,7 +5431,13 @@ void SlotMachineAudioProcessorEditor::resized()
         // filename label: use custom width from skin if set, otherwise fills the rest
         const int labelX = loadX + loadW + gap + clearW + gap;
         const int skinFileNameWidth = appLF.getFileNameWidth();
-        const int labelW = (skinFileNameWidth > 0) ? scaleDimension(skinFileNameWidth) : juce::jmax(0, iw - (labelX - ix));
+        // On macOS, reduce FileNameWidth to 84% (rounded) to account for platform rendering differences
+#if JUCE_MAC
+        const int adjustedFileNameWidth = (skinFileNameWidth > 0) ? juce::roundToInt(skinFileNameWidth * 0.84f) : 0;
+#else
+        const int adjustedFileNameWidth = skinFileNameWidth;
+#endif
+        const int labelW = (adjustedFileNameWidth > 0) ? scaleDimension(adjustedFileNameWidth) : juce::jmax(0, iw - (labelX - ix));
         ui.fileLabel.setBounds(labelX, iy, labelW, fileRowH);
 
 
