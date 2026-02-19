@@ -3725,6 +3725,7 @@ SlotMachineAudioProcessorEditor::SlotMachineAudioProcessorEditor(SlotMachineAudi
     addAndMakeVisible(btnResetLoop);   beautify(btnResetLoop);   btnResetLoop.addListener(this);
     addAndMakeVisible(btnReset);       beautify(btnReset);       btnReset.addListener(this);
     addAndMakeVisible(btnInitialize);  beautify(btnInitialize);  btnInitialize.addListener(this);
+    btnInitialize.getProperties().set("smallFont", true);
     addAndMakeVisible(btnOptions);     beautify(btnOptions);     btnOptions.addListener(this);
     btnOptions.getProperties().set("smallFont", true);
     addAndMakeVisible(btnExportMidi);   beautify(btnExportMidi);   btnExportMidi.addListener(this);
