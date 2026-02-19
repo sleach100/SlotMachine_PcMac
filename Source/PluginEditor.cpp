@@ -952,10 +952,15 @@ namespace
             }
             else if (button == &viewReleaseNotesButton)
             {
-                // Get the directory where the executable is located
-                auto exeFile = juce::File::getSpecialLocation(juce::File::currentExecutableFile);
-                auto installDir = exeFile.getParentDirectory();
-                auto releaseNotesFile = installDir.getChildFile("ReleaseNotes.txt");
+                // Resolve Contents/ regardless of bundle layout:
+                //   proper .app bundle: exe is at Contents/MacOS/<exe>
+                //   Xcode flat Debug:   exe is beside Contents/
+                auto exeParent = juce::File::getSpecialLocation(juce::File::currentExecutableFile)
+                                     .getParentDirectory();
+                auto contentsDir = (exeParent.getFileName() == "MacOS")
+                                       ? exeParent.getParentDirectory()
+                                       : exeParent;
+                auto releaseNotesFile = contentsDir.getChildFile("Resources/ReleaseNotes.txt");
 
                 // If file exists, open it with the default text editor
                 if (releaseNotesFile.existsAsFile())
