@@ -952,10 +952,15 @@ namespace
             }
             else if (button == &viewReleaseNotesButton)
             {
-                // Get the directory where the executable is located
-                auto exeFile = juce::File::getSpecialLocation(juce::File::currentExecutableFile);
-                auto installDir = exeFile.getParentDirectory();
-                auto releaseNotesFile = installDir.getChildFile("ReleaseNotes.txt");
+                // Resolve Contents/ regardless of bundle layout:
+                //   proper .app bundle: exe is at Contents/MacOS/<exe>
+                //   Xcode flat Debug:   exe is beside Contents/
+                auto exeParent = juce::File::getSpecialLocation(juce::File::currentExecutableFile)
+                                     .getParentDirectory();
+                auto contentsDir = (exeParent.getFileName() == "MacOS")
+                                       ? exeParent.getParentDirectory()
+                                       : exeParent;
+                auto releaseNotesFile = contentsDir.getChildFile("Resources/ReleaseNotes.txt");
 
                 // If file exists, open it with the default text editor
                 if (releaseNotesFile.existsAsFile())
@@ -3725,10 +3730,13 @@ SlotMachineAudioProcessorEditor::SlotMachineAudioProcessorEditor(SlotMachineAudi
     addAndMakeVisible(btnResetLoop);   beautify(btnResetLoop);   btnResetLoop.addListener(this);
     addAndMakeVisible(btnReset);       beautify(btnReset);       btnReset.addListener(this);
     addAndMakeVisible(btnInitialize);  beautify(btnInitialize);  btnInitialize.addListener(this);
+    btnInitialize.getProperties().set("smallFont", true);
     addAndMakeVisible(btnOptions);     beautify(btnOptions);     btnOptions.addListener(this);
+    btnOptions.getProperties().set("smallFont", true);
     addAndMakeVisible(btnExportMidi);   beautify(btnExportMidi);   btnExportMidi.addListener(this);
     addAndMakeVisible(btnExportAudio);  beautify(btnExportAudio);  btnExportAudio.addListener(this);
     addAndMakeVisible(btnVisualizer);   beautify(btnVisualizer);   btnVisualizer.addListener(this);
+    btnVisualizer.getProperties().set("smallFont", true);
     addAndMakeVisible(btnTutorial);     beautify(btnTutorial);     btnTutorial.addListener(this);
     // Disable Tutorial button in VST3 version
     if (isRunningAsVST3())
@@ -3982,7 +3990,17 @@ SlotMachineAudioProcessorEditor::SlotMachineAudioProcessorEditor(SlotMachineAudi
     lastBeatsPerBar = processor.getBeatsPerBar();
     refreshSamplesPerBar();
 
-    startTimerHz(60);
+#if JUCE_MAC
+    // macOS: VBlankAttachment (backed by CVDisplayLink) fires at the hardware vsync rate,
+    // eliminating the NSTimer run-loop jitter that causes the UI to lag behind audio hits.
+    // Automatically follows the display if the plugin window moves to a different monitor.
+    vblankAttachment = std::make_unique<juce::VBlankAttachment>(this, [this] { timerCallback(); });
+#else
+    // Windows/other: 120 Hz timer halves maximum hit-detection polling lag (8.3 ms vs
+    // 16.7 ms at 60 Hz).  JUCE coalesces repaint() calls so actual paint rate matches the
+    // display refresh rate.
+    startTimerHz(120);
+#endif
     lastPhase = (float)processor.getMasterPhase();
 
     lastStartToggleState = startToggle.getToggleState();
@@ -4647,6 +4665,17 @@ SlotMachineAudioProcessorEditor::~SlotMachineAudioProcessorEditor()
     shutdownStandalonePowerMonitor();
     #endif
 
+#if JUCE_MAC && JUCE_STANDALONE_APPLICATION
+    // Shut down macOS sleep/wake monitor before child components are torn down.
+    extern void shutdownMacStandalonePowerMonitor();
+    shutdownMacStandalonePowerMonitor();
+    #endif
+
+#if JUCE_MAC
+    // Unregister VBlankAttachment before child components are destroyed to prevent
+    // timerCallback() from firing against partially-destroyed state.
+    vblankAttachment.reset();
+#endif
     setLookAndFeel(nullptr);
     closeVisualizerWindow();
     apvts.removeParameterListener("optTimingMode", this);
@@ -4663,6 +4692,12 @@ void SlotMachineAudioProcessorEditor::parentHierarchyChanged()
     // Forward declare the initialization function from StandaloneInit.cpp
     extern void initializeStandalonePowerMonitor(SlotMachineAudioProcessorEditor* editor);
     initializeStandalonePowerMonitor(this);
+    #endif
+
+    #if JUCE_MAC && JUCE_STANDALONE_APPLICATION
+    // Forward declare the initialization function from MacStandaloneInit.mm
+    extern void initializeMacStandalonePowerMonitor(SlotMachineAudioProcessorEditor* editor);
+    initializeMacStandalonePowerMonitor(this);
     #endif
 }
 
@@ -6702,7 +6737,6 @@ void SlotMachineAudioProcessorEditor::buttonClicked(juce::Button* b)
 
     if (b == &btnLock)
     {
-#if JUCE_WINDOWS
         if (!clearLicenseFromRegistry())
         {
             juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
@@ -6710,10 +6744,6 @@ void SlotMachineAudioProcessorEditor::buttonClicked(juce::Button* b)
                 "Unable to remove the saved license information from the registry.");
         }
         LemonSqueezyCache::clearLicenseCache();
-#else
-        clearLicenseFromRegistry();
-        LemonSqueezyCache::clearLicenseCache();
-#endif
 
         storedFirstName.clear();
         storedLastName.clear();
@@ -6918,7 +6948,6 @@ void SlotMachineAudioProcessorEditor::buttonClicked(juce::Button* b)
                     juce::ignoreUnused(apiSuccess);
 
                     // Clear local cache regardless of API result
-#if JUCE_WINDOWS
                     if (!clearLicenseFromRegistry())
                     {
                         juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
@@ -6926,10 +6955,6 @@ void SlotMachineAudioProcessorEditor::buttonClicked(juce::Button* b)
                             "Unable to remove the saved license information from the registry.");
                     }
                     LemonSqueezyCache::clearLicenseCache();
-#else
-                    clearLicenseFromRegistry();
-                    LemonSqueezyCache::clearLicenseCache();
-#endif
 
                     // Clear instance ID
                     InstanceIdentifier::clearInstanceID();
@@ -7121,6 +7146,17 @@ void SlotMachineAudioProcessorEditor::buttonClicked(juce::Button* b)
     // ===== Export Audio (user-selected cycles) =====
     if (b == &btnExportAudio)
     {
+        bool anySamples = false;
+        for (int i = 0; i < kNumSlots; ++i)
+            if (processor.slotHasSample(i)) { anySamples = true; break; }
+        if (!anySamples)
+        {
+            juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
+                "Export Audio",
+                "No samples are loaded. Please load at least one sample before exporting.");
+            return;
+        }
+
         promptForExportCycles("Export Audio", 1,
             [this](int cycles, bool exportPlaythrough, bool /*useFixedNoteLength*/)
             {
@@ -7135,6 +7171,17 @@ void SlotMachineAudioProcessorEditor::buttonClicked(juce::Button* b)
     // ===== Export MIDI (user-selected cycles) =====
     if (b == &btnExportMidi)
     {
+        bool anySamples = false;
+        for (int i = 0; i < kNumSlots; ++i)
+            if (processor.slotHasSample(i)) { anySamples = true; break; }
+        if (!anySamples)
+        {
+            juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
+                "Export MIDI",
+                "No samples are loaded. Please load at least one sample before exporting.");
+            return;
+        }
+
         promptForExportCycles("Export MIDI", 1,
             [this](int cycles, bool exportPlaythrough, bool useFixedNoteLength)
             {
@@ -7589,7 +7636,18 @@ void SlotMachineAudioProcessorEditor::handleVisualizerWindowCloseRequest()
 void SlotMachineAudioProcessorEditor::openTutorialVideo()
 {
     const auto executable = juce::File::getSpecialLocation(juce::File::currentExecutableFile);
+#if JUCE_MAC
+    // In a proper .app bundle the executable lives at Contents/MacOS/<app>.
+    // In an Xcode Debug flat build the executable sits next to Contents/ directly.
+    // Detect which layout we're in by checking the parent folder name.
+    auto exeParent = executable.getParentDirectory();
+    auto contentsDir = (exeParent.getFileName() == "MacOS")
+                           ? exeParent.getParentDirectory()   // proper bundle: go up to Contents/
+                           : exeParent;                        // flat build:   exe is beside Contents/
+    auto tutorialFile = contentsDir.getChildFile("Resources/tutorialslotmachine.mp4");
+#else
     auto tutorialFile = executable.getParentDirectory().getChildFile("tutorialslotmachine.mp4");
+#endif
 
     if (!tutorialFile.existsAsFile())
     {
@@ -7672,7 +7730,7 @@ void SlotMachineAudioProcessorEditor::setMasterRun(bool shouldRun)
 
     if (shouldRun)
     {
-        animateStartButton(glowColour, pulseColour);
+        animateStartButton(glowColour, pulseColour, 1.0f);
     }
     else
     {
@@ -7726,9 +7784,9 @@ void SlotMachineAudioProcessorEditor::updateStartButtonVisuals(bool shouldRun,
     btnStart.repaint();
 }
 
-void SlotMachineAudioProcessorEditor::animateStartButton(juce::Colour glowColour, juce::Colour pulseColour)
+void SlotMachineAudioProcessorEditor::animateStartButton(juce::Colour glowColour, juce::Colour pulseColour, float dt)
 {
-    startButtonAnimPhase += 0.04f;
+    startButtonAnimPhase += 0.04f * dt;
     if (startButtonAnimPhase > juce::MathConstants<float>::twoPi)
         startButtonAnimPhase -= juce::MathConstants<float>::twoPi;
 
@@ -8326,6 +8384,12 @@ void SlotMachineAudioProcessorEditor::paintMasterWaveform(juce::Graphics& g, juc
 
 void SlotMachineAudioProcessorEditor::timerCallback()
 {
+    const int64_t nowCallbackMs = juce::Time::getMillisecondCounter();
+    const float dt = (lastCallbackMs == 0)
+        ? 1.0f
+        : juce::jlimit(0.0f, 5.0f, (float)(nowCallbackMs - lastCallbackMs) * (60.0f / 1000.0f));
+    lastCallbackMs = nowCallbackMs;
+
     const float currentScaleParam = Opt::getFloat(apvts, "optSlotScale", slotScale);
     if (std::abs(currentScaleParam - slotScale) > 0.0001f)
         applySlotScale(currentScaleParam);
@@ -8371,7 +8435,7 @@ void SlotMachineAudioProcessorEditor::timerCallback()
     }
 
     if (isRunning)
-        animateStartButton(glowColour, pulseColour);
+        animateStartButton(glowColour, pulseColour, dt);
 
     // 0..1 over full polyrhythmic cycle
     const float p = juce::jlimit(0.0f, 1.0f, (float)processor.getMasterPhase());
@@ -8547,8 +8611,8 @@ void SlotMachineAudioProcessorEditor::timerCallback()
         }
     }
 
-    // Decay flash envelope @ ~60 Hz
-    cycleFlash = juce::jmax(0.0f, cycleFlash * 0.88f - 0.01f);
+    // Decay flash envelope (dt-normalised for display-rate independence)
+    cycleFlash = juce::jmax(0.0f, cycleFlash * std::pow(0.88f, dt) - 0.01f * dt);
 
     lastPhase = p;
     masterPhase = p; // used by paint() for the master bar
@@ -8601,7 +8665,7 @@ void SlotMachineAudioProcessorEditor::timerCallback()
         // Calculate decay rate: base * sqrt(count) for proportional scaling
         // count=1: 0.03, count=4: 0.06, count=16: 0.12, count=64: 0.24
         const float decayRate = 0.03f * std::sqrt((float)count);
-        ui->glow = juce::jmax(0.0f, ui->glow - decayRate);
+        ui->glow = juce::jmax(0.0f, ui->glow - decayRate * dt);
 
         // Update group component flash state for skinning
         ui->group.getProperties().set("flashState", ui->glow);

@@ -113,6 +113,8 @@
             file="Source/WindowsPowerMonitor.cpp"/>
       <FILE id="PM0002" name="WindowsPowerMonitor.h" compile="0" resource="0"
             file="Source/WindowsPowerMonitor.h"/>
+      <FILE id="MA0001" name="MacStandaloneInit.mm" compile="1" resource="0"
+            file="Source/MacStandaloneInit.mm"/>
     </GROUP>
     <FILE id="RTt46d" name="base32.h" compile="0" resource="0" file="Source/base32.h"
           xcodeResource="0"/>
@@ -129,6 +131,10 @@
     <FILE id="uKTD9u" name="MuteON.png" compile="0" resource="1" file="Resources/Images/MuteON.png"/>
     <FILE id="VmtIB1" name="SlotMachine-UserManual.html" compile="0" resource="1"
           file="Resources/SlotMachine-UserManual.html"/>
+    <FILE id="VR0001" name="version.txt" compile="0" resource="0"
+          file="Resources/version.txt" xcodeResource="1"/>
+    <FILE id="VR0002" name="tutorialslotmachine.mp4" compile="0" resource="0"
+          file="Resources/tutorialslotmachine.mp4" xcodeResource="1"/>
     <FILE id="Z2Y83E" name="SlotMachine.ico" compile="0" resource="1" file="Resources/SlotMachine.ico"/>
     <FILE id="n4aJ0r" name="SM5.png" compile="0" resource="1" file="Resources/Images/SM5.png"/>
     <FILE id="n8iawq" name="SoloOFF.png" compile="0" resource="1" file="Resources/Images/SoloOFF.png"/>
@@ -189,7 +195,8 @@
                hardenedRuntimeEnabled="0"
                microphonePermissionsEnabled="1"
                microphonePermissionsText="SlotMachine needs microphone access for audio input."
-               bluetoothPermissionsEnabled="0">
+               bluetoothPermissionsEnabled="0"
+               extraFrameworks="IOKit">
       <CONFIGURATIONS>
         <CONFIGURATION isDebug="1" name="Debug" targetName="SlotMachine"
                        macOSDeploymentTarget="10.15"/>

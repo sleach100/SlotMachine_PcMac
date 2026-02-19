@@ -15,6 +15,14 @@ public:
     void setCornerRadius (float r) noexcept { cornerRadius = r; }
     float getCornerRadius () const noexcept { return cornerRadius; }
 
+    juce::Font getTextButtonFont (juce::TextButton& button, int buttonHeight) override
+    {
+        auto var = button.getProperties()["smallFont"];
+        if (!var.isVoid() && (bool) var)
+            return juce::Font{ juce::FontOptions((float) juce::jmin(12, buttonHeight - 1)) };
+        return juce::LookAndFeel_V4::getTextButtonFont(button, buttonHeight);
+    }
+
     void drawButtonBackground (juce::Graphics& g, juce::Button& b,
                                const juce::Colour& bg, bool isOver, bool isDown) override
     {

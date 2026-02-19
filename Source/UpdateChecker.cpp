@@ -60,14 +60,20 @@ UpdateChecker::VersionInfo UpdateChecker::VersionInfo::fromFilename(const juce::
     VersionInfo info;
     info.filename = filename;
 
-    // Parse filename like "SlotMachineSetup-01.02.03.exe"
-    // Extract the version part between "-" and ".exe"
+    // Parse filename like "SlotMachineSetup-01.02.03.exe" / ".dmg" / ".pkg"
+    // Extract the version part between the last "-" and the file extension.
     int dashIndex = filename.lastIndexOf("-");
-    int exeIndex = filename.lastIndexOf(".exe");
+    int extIndex = -1;
+    if (filename.endsWithIgnoreCase(".exe"))
+        extIndex = filename.lastIndexOf(".exe");
+    else if (filename.endsWithIgnoreCase(".dmg"))
+        extIndex = filename.lastIndexOf(".dmg");
+    else if (filename.endsWithIgnoreCase(".pkg"))
+        extIndex = filename.lastIndexOf(".pkg");
 
-    if (dashIndex >= 0 && exeIndex > dashIndex)
+    if (dashIndex >= 0 && extIndex > dashIndex)
     {
-        juce::String versionPart = filename.substring(dashIndex + 1, exeIndex);
+        juce::String versionPart = filename.substring(dashIndex + 1, extIndex);
         info = fromString(versionPart);
         info.filename = filename;
     }
@@ -147,10 +153,18 @@ void UpdateChecker::saveUpdateOptions(const juce::ValueTree& updateOptions)
 
 UpdateChecker::VersionInfo UpdateChecker::getInstalledVersion()
 {
-    // Read version from version.txt in the same folder as the executable
+    // Read version from version.txt.
+    // On macOS the executable lives at Contents/MacOS/<app>; version.txt is
+    // bundled into Contents/Resources/ by the build system.
+    // On Windows it sits next to the executable.
     juce::File appFile = juce::File::getSpecialLocation(juce::File::currentExecutableFile);
-    juce::File appDir = appFile.getParentDirectory();
-    juce::File versionFile = appDir.getChildFile("version.txt");
+#if JUCE_MAC
+    juce::File versionFile = appFile.getParentDirectory()
+                                     .getParentDirectory()
+                                     .getChildFile("Resources/version.txt");
+#else
+    juce::File versionFile = appFile.getParentDirectory().getChildFile("version.txt");
+#endif
 
     if (versionFile.existsAsFile())
     {
@@ -422,7 +436,8 @@ UpdateChecker::VersionInfo UpdateChecker::parseUpdatesFile(const juce::String& c
     {
         juce::String line = lines[i].trim();
 
-        if (line.isNotEmpty() && line.startsWith("SlotMachineSetup-") && line.endsWith(".exe"))
+        if (line.isNotEmpty() && line.startsWith("SlotMachineSetup-") &&
+            (line.endsWith(".exe") || line.endsWith(".dmg") || line.endsWith(".pkg")))
         {
             info = VersionInfo::fromFilename(line);
             DBG("UpdateChecker: Parsed latest version: " + info.toString() + " from " + line);
@@ -600,6 +615,13 @@ void UpdateChecker::showUpdateDialog(juce::Component* parent,
 
 bool UpdateChecker::launchUpdaterAndTerminate()
 {
+#if JUCE_MAC
+    // On macOS there is no bundled updater application.
+    // Open the downloads page so the user can grab the latest .dmg / .pkg.
+    DBG("UpdateChecker: macOS — opening download page in default browser");
+    juce::URL("https://www.lonepearlogic.com").launchInDefaultBrowser();
+    return true;
+#else
     // Get the path to the updater executable
     // It should be in the same directory as the main application
     juce::File appFile = juce::File::getSpecialLocation(juce::File::currentExecutableFile);
@@ -677,4 +699,5 @@ bool UpdateChecker::launchUpdaterAndTerminate()
     juce::JUCEApplication::getInstance()->systemRequestedQuit();
 
     return true;
+#endif
 }
