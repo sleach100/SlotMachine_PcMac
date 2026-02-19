@@ -3726,9 +3726,11 @@ SlotMachineAudioProcessorEditor::SlotMachineAudioProcessorEditor(SlotMachineAudi
     addAndMakeVisible(btnReset);       beautify(btnReset);       btnReset.addListener(this);
     addAndMakeVisible(btnInitialize);  beautify(btnInitialize);  btnInitialize.addListener(this);
     addAndMakeVisible(btnOptions);     beautify(btnOptions);     btnOptions.addListener(this);
+    btnOptions.getProperties().set("smallFont", true);
     addAndMakeVisible(btnExportMidi);   beautify(btnExportMidi);   btnExportMidi.addListener(this);
     addAndMakeVisible(btnExportAudio);  beautify(btnExportAudio);  btnExportAudio.addListener(this);
     addAndMakeVisible(btnVisualizer);   beautify(btnVisualizer);   btnVisualizer.addListener(this);
+    btnVisualizer.getProperties().set("smallFont", true);
     addAndMakeVisible(btnTutorial);     beautify(btnTutorial);     btnTutorial.addListener(this);
     // Disable Tutorial button in VST3 version
     if (isRunningAsVST3())
