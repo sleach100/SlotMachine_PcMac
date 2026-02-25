@@ -3991,10 +3991,14 @@ SlotMachineAudioProcessorEditor::SlotMachineAudioProcessorEditor(SlotMachineAudi
     refreshSamplesPerBar();
 
 #if JUCE_MAC
-    // macOS: VBlankAttachment (backed by CVDisplayLink) fires at the hardware vsync rate,
-    // eliminating the NSTimer run-loop jitter that causes the UI to lag behind audio hits.
-    // Automatically follows the display if the plugin window moves to a different monitor.
-    vblankAttachment = std::make_unique<juce::VBlankAttachment>(this, [this] { timerCallback(); });
+    // macOS: VBlankAttachment (backed by CVDisplayLink) drives painting at the hardware
+    // vsync rate, eliminating NSTimer run-loop jitter.  A 120 Hz juce::Timer runs
+    // alongside it (Fix 4) so hit detection and deferred-flash checks happen every
+    // ~8.3 ms instead of ~16.7 ms.  The timer path skips performAnyPendingRepaintsNow()
+    // (inVBlankCallback == false) to avoid forcing mid-frame paints.
+    vblankAttachment = std::make_unique<juce::VBlankAttachment>(this,
+        [this] { inVBlankCallback = true; timerCallback(); inVBlankCallback = false; });
+    startTimerHz(120);
 #else
     // Windows/other: 120 Hz timer halves maximum hit-detection polling lag (8.3 ms vs
     // 16.7 ms at 60 Hz).  JUCE coalesces repaint() calls so actual paint rate matches the
@@ -4672,9 +4676,11 @@ SlotMachineAudioProcessorEditor::~SlotMachineAudioProcessorEditor()
     #endif
 
 #if JUCE_MAC
-    // Unregister VBlankAttachment before child components are destroyed to prevent
-    // timerCallback() from firing against partially-destroyed state.
+    // Unregister VBlankAttachment and stop the 120 Hz detection timer before child
+    // components are destroyed to prevent timerCallback() from firing against
+    // partially-destroyed state.
     vblankAttachment.reset();
+    stopTimer();
 #endif
     setLookAndFeel(nullptr);
     closeVisualizerWindow();
@@ -8723,16 +8729,16 @@ void SlotMachineAudioProcessorEditor::timerCallback()
 
     consumeScopeBlocks();
 
-    // On macOS the VBlankAttachment callback is dispatched to the message thread AFTER the
-    // hardware VSync signal fires.  Calling repaint() alone queues an async redraw that
-    // AppKit defers to the next display-update pass, adding ~16.7 ms of unnecessary
-    // display-pipeline latency at 60 Hz.  Calling performAnyPendingRepaintsNow() on the
-    // ComponentPeer immediately after repaint() forces the paint to complete within the
-    // current VSync window, eliminating that extra-frame delay on macOS.
+    // Mark the component dirty every callback (both VBlank and 120 Hz timer paths).
+    // performAnyPendingRepaintsNow() is called only from the VBlank path so we flush
+    // within the current VSync window without forcing mid-frame paints from the timer.
     repaint();
 #if JUCE_MAC
-    if (auto* peer = getPeer())
-        peer->performAnyPendingRepaintsNow();
+    if (inVBlankCallback)
+    {
+        if (auto* peer = getPeer())
+            peer->performAnyPendingRepaintsNow();
+    }
 #endif
 }
 
