@@ -1007,16 +1007,15 @@ void PolyrhythmVizComponent::timerCallback()
     }
 
     // On macOS the VBlankAttachment callback is dispatched to the message thread AFTER the
-    // hardware VSync signal fires.  Calling repaint() here would schedule a *second* async
-    // redraw, causing the painted frame to appear one full VSync period (~16.7 ms at 60 Hz)
-    // later than necessary.  paintImmediately() renders synchronously within the current
-    // VSync window, cutting that extra-frame display-pipeline latency on macOS.
-    // On Windows the 120 Hz timer path continues to use the standard async repaint() because
-    // paintImmediately() would be called faster than the display refresh rate.
-#if JUCE_MAC
-    paintImmediately(getLocalBounds());
-#else
+    // hardware VSync signal fires.  Calling repaint() alone queues an async redraw that
+    // AppKit defers to the next display-update pass, adding ~16.7 ms of unnecessary
+    // display-pipeline latency at 60 Hz.  Calling performAnyPendingRepaintsNow() on the
+    // ComponentPeer immediately after repaint() forces the paint to complete within the
+    // current VSync window, eliminating that extra-frame delay on macOS.
     repaint();
+#if JUCE_MAC
+    if (auto* peer = getPeer())
+        peer->performAnyPendingRepaintsNow();
 #endif
 }
 
