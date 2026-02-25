@@ -164,9 +164,11 @@ public:
     }
     // High-resolution version used for phase extrapolation (sub-millisecond precision
     // eliminates the ±1 ms quantisation jitter visible in the playhead at 120 Hz).
+    // acquire pairs with the release-store in processBlock(), guaranteeing that a caller
+    // who observes the new timestamp also observes the freshly-written currentCyclePhase01.
     int64_t getLastProcessBlockWallTimeTicks() const noexcept
     {
-        return lastProcessBlockWallTimeTicks.load(std::memory_order_relaxed);
+        return lastProcessBlockWallTimeTicks.load(std::memory_order_acquire);
     }
     double  getCurrentCycleBeats() const noexcept
     {

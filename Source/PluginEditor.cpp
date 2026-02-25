@@ -8455,7 +8455,13 @@ void SlotMachineAudioProcessorEditor::timerCallback()
     // than the stale end-of-last-block snapshot.  See PolyrhythmVizComponent for rationale.
     const float p = [&]() -> float
     {
-        const double rawPhase = processor.getMasterPhase();
+        // Read blockTicks FIRST with acquire so the C++ memory model guarantees that
+        // a fresh blockTicks value implies a fresh rawPhase (the audio thread release-stores
+        // blockTicks after writing currentCyclePhase01).  Reading rawPhase after the acquire
+        // prevents the race where the UI saw stale rawPhase + fresh blockTicks, which
+        // produced elapsedSec≈0 and a visible backward snap of the playhead.
+        const int64_t blockTicks  = processor.getLastProcessBlockWallTimeTicks(); // acquire
+        const double  rawPhase    = processor.getMasterPhase(); // coherent with blockTicks
         // When stopped, the audio processBlock() still runs (updating lastProcessBlockWallTimeMs
         // every ~5-20 ms) but masterPhase is frozen.  Extrapolating against a moving blockMs
         // with a fixed rawPhase produces an elapsedSec that oscillates 0..bufferDuration,
@@ -8463,7 +8469,6 @@ void SlotMachineAudioProcessorEditor::timerCallback()
         // Skip extrapolation entirely when the transport is not running.
         if (!isRunning)
             return juce::jlimit(0.0f, 1.0f, static_cast<float>(rawPhase));
-        const int64_t blockTicks  = processor.getLastProcessBlockWallTimeTicks();
         const double  cycleBeats  = processor.getCurrentCycleBeats();
         if (blockTicks == 0 || cycleBeats <= 0.0 || bpmNow <= 0.0)
             return juce::jlimit(0.0f, 1.0f, static_cast<float>(rawPhase));
