@@ -8454,7 +8454,14 @@ void SlotMachineAudioProcessorEditor::timerCallback()
     // than the stale end-of-last-block snapshot.  See PolyrhythmVizComponent for rationale.
     const float p = [&]() -> float
     {
-        const double rawPhase     = processor.getMasterPhase();
+        const double rawPhase = processor.getMasterPhase();
+        // When stopped, the audio processBlock() still runs (updating lastProcessBlockWallTimeMs
+        // every ~5-20 ms) but masterPhase is frozen.  Extrapolating against a moving blockMs
+        // with a fixed rawPhase produces an elapsedSec that oscillates 0..bufferDuration,
+        // shifting the playhead X by several pixels each UI tick — visible jitter.
+        // Skip extrapolation entirely when the transport is not running.
+        if (!isRunning)
+            return juce::jlimit(0.0f, 1.0f, static_cast<float>(rawPhase));
         const int64_t blockMs     = processor.getLastProcessBlockWallTimeMs();
         const double  cycleBeats  = processor.getCurrentCycleBeats();
         if (blockMs == 0 || cycleBeats <= 0.0 || bpmNow <= 0.0)
