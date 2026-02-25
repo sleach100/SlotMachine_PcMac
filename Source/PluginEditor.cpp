@@ -5118,7 +5118,26 @@ void SlotMachineAudioProcessorEditor::paintOverChildren(juce::Graphics& g)
 
         paintMasterWaveform(g, masterBarBounds);
 
-        const float clampedPhase = juce::jlimit(0.0f, 1.0f, masterPhase);
+        // Extrapolate to the exact paint instant rather than reading the pre-computed
+        // masterPhase (which was captured at the top of timerCallback and may be several
+        // ms stale by the time paint() runs).  Fresh ticks here eliminate the per-frame
+        // lag variation that causes visible jitter at playback speed.
+        const float clampedPhase = [&]() -> float
+        {
+            const int64_t blockTicks = processor.getLastProcessBlockWallTimeTicks();
+            const double  rawPhase   = processor.getMasterPhase();
+            if (!startToggle.getToggleState())
+                return juce::jlimit(0.0f, 1.0f, static_cast<float>(rawPhase));
+            const double cycleBeats  = processor.getCurrentCycleBeats();
+            const double bpmNow      = processor.getBpm();
+            if (blockTicks == 0 || cycleBeats <= 0.0 || bpmNow <= 0.0)
+                return juce::jlimit(0.0f, 1.0f, static_cast<float>(rawPhase));
+            const double elapsedSec  = juce::jlimit(0.0, 0.05,
+                static_cast<double>(juce::Time::getHighResolutionTicks() - blockTicks)
+                / static_cast<double>(juce::Time::getHighResolutionTicksPerSecond()));
+            const double extrap = std::fmod(rawPhase + elapsedSec * bpmNow / (60.0 * cycleBeats), 1.0);
+            return juce::jlimit(0.0f, 1.0f, static_cast<float>(extrap));
+        }();
         const float w = masterBarBounds.getWidth() * clampedPhase;
         if (w > 1.0f)
         {
@@ -8396,7 +8415,8 @@ void SlotMachineAudioProcessorEditor::paintMasterWaveform(juce::Graphics& g, juc
 
 void SlotMachineAudioProcessorEditor::timerCallback()
 {
-    const int64_t nowCallbackMs = juce::Time::getMillisecondCounter();
+    const int64_t nowCallbackMs    = juce::Time::getMillisecondCounter();
+    const int64_t nowCallbackTicks = juce::Time::getHighResolutionTicks();
     const float dt = (lastCallbackMs == 0)
         ? 1.0f
         : juce::jlimit(0.0f, 5.0f, (float)(nowCallbackMs - lastCallbackMs) * (60.0f / 1000.0f));
@@ -8454,13 +8474,28 @@ void SlotMachineAudioProcessorEditor::timerCallback()
     // than the stale end-of-last-block snapshot.  See PolyrhythmVizComponent for rationale.
     const float p = [&]() -> float
     {
-        const double rawPhase     = processor.getMasterPhase();
-        const int64_t blockMs     = processor.getLastProcessBlockWallTimeMs();
-        const double  cycleBeats  = processor.getCurrentCycleBeats();
-        if (blockMs == 0 || cycleBeats <= 0.0 || bpmNow <= 0.0)
+        // Read blockTicks FIRST with acquire so the C++ memory model guarantees that
+        // a fresh blockTicks value implies a fresh rawPhase (the audio thread release-stores
+        // blockTicks after writing currentCyclePhase01).  Reading rawPhase after the acquire
+        // prevents the race where the UI saw stale rawPhase + fresh blockTicks, which
+        // produced elapsedSec≈0 and a visible backward snap of the playhead.
+        const int64_t blockTicks  = processor.getLastProcessBlockWallTimeTicks(); // acquire
+        const double  rawPhase    = processor.getMasterPhase(); // coherent with blockTicks
+        // When stopped, the audio processBlock() still runs (updating lastProcessBlockWallTimeMs
+        // every ~5-20 ms) but masterPhase is frozen.  Extrapolating against a moving blockMs
+        // with a fixed rawPhase produces an elapsedSec that oscillates 0..bufferDuration,
+        // shifting the playhead X by several pixels each UI tick — visible jitter.
+        // Skip extrapolation entirely when the transport is not running.
+        if (!isRunning)
             return juce::jlimit(0.0f, 1.0f, static_cast<float>(rawPhase));
+        const double  cycleBeats  = processor.getCurrentCycleBeats();
+        if (blockTicks == 0 || cycleBeats <= 0.0 || bpmNow <= 0.0)
+            return juce::jlimit(0.0f, 1.0f, static_cast<float>(rawPhase));
+        // Use high-resolution ticks (sub-millisecond) to avoid the ±1 ms quantisation
+        // that jitter the playhead position at 120 Hz when computed from getMillisecondCounter().
         const double elapsedSec = juce::jlimit(0.0, 0.05,
-            static_cast<double>(nowCallbackMs - blockMs) / 1000.0);
+            static_cast<double>(nowCallbackTicks - blockTicks)
+            / static_cast<double>(juce::Time::getHighResolutionTicksPerSecond()));
         const double extrap = std::fmod(rawPhase + elapsedSec * bpmNow / (60.0 * cycleBeats), 1.0);
         return juce::jlimit(0.0f, 1.0f, static_cast<float>(extrap));
     }();

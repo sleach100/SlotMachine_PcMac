@@ -1748,6 +1748,13 @@ void SlotMachineAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, j
     else
         currentCyclePhase01 = 0.0;
 
+    // Stamp AFTER writing currentCyclePhase01 with memory_order_release so the UI thread's
+    // matching acquire-load on lastProcessBlockWallTimeTicks guarantees it will also see the
+    // freshly-written phase.  This eliminates the race where the UI reads stale rawPhase
+    // paired with a fresh blockTicks, which caused visible playhead stutter.
+    lastProcessBlockWallTimeTicks.store(juce::Time::getHighResolutionTicks(),
+                                        std::memory_order_release);
+
 #if JUCE_DEBUG
     if (blockStartIsDownbeat)
     {
