@@ -71,6 +71,12 @@ private:
         float flash = 0.0f;
         int flashVertex = -1;
         uint32_t lastHitCounter = 0;
+        // Deferred-flash state (Fix 1): when hitPlayTimeMs is in the future the flash is
+        // scheduled here rather than fired immediately, so the visual appears on screen at
+        // the same moment the audio is heard.
+        double   pendingFlashAtMs     = 0.0; // wall-clock ms at which to fire; 0 = none
+        double   pendingFlashPhase    = 0.0; // extrapolated masterPhase at fire time
+        uint32_t pendingFlashHitCount = 0;   // hitCounter snapshot for twinkle seed
         juce::Colour colour;
         juce::Point<float> beadPos{};
         bool edgeWalk = true;

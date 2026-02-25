@@ -855,42 +855,92 @@ void PolyrhythmVizComponent::timerCallback()
         if (hits != slot.lastHitCounter)
         {
             slot.lastHitCounter = hits;
-            slot.flash = 1.0f;
-            slot.arcIntensity = 1.0f;  // Trigger arc intensity on hit
+
+            // Non-flash effects (arc, sweep, nebula) are less timing-sensitive and fire
+            // immediately regardless of output latency.
+            slot.arcIntensity = 1.0f;
             slot.arcGeometryNeedsRebuild = true;
-            slot.sweepGain = 1.0f;     // Boost neon sweep on hit
-            nebulaEnergy = juce::jmin(1.0f, nebulaEnergy + 0.12f);  // Gentle boost to nebula energy on hit
-            const int sides = juce::jmax(1, slot.sides);
-            // Use floor (same as edge-walk segment calculation) for consistent vertex indexing
-            // This ensures flash appears at the vertex the bead just passed, not ahead of it
-            const int corner = sides > 0
-                ? ((int)std::floor(masterPhase * (double)sides) % sides + sides) % sides
-                : -1;
-            slot.flashVertex = corner;
+            slot.sweepGain = 1.0f;
+            nebulaEnergy = juce::jmin(1.0f, nebulaEnergy + 0.12f);
 
-            // Starlight Twinkle: trigger random vertices on hit
-            if (starlightTwinkleEnabled && sides > 0)
+            // Delay the flash (vertex highlight + starlight twinkle) until the hit audio
+            // is heard.  hitPlayTimeMs = blockStartWallTime + hitOffset/sr + outputLatency.
+            // Firing at that moment keeps the visual locked to the sound regardless of
+            // buffer size or device latency (e.g. Bluetooth, USB interfaces).
+            const double hitPlayTime = processor.getSlotHitPlayTimeMs(i);
+            const bool fireNow = (hitPlayTime <= 0.0 || static_cast<double>(nowMs) >= hitPlayTime);
+
+            // Helper: apply flash + flashVertex + optional starlight twinkle at a given phase.
+            auto fireFlash = [&](double phase, uint32_t hitSeed)
             {
-                // Ensure twinkleBrightness is the right size
-                if (slot.twinkleBrightness.size() != (size_t)sides)
-                    slot.twinkleBrightness.resize((size_t)sides, 0.0f);
+                slot.flash = 1.0f;
+                const int flashSides = juce::jmax(1, slot.sides);
+                const int corner = flashSides > 0
+                    ? ((int)std::floor(phase * (double)flashSides) % flashSides + flashSides) % flashSides
+                    : -1;
+                slot.flashVertex = corner;
 
-                // Use hit counter for deterministic "randomness" that varies per hit
-                const uint32_t seed = hits * 31u + (uint32_t)i * 17u;
-
-                // Trigger 1-3 random vertices (based on number of sides)
-                const int numTwinkles = juce::jmin(sides, 1 + (int)(seed % 3u));
-                for (int t = 0; t < numTwinkles; ++t)
+                if (starlightTwinkleEnabled && flashSides > 0)
                 {
-                    const int vertexIdx = (int)((seed * (31u + (uint32_t)t)) % (uint32_t)sides);
-                    slot.twinkleBrightness[(size_t)vertexIdx] = 1.0f;
+                    if (slot.twinkleBrightness.size() != (size_t)flashSides)
+                        slot.twinkleBrightness.resize((size_t)flashSides, 0.0f);
+                    const uint32_t seed = hitSeed * 31u + (uint32_t)i * 17u;
+                    const int numTwinkles = juce::jmin(flashSides, 1 + (int)(seed % 3u));
+                    for (int t = 0; t < numTwinkles; ++t)
+                    {
+                        const int vertexIdx = (int)((seed * (31u + (uint32_t)t)) % (uint32_t)flashSides);
+                        slot.twinkleBrightness[(size_t)vertexIdx] = 1.0f;
+                    }
                 }
+            };
+
+            if (fireNow)
+            {
+                fireFlash(masterPhase, hits);
+                slot.pendingFlashAtMs = 0.0;
+            }
+            else
+            {
+                // Schedule flash for later.  Estimate the bead phase at fire time so
+                // flashVertex is placed at the correct vertex even before masterPhase
+                // has advanced to that position.
+                const double msUntilFire  = hitPlayTime - static_cast<double>(nowMs);
+                slot.pendingFlashAtMs     = hitPlayTime;
+                slot.pendingFlashHitCount = hits;
+                slot.pendingFlashPhase    = std::fmod(
+                    masterPhase + (msUntilFire / 1000.0) * bpmForExtrapolation / (60.0 * cycleBeats),
+                    1.0);
             }
         }
         else
         {
             slot.flash = juce::jmax(0.0f, slot.flash - kFlashDecay * dt);
-            slot.sweepGain = juce::jmax(0.0f, slot.sweepGain * std::pow(0.88f, dt) - 0.015f * dt);  // Fast decay for sweep boost
+            slot.sweepGain = juce::jmax(0.0f, slot.sweepGain * std::pow(0.88f, dt) - 0.015f * dt);
+        }
+
+        // Fire any pending (deferred) flash once its scheduled play-time has arrived.
+        if (slot.pendingFlashAtMs > 0.0 && static_cast<double>(nowMs) >= slot.pendingFlashAtMs)
+        {
+            slot.flash = 1.0f;
+            const int flashSides = juce::jmax(1, slot.sides);
+            const int corner = flashSides > 0
+                ? ((int)std::floor(slot.pendingFlashPhase * (double)flashSides) % flashSides + flashSides) % flashSides
+                : -1;
+            slot.flashVertex = corner;
+
+            if (starlightTwinkleEnabled && flashSides > 0)
+            {
+                if (slot.twinkleBrightness.size() != (size_t)flashSides)
+                    slot.twinkleBrightness.resize((size_t)flashSides, 0.0f);
+                const uint32_t seed = slot.pendingFlashHitCount * 31u + (uint32_t)i * 17u;
+                const int numTwinkles = juce::jmin(flashSides, 1 + (int)(seed % 3u));
+                for (int t = 0; t < numTwinkles; ++t)
+                {
+                    const int vertexIdx = (int)((seed * (31u + (uint32_t)t)) % (uint32_t)flashSides);
+                    slot.twinkleBrightness[(size_t)vertexIdx] = 1.0f;
+                }
+            }
+            slot.pendingFlashAtMs = 0.0;
         }
 
         // Decay starlight twinkle brightness for all vertices (even when hit, for independent decay)

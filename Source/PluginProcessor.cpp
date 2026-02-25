@@ -1614,9 +1614,11 @@ void SlotMachineAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, j
     juce::ScopedNoDenormals noDenormals;
 
     // Stamp the wall-clock time at the very start of this block so the render thread
-    // can extrapolate masterPhase forward from the last-known audio position.
-    lastProcessBlockWallTimeMs.store(juce::Time::getMillisecondCounter(),
-                                     std::memory_order_relaxed);
+    // can extrapolate masterPhase forward from the last-known audio position, and so
+    // per-hit play-times can be computed for deferred visual flash triggering (Fix 1).
+    const auto blockStartWallTimeMs =
+        static_cast<int64_t>(juce::Time::getMillisecondCounter());
+    lastProcessBlockWallTimeMs.store(blockStartWallTimeMs, std::memory_order_relaxed);
 
     const int  numSamples = buffer.getNumSamples();
     const int  totalOut = getTotalNumOutputChannels();
@@ -1761,6 +1763,13 @@ void SlotMachineAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, j
     }
 #endif
 
+    // Per-hit play-time: ms after blockStartWallTimeMs at which audio reaches the speakers.
+    // outputLatencyMs defaults to 0 in plugin mode (latency unknown); standalone mode sets it
+    // via setOutputLatencyHint() once the audio device is open.
+    const double outputLatencyMs =
+        static_cast<double>(cachedOutputLatencySamples.load(std::memory_order_relaxed))
+        / (currentSampleRate > 0.0 ? currentSampleRate : 44100.0) * 1000.0;
+
     // Per-slot timing/render
     for (int i = 0; i < kNumSlots; ++i)
     {
@@ -1860,6 +1869,9 @@ void SlotMachineAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, j
             else if (s.hasSample() && slotAudible)
             {
                 s.trigger();
+                // Manual trigger fires at the start of the block (hitOffset = 0).
+                s.hitPlayTimeMs.store(static_cast<double>(blockStartWallTimeMs) + outputLatencyMs,
+                                      std::memory_order_relaxed);
 
                 if (wantMidi) {
                     const int noteNumber = 60; // Middle C for all slots
@@ -1932,6 +1944,11 @@ void SlotMachineAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, j
 
                     // Fire and mix from hit point to block end
                     s.trigger();
+                    s.hitPlayTimeMs.store(
+                        static_cast<double>(blockStartWallTimeMs)
+                            + static_cast<double>(hitOffset) / currentSampleRate * 1000.0
+                            + outputLatencyMs,
+                        std::memory_order_relaxed);
 
                     // MIDI: emit note at exact in-block position
                     if (wantMidi && slotAudible)
@@ -1998,6 +2015,11 @@ void SlotMachineAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, j
                     continue;
 
                 s.trigger();
+                s.hitPlayTimeMs.store(
+                    static_cast<double>(blockStartWallTimeMs)
+                        + static_cast<double>(hitOffset) / currentSampleRate * 1000.0
+                        + outputLatencyMs,
+                    std::memory_order_relaxed);
 
                 if (wantMidi && slotAudible)
                 {
@@ -2534,6 +2556,12 @@ uint32_t SlotMachineAudioProcessor::getSlotHitCounter(int index) const
 {
     jassert(juce::isPositiveAndBelow(index, kNumSlots));
     return slots[(size_t)index].hitCounter;
+}
+
+double SlotMachineAudioProcessor::getSlotHitPlayTimeMs(int index) const
+{
+    jassert(juce::isPositiveAndBelow(index, kNumSlots));
+    return slots[(size_t)index].hitPlayTimeMs.load(std::memory_order_relaxed);
 }
 
 uint64_t SlotMachineAudioProcessor::getSlotCountMask(int index) const

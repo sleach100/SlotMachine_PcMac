@@ -8672,7 +8672,23 @@ void SlotMachineAudioProcessorEditor::timerCallback()
         if (hits != ui->lastHitCounter)
         {
             ui->lastHitCounter = hits;
-            ui->glow = 1.0f; // pulse on hit
+            const double hitPlayTime = processor.getSlotHitPlayTimeMs(i);
+            if (hitPlayTime <= 0.0 || static_cast<double>(nowCallbackMs) >= hitPlayTime)
+            {
+                ui->glow = 1.0f; // pulse on hit — time already arrived
+                ui->pendingGlowAtMs = 0.0;
+            }
+            else
+            {
+                ui->pendingGlowAtMs = hitPlayTime; // defer until audio is heard
+            }
+        }
+
+        // Fire deferred glow once its scheduled play-time has arrived.
+        if (ui->pendingGlowAtMs > 0.0 && static_cast<double>(nowCallbackMs) >= ui->pendingGlowAtMs)
+        {
+            ui->glow = 1.0f;
+            ui->pendingGlowAtMs = 0.0;
         }
 
         // Variable glow decay based on count value (higher count = faster decay = shorter flash)

@@ -437,6 +437,7 @@ private:
         float    glow = 0.0f;
         float    phase = 0.0f;
         uint32_t lastHitCounter = 0;
+        double   pendingGlowAtMs = 0.0; // deferred glow fire time (0 = none pending)
 
         int titleLabelRaiseOffset = 0;
 
