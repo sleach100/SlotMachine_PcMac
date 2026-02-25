@@ -437,6 +437,7 @@ private:
         float    glow = 0.0f;
         float    phase = 0.0f;
         uint32_t lastHitCounter = 0;
+        double   pendingGlowAtMs = 0.0; // deferred glow fire time (0 = none pending)
 
         int titleLabelRaiseOffset = 0;
 
@@ -600,8 +601,13 @@ private:
     // Display-sync repaint (macOS): VBlankAttachment fires at hardware vsync rate via
     // CVDisplayLink, eliminating timer-to-display phase jitter.
     // Windows uses startTimerHz() instead (see constructor).
+    // On macOS a 120 Hz juce::Timer also runs alongside VBlankAttachment (Fix 4) so
+    // hit detection and deferred-flash checks happen every ~8.3 ms instead of ~16.7 ms.
+    // performAnyPendingRepaintsNow() is only called from VBlank callbacks (not the timer)
+    // to avoid forcing mid-frame paints; inVBlankCallback tracks which path is active.
 #if JUCE_MAC
     std::unique_ptr<juce::VBlankAttachment> vblankAttachment;
+    bool inVBlankCallback { false };
 #endif
     // Timestamp of the previous timerCallback() invocation, used to compute dt
     // (elapsed time normalised to one 60 Hz frame) for frame-rate-independent decay.

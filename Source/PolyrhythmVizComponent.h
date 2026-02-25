@@ -33,8 +33,13 @@ private:
     // Display-sync repaint (macOS): VBlankAttachment fires at hardware vsync rate via
     // CVDisplayLink, eliminating timer-to-display phase jitter.
     // Windows uses startTimerHz() instead (see constructor).
+    // On macOS a 120 Hz juce::Timer also runs alongside VBlankAttachment (Fix 4) so
+    // hit detection and deferred-flash checks happen every ~8.3 ms instead of ~16.7 ms.
+    // performAnyPendingRepaintsNow() is only called from VBlank callbacks (not the timer)
+    // to avoid forcing mid-frame paints; inVBlankCallback tracks which path is active.
 #if JUCE_MAC
     std::unique_ptr<juce::VBlankAttachment> vblankAttachment;
+    bool inVBlankCallback { false };
 #endif
     // Timestamp of the previous timerCallback() invocation, used to compute dt
     // (elapsed time normalised to one 60 Hz frame) for frame-rate-independent decay.
@@ -71,6 +76,12 @@ private:
         float flash = 0.0f;
         int flashVertex = -1;
         uint32_t lastHitCounter = 0;
+        // Deferred-flash state (Fix 1): when hitPlayTimeMs is in the future the flash is
+        // scheduled here rather than fired immediately, so the visual appears on screen at
+        // the same moment the audio is heard.
+        double   pendingFlashAtMs     = 0.0; // wall-clock ms at which to fire; 0 = none
+        double   pendingFlashPhase    = 0.0; // extrapolated masterPhase at fire time
+        uint32_t pendingFlashHitCount = 0;   // hitCounter snapshot for twinkle seed
         juce::Colour colour;
         juce::Point<float> beadPos{};
         bool edgeWalk = true;

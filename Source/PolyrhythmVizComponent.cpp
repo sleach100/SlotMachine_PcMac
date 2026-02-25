@@ -69,9 +69,14 @@ PolyrhythmVizComponent::PolyrhythmVizComponent(SlotMachineAudioProcessor& proc, 
 {
     setOpaque(true);
 #if JUCE_MAC
-    // macOS: VBlankAttachment (backed by CVDisplayLink) fires at the hardware vsync rate,
-    // eliminating the NSTimer run-loop jitter that causes the visualizer to lag behind hits.
-    vblankAttachment = std::make_unique<juce::VBlankAttachment>(this, [this] { timerCallback(); });
+    // macOS: VBlankAttachment (backed by CVDisplayLink) drives painting at the hardware
+    // vsync rate, eliminating NSTimer run-loop jitter.  A 120 Hz juce::Timer runs
+    // alongside it (Fix 4) so hit detection and deferred-flash checks happen every
+    // ~8.3 ms instead of ~16.7 ms.  The timer path skips performAnyPendingRepaintsNow()
+    // (inVBlankCallback == false) to avoid forcing mid-frame paints.
+    vblankAttachment = std::make_unique<juce::VBlankAttachment>(this,
+        [this] { inVBlankCallback = true; timerCallback(); inVBlankCallback = false; });
+    startTimerHz(120);
 #else
     // Windows/other: 120 Hz timer.
     startTimerHz(120);
@@ -711,7 +716,26 @@ void PolyrhythmVizComponent::timerCallback()
         : juce::jlimit(0.0f, 5.0f, (float)(nowMs - lastCallbackMs) * (60.0f / 1000.0f));
     lastCallbackMs = nowMs;
 
-    const double currentPhase = processor.getMasterPhase();
+    // Extrapolate the master phase forward from the end of the last audio block to the
+    // current wall-clock instant.  processBlock() stamps lastProcessBlockWallTimeMs at
+    // its start and writes the end-of-block phase to currentCyclePhase01.  By advancing
+    // the phase by (elapsed * BPM / (60 * cycleBeats)) we recover the audio position that
+    // is actually playing right now, eliminating bead-lag and wrong flash-vertex placement.
+    // elapsedSec is capped at 50 ms to avoid over-shooting when audio is paused or the
+    // block timestamp is stale.
+    const double rawPhase   = processor.getMasterPhase();
+    const int64_t blockMs   = processor.getLastProcessBlockWallTimeMs();
+    const double cycleBeats = processor.getCurrentCycleBeats();
+    const double bpmForExtrapolation = processor.getBpm();
+    const double currentPhase = [&]() -> double
+    {
+        if (blockMs == 0 || cycleBeats <= 0.0 || bpmForExtrapolation <= 0.0)
+            return rawPhase;
+        const double elapsedSec = juce::jlimit(0.0, 0.05,
+            static_cast<double>(nowMs - blockMs) / 1000.0);
+        return std::fmod(rawPhase + elapsedSec * bpmForExtrapolation / (60.0 * cycleBeats), 1.0);
+    }();
+
     const bool wrapped = (currentPhase + 0.02) < lastPhase;
     if (wrapped)
     {
@@ -836,42 +860,100 @@ void PolyrhythmVizComponent::timerCallback()
         if (hits != slot.lastHitCounter)
         {
             slot.lastHitCounter = hits;
-            slot.flash = 1.0f;
-            slot.arcIntensity = 1.0f;  // Trigger arc intensity on hit
+
+            // Non-flash effects (arc, sweep, nebula) are less timing-sensitive and fire
+            // immediately regardless of output latency.
+            slot.arcIntensity = 1.0f;
             slot.arcGeometryNeedsRebuild = true;
-            slot.sweepGain = 1.0f;     // Boost neon sweep on hit
-            nebulaEnergy = juce::jmin(1.0f, nebulaEnergy + 0.12f);  // Gentle boost to nebula energy on hit
-            const int sides = juce::jmax(1, slot.sides);
-            // Use floor (same as edge-walk segment calculation) for consistent vertex indexing
-            // This ensures flash appears at the vertex the bead just passed, not ahead of it
-            const int corner = sides > 0
-                ? ((int)std::floor(masterPhase * (double)sides) % sides + sides) % sides
-                : -1;
-            slot.flashVertex = corner;
+            slot.sweepGain = 1.0f;
+            nebulaEnergy = juce::jmin(1.0f, nebulaEnergy + 0.12f);
 
-            // Starlight Twinkle: trigger random vertices on hit
-            if (starlightTwinkleEnabled && sides > 0)
+            // Delay the flash (vertex highlight + starlight twinkle) until the hit audio
+            // is heard.  hitPlayTimeMs = blockStartWallTime + hitOffset/sr + outputLatency.
+            // Firing at that moment keeps the visual locked to the sound regardless of
+            // buffer size or device latency (e.g. Bluetooth, USB interfaces).
+            const double hitPlayTime = processor.getSlotHitPlayTimeMs(i);
+            const bool fireNow = (hitPlayTime <= 0.0 || static_cast<double>(nowMs) >= hitPlayTime);
+
+            // Helper: apply flash + flashVertex + optional starlight twinkle at a given phase.
+            auto fireFlash = [&](double phase, uint32_t hitSeed)
             {
-                // Ensure twinkleBrightness is the right size
-                if (slot.twinkleBrightness.size() != (size_t)sides)
-                    slot.twinkleBrightness.resize((size_t)sides, 0.0f);
+                slot.flash = 1.0f;
+                const int flashSides = juce::jmax(1, slot.sides);
+                const int corner = flashSides > 0
+                    ? ((int)std::floor(phase * (double)flashSides) % flashSides + flashSides) % flashSides
+                    : -1;
+                slot.flashVertex = corner;
 
-                // Use hit counter for deterministic "randomness" that varies per hit
-                const uint32_t seed = hits * 31u + (uint32_t)i * 17u;
-
-                // Trigger 1-3 random vertices (based on number of sides)
-                const int numTwinkles = juce::jmin(sides, 1 + (int)(seed % 3u));
-                for (int t = 0; t < numTwinkles; ++t)
+                if (starlightTwinkleEnabled && flashSides > 0)
                 {
-                    const int vertexIdx = (int)((seed * (31u + (uint32_t)t)) % (uint32_t)sides);
-                    slot.twinkleBrightness[(size_t)vertexIdx] = 1.0f;
+                    if (slot.twinkleBrightness.size() != (size_t)flashSides)
+                        slot.twinkleBrightness.resize((size_t)flashSides, 0.0f);
+                    const uint32_t seed = hitSeed * 31u + (uint32_t)i * 17u;
+                    const int numTwinkles = juce::jmin(flashSides, 1 + (int)(seed % 3u));
+                    for (int t = 0; t < numTwinkles; ++t)
+                    {
+                        const int vertexIdx = (int)((seed * (31u + (uint32_t)t)) % (uint32_t)flashSides);
+                        slot.twinkleBrightness[(size_t)vertexIdx] = 1.0f;
+                    }
                 }
+            };
+
+            if (fireNow)
+            {
+                // Use the bead phase at hitPlayTime, not at poll time, so flashVertex
+                // lands on the vertex the bead occupied when the sound played (Fix 5).
+                // Formula is identical to Fix 2 extrapolation: rawPhase + (Δt * BPM) / (60 * cycleBeats).
+                const double hitPhase = (hitPlayTime > 0.0 && blockMs > 0
+                                         && cycleBeats > 0.0 && bpmForExtrapolation > 0.0)
+                    ? std::fmod(rawPhase + (hitPlayTime - static_cast<double>(blockMs))
+                                    / 1000.0 * bpmForExtrapolation / (60.0 * cycleBeats), 1.0)
+                    : masterPhase;
+                fireFlash(hitPhase, hits);
+                slot.pendingFlashAtMs = 0.0;
+            }
+            else
+            {
+                // Schedule flash for later.  Estimate the bead phase at fire time so
+                // flashVertex is placed at the correct vertex even before masterPhase
+                // has advanced to that position.
+                const double msUntilFire  = hitPlayTime - static_cast<double>(nowMs);
+                slot.pendingFlashAtMs     = hitPlayTime;
+                slot.pendingFlashHitCount = hits;
+                slot.pendingFlashPhase    = std::fmod(
+                    masterPhase + (msUntilFire / 1000.0) * bpmForExtrapolation / (60.0 * cycleBeats),
+                    1.0);
             }
         }
         else
         {
             slot.flash = juce::jmax(0.0f, slot.flash - kFlashDecay * dt);
-            slot.sweepGain = juce::jmax(0.0f, slot.sweepGain * std::pow(0.88f, dt) - 0.015f * dt);  // Fast decay for sweep boost
+            slot.sweepGain = juce::jmax(0.0f, slot.sweepGain * std::pow(0.88f, dt) - 0.015f * dt);
+        }
+
+        // Fire any pending (deferred) flash once its scheduled play-time has arrived.
+        if (slot.pendingFlashAtMs > 0.0 && static_cast<double>(nowMs) >= slot.pendingFlashAtMs)
+        {
+            slot.flash = 1.0f;
+            const int flashSides = juce::jmax(1, slot.sides);
+            const int corner = flashSides > 0
+                ? ((int)std::floor(slot.pendingFlashPhase * (double)flashSides) % flashSides + flashSides) % flashSides
+                : -1;
+            slot.flashVertex = corner;
+
+            if (starlightTwinkleEnabled && flashSides > 0)
+            {
+                if (slot.twinkleBrightness.size() != (size_t)flashSides)
+                    slot.twinkleBrightness.resize((size_t)flashSides, 0.0f);
+                const uint32_t seed = slot.pendingFlashHitCount * 31u + (uint32_t)i * 17u;
+                const int numTwinkles = juce::jmin(flashSides, 1 + (int)(seed % 3u));
+                for (int t = 0; t < numTwinkles; ++t)
+                {
+                    const int vertexIdx = (int)((seed * (31u + (uint32_t)t)) % (uint32_t)flashSides);
+                    slot.twinkleBrightness[(size_t)vertexIdx] = 1.0f;
+                }
+            }
+            slot.pendingFlashAtMs = 0.0;
         }
 
         // Decay starlight twinkle brightness for all vertices (even when hit, for independent decay)
@@ -1006,7 +1088,17 @@ void PolyrhythmVizComponent::timerCallback()
         }
     }
 
+    // Mark the component dirty every callback (both VBlank and 120 Hz timer paths).
+    // performAnyPendingRepaintsNow() is called only from the VBlank path so we flush
+    // within the current VSync window without forcing mid-frame paints from the timer.
     repaint();
+#if JUCE_MAC
+    if (inVBlankCallback)
+    {
+        if (auto* peer = getPeer())
+            peer->performAnyPendingRepaintsNow();
+    }
+#endif
 }
 
 void PolyrhythmVizComponent::drawElectricArc(int slotIndex)

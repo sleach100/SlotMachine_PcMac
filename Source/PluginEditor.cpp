@@ -3991,10 +3991,14 @@ SlotMachineAudioProcessorEditor::SlotMachineAudioProcessorEditor(SlotMachineAudi
     refreshSamplesPerBar();
 
 #if JUCE_MAC
-    // macOS: VBlankAttachment (backed by CVDisplayLink) fires at the hardware vsync rate,
-    // eliminating the NSTimer run-loop jitter that causes the UI to lag behind audio hits.
-    // Automatically follows the display if the plugin window moves to a different monitor.
-    vblankAttachment = std::make_unique<juce::VBlankAttachment>(this, [this] { timerCallback(); });
+    // macOS: VBlankAttachment (backed by CVDisplayLink) drives painting at the hardware
+    // vsync rate, eliminating NSTimer run-loop jitter.  A 120 Hz juce::Timer runs
+    // alongside it (Fix 4) so hit detection and deferred-flash checks happen every
+    // ~8.3 ms instead of ~16.7 ms.  The timer path skips performAnyPendingRepaintsNow()
+    // (inVBlankCallback == false) to avoid forcing mid-frame paints.
+    vblankAttachment = std::make_unique<juce::VBlankAttachment>(this,
+        [this] { inVBlankCallback = true; timerCallback(); inVBlankCallback = false; });
+    startTimerHz(120);
 #else
     // Windows/other: 120 Hz timer halves maximum hit-detection polling lag (8.3 ms vs
     // 16.7 ms at 60 Hz).  JUCE coalesces repaint() calls so actual paint rate matches the
@@ -4672,9 +4676,11 @@ SlotMachineAudioProcessorEditor::~SlotMachineAudioProcessorEditor()
     #endif
 
 #if JUCE_MAC
-    // Unregister VBlankAttachment before child components are destroyed to prevent
-    // timerCallback() from firing against partially-destroyed state.
+    // Unregister VBlankAttachment and stop the 120 Hz detection timer before child
+    // components are destroyed to prevent timerCallback() from firing against
+    // partially-destroyed state.
     vblankAttachment.reset();
+    stopTimer();
 #endif
     setLookAndFeel(nullptr);
     closeVisualizerWindow();
@@ -8443,8 +8449,21 @@ void SlotMachineAudioProcessorEditor::timerCallback()
     if (isRunning)
         animateStartButton(glowColour, pulseColour, dt);
 
-    // 0..1 over full polyrhythmic cycle
-    const float p = juce::jlimit(0.0f, 1.0f, (float)processor.getMasterPhase());
+    // 0..1 over full polyrhythmic cycle — extrapolated to current wall-clock time so that
+    // the master-phase bar and cycle-wrap detection track the live audio position rather
+    // than the stale end-of-last-block snapshot.  See PolyrhythmVizComponent for rationale.
+    const float p = [&]() -> float
+    {
+        const double rawPhase     = processor.getMasterPhase();
+        const int64_t blockMs     = processor.getLastProcessBlockWallTimeMs();
+        const double  cycleBeats  = processor.getCurrentCycleBeats();
+        if (blockMs == 0 || cycleBeats <= 0.0 || bpmNow <= 0.0)
+            return juce::jlimit(0.0f, 1.0f, static_cast<float>(rawPhase));
+        const double elapsedSec = juce::jlimit(0.0, 0.05,
+            static_cast<double>(nowCallbackMs - blockMs) / 1000.0);
+        const double extrap = std::fmod(rawPhase + elapsedSec * bpmNow / (60.0 * cycleBeats), 1.0);
+        return juce::jlimit(0.0f, 1.0f, static_cast<float>(extrap));
+    }();
 
     // === Apply pending manual tab switches early (before cycle wraps) ===
     // This gives the audio thread time to apply the switch at the upcoming downbeat,
@@ -8659,7 +8678,23 @@ void SlotMachineAudioProcessorEditor::timerCallback()
         if (hits != ui->lastHitCounter)
         {
             ui->lastHitCounter = hits;
-            ui->glow = 1.0f; // pulse on hit
+            const double hitPlayTime = processor.getSlotHitPlayTimeMs(i);
+            if (hitPlayTime <= 0.0 || static_cast<double>(nowCallbackMs) >= hitPlayTime)
+            {
+                ui->glow = 1.0f; // pulse on hit — time already arrived
+                ui->pendingGlowAtMs = 0.0;
+            }
+            else
+            {
+                ui->pendingGlowAtMs = hitPlayTime; // defer until audio is heard
+            }
+        }
+
+        // Fire deferred glow once its scheduled play-time has arrived.
+        if (ui->pendingGlowAtMs > 0.0 && static_cast<double>(nowCallbackMs) >= ui->pendingGlowAtMs)
+        {
+            ui->glow = 1.0f;
+            ui->pendingGlowAtMs = 0.0;
         }
 
         // Variable glow decay based on count value (higher count = faster decay = shorter flash)
@@ -8694,7 +8729,17 @@ void SlotMachineAudioProcessorEditor::timerCallback()
 
     consumeScopeBlocks();
 
+    // Mark the component dirty every callback (both VBlank and 120 Hz timer paths).
+    // performAnyPendingRepaintsNow() is called only from the VBlank path so we flush
+    // within the current VSync window without forcing mid-frame paints from the timer.
     repaint();
+#if JUCE_MAC
+    if (inVBlankCallback)
+    {
+        if (auto* peer = getPeer())
+            peer->performAnyPendingRepaintsNow();
+    }
+#endif
 }
 
 void SlotMachineAudioProcessorEditor::handleSlotRateChanged(int slotIndex, SlotUI& ui)

@@ -116,6 +116,7 @@ public:
 
     // UI polling
     uint32_t getSlotHitCounter(int index) const;
+    double   getSlotHitPlayTimeMs(int index) const;
     double   getSlotPhase(int index) const;
     int      getSlotCurrentBeatIndex(int index) const;
     double getMasterPhase() const;
@@ -142,8 +143,29 @@ public:
     void scheduleTabSwitchOnNextDownbeat(int newTabIndex);
 
     auto& getScopeQueue() noexcept { return scopeQueue; }
-    double getBpm() const noexcept { return bpmAtomic.load(std::memory_order_relaxed); }
-    int    getBeatsPerBar() const noexcept { return numeratorAtomic.load(std::memory_order_relaxed); }
+    double  getBpm() const noexcept { return bpmAtomic.load(std::memory_order_relaxed); }
+    int     getBeatsPerBar() const noexcept { return numeratorAtomic.load(std::memory_order_relaxed); }
+
+    // Called by the standalone initialiser (or any component that has access to the
+    // audio device) to inform the processor of the hardware output latency.  In plugin
+    // mode where the host controls audio I/O this is left at 0 (fires immediately).
+    void setOutputLatencyHint(int latencySamples) noexcept
+    {
+        cachedOutputLatencySamples.store(juce::jmax(0, latencySamples),
+                                         std::memory_order_relaxed);
+    }
+
+    // Phase-extrapolation support: render thread reads these to interpolate masterPhase
+    // forward from the end of the last audio block to the current wall-clock instant,
+    // eliminating the staleness that comes from polling at display-frame boundaries.
+    int64_t getLastProcessBlockWallTimeMs() const noexcept
+    {
+        return lastProcessBlockWallTimeMs.load(std::memory_order_relaxed);
+    }
+    double  getCurrentCycleBeats() const noexcept
+    {
+        return currentCycleBeatsCached.load(std::memory_order_relaxed);
+    }
 
 private:
     friend bool renderPatternAudio(SlotMachineAudioProcessor& processor,
@@ -167,6 +189,11 @@ private:
     std::array<std::atomic<int>, kNumSlots> currentBeatIndices{};
     double currentCycleBeats = 1.0;
     double currentCyclePhase01 = 0.0;
+    // Atomic copies written at the end of every processBlock() for the render thread.
+    std::atomic<int64_t> lastProcessBlockWallTimeMs { 0 };
+    std::atomic<double>  currentCycleBeatsCached { 1.0 };
+    // Hardware output latency hint (samples); defaults to 0 until set by standalone init.
+    std::atomic<int>     cachedOutputLatencySamples { 0 };
 
     // ====== Internal per-slot voice ======
     struct SlotVoice
@@ -182,6 +209,9 @@ private:
         float  panR = 0.7071f;
         bool   active = false; // has sample
         uint32_t hitCounter = 0;
+        // Wall-clock time (ms) when this slot's most-recent hit will reach the speakers.
+        // Written by the audio thread alongside hitCounter; read lock-free by the render thread.
+        std::atomic<double> hitPlayTimeMs { 0.0 };
 
         // playback
         int playIndex = -1; // -1 idle
