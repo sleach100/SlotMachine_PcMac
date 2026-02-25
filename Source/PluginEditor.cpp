@@ -5118,7 +5118,26 @@ void SlotMachineAudioProcessorEditor::paintOverChildren(juce::Graphics& g)
 
         paintMasterWaveform(g, masterBarBounds);
 
-        const float clampedPhase = juce::jlimit(0.0f, 1.0f, masterPhase);
+        // Extrapolate to the exact paint instant rather than reading the pre-computed
+        // masterPhase (which was captured at the top of timerCallback and may be several
+        // ms stale by the time paint() runs).  Fresh ticks here eliminate the per-frame
+        // lag variation that causes visible jitter at playback speed.
+        const float clampedPhase = [&]() -> float
+        {
+            const int64_t blockTicks = processor.getLastProcessBlockWallTimeTicks();
+            const double  rawPhase   = processor.getMasterPhase();
+            if (!startToggle.getToggleState())
+                return juce::jlimit(0.0f, 1.0f, static_cast<float>(rawPhase));
+            const double cycleBeats  = processor.getCurrentCycleBeats();
+            const double bpmNow      = processor.getBpm();
+            if (blockTicks == 0 || cycleBeats <= 0.0 || bpmNow <= 0.0)
+                return juce::jlimit(0.0f, 1.0f, static_cast<float>(rawPhase));
+            const double elapsedSec  = juce::jlimit(0.0, 0.05,
+                static_cast<double>(juce::Time::getHighResolutionTicks() - blockTicks)
+                / static_cast<double>(juce::Time::getHighResolutionTicksPerSecond()));
+            const double extrap = std::fmod(rawPhase + elapsedSec * bpmNow / (60.0 * cycleBeats), 1.0);
+            return juce::jlimit(0.0f, 1.0f, static_cast<float>(extrap));
+        }();
         const float w = masterBarBounds.getWidth() * clampedPhase;
         if (w > 1.0f)
         {
