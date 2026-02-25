@@ -896,7 +896,15 @@ void PolyrhythmVizComponent::timerCallback()
 
             if (fireNow)
             {
-                fireFlash(masterPhase, hits);
+                // Use the bead phase at hitPlayTime, not at poll time, so flashVertex
+                // lands on the vertex the bead occupied when the sound played (Fix 5).
+                // Formula is identical to Fix 2 extrapolation: rawPhase + (Δt * BPM) / (60 * cycleBeats).
+                const double hitPhase = (hitPlayTime > 0.0 && blockMs > 0
+                                         && cycleBeats > 0.0 && bpmForExtrapolation > 0.0)
+                    ? std::fmod(rawPhase + (hitPlayTime - static_cast<double>(blockMs))
+                                    / 1000.0 * bpmForExtrapolation / (60.0 * cycleBeats), 1.0)
+                    : masterPhase;
+                fireFlash(hitPhase, hits);
                 slot.pendingFlashAtMs = 0.0;
             }
             else
