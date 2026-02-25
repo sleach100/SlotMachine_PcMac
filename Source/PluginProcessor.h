@@ -162,6 +162,12 @@ public:
     {
         return lastProcessBlockWallTimeMs.load(std::memory_order_relaxed);
     }
+    // High-resolution version used for phase extrapolation (sub-millisecond precision
+    // eliminates the ±1 ms quantisation jitter visible in the playhead at 120 Hz).
+    int64_t getLastProcessBlockWallTimeTicks() const noexcept
+    {
+        return lastProcessBlockWallTimeTicks.load(std::memory_order_relaxed);
+    }
     double  getCurrentCycleBeats() const noexcept
     {
         return currentCycleBeatsCached.load(std::memory_order_relaxed);
@@ -190,7 +196,8 @@ private:
     double currentCycleBeats = 1.0;
     double currentCyclePhase01 = 0.0;
     // Atomic copies written at the end of every processBlock() for the render thread.
-    std::atomic<int64_t> lastProcessBlockWallTimeMs { 0 };
+    std::atomic<int64_t> lastProcessBlockWallTimeMs    { 0 };
+    std::atomic<int64_t> lastProcessBlockWallTimeTicks { 0 }; // high-res; see getLastProcessBlockWallTimeTicks()
     std::atomic<double>  currentCycleBeatsCached { 1.0 };
     // Hardware output latency hint (samples); defaults to 0 until set by standalone init.
     std::atomic<int>     cachedOutputLatencySamples { 0 };

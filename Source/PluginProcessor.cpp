@@ -1619,6 +1619,7 @@ void SlotMachineAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, j
     const auto blockStartWallTimeMs =
         static_cast<int64_t>(juce::Time::getMillisecondCounter());
     lastProcessBlockWallTimeMs.store(blockStartWallTimeMs, std::memory_order_relaxed);
+    lastProcessBlockWallTimeTicks.store(juce::Time::getHighResolutionTicks(), std::memory_order_relaxed);
 
     const int  numSamples = buffer.getNumSamples();
     const int  totalOut = getTotalNumOutputChannels();
