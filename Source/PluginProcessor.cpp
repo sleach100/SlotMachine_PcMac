@@ -1613,6 +1613,11 @@ void SlotMachineAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, j
 {
     juce::ScopedNoDenormals noDenormals;
 
+    // Stamp the wall-clock time at the very start of this block so the render thread
+    // can extrapolate masterPhase forward from the last-known audio position.
+    lastProcessBlockWallTimeMs.store(juce::Time::getMillisecondCounter(),
+                                     std::memory_order_relaxed);
+
     const int  numSamples = buffer.getNumSamples();
     const int  totalOut = getTotalNumOutputChannels();
     const int  totalIn = getTotalNumInputChannels();
@@ -1735,6 +1740,7 @@ void SlotMachineAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, j
 
     // Cache for editor
     currentCycleBeats = cycleBeats;
+    currentCycleBeatsCached.store(cycleBeats, std::memory_order_relaxed);
     if (currentCycleBeats > 0.0)
         currentCyclePhase01 = std::fmod(masterBeatsAccum, currentCycleBeats) / currentCycleBeats;
     else

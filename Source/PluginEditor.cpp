@@ -8443,8 +8443,21 @@ void SlotMachineAudioProcessorEditor::timerCallback()
     if (isRunning)
         animateStartButton(glowColour, pulseColour, dt);
 
-    // 0..1 over full polyrhythmic cycle
-    const float p = juce::jlimit(0.0f, 1.0f, (float)processor.getMasterPhase());
+    // 0..1 over full polyrhythmic cycle — extrapolated to current wall-clock time so that
+    // the master-phase bar and cycle-wrap detection track the live audio position rather
+    // than the stale end-of-last-block snapshot.  See PolyrhythmVizComponent for rationale.
+    const float p = [&]() -> float
+    {
+        const double rawPhase     = processor.getMasterPhase();
+        const int64_t blockMs     = processor.getLastProcessBlockWallTimeMs();
+        const double  cycleBeats  = processor.getCurrentCycleBeats();
+        if (blockMs == 0 || cycleBeats <= 0.0 || bpmNow <= 0.0)
+            return juce::jlimit(0.0f, 1.0f, static_cast<float>(rawPhase));
+        const double elapsedSec = juce::jlimit(0.0, 0.05,
+            static_cast<double>(nowCallbackMs - blockMs) / 1000.0);
+        const double extrap = std::fmod(rawPhase + elapsedSec * bpmNow / (60.0 * cycleBeats), 1.0);
+        return juce::jlimit(0.0f, 1.0f, static_cast<float>(extrap));
+    }();
 
     // === Apply pending manual tab switches early (before cycle wraps) ===
     // This gives the audio thread time to apply the switch at the upcoming downbeat,

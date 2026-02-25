@@ -142,8 +142,20 @@ public:
     void scheduleTabSwitchOnNextDownbeat(int newTabIndex);
 
     auto& getScopeQueue() noexcept { return scopeQueue; }
-    double getBpm() const noexcept { return bpmAtomic.load(std::memory_order_relaxed); }
-    int    getBeatsPerBar() const noexcept { return numeratorAtomic.load(std::memory_order_relaxed); }
+    double  getBpm() const noexcept { return bpmAtomic.load(std::memory_order_relaxed); }
+    int     getBeatsPerBar() const noexcept { return numeratorAtomic.load(std::memory_order_relaxed); }
+
+    // Phase-extrapolation support: render thread reads these to interpolate masterPhase
+    // forward from the end of the last audio block to the current wall-clock instant,
+    // eliminating the staleness that comes from polling at display-frame boundaries.
+    int64_t getLastProcessBlockWallTimeMs() const noexcept
+    {
+        return lastProcessBlockWallTimeMs.load(std::memory_order_relaxed);
+    }
+    double  getCurrentCycleBeats() const noexcept
+    {
+        return currentCycleBeatsCached.load(std::memory_order_relaxed);
+    }
 
 private:
     friend bool renderPatternAudio(SlotMachineAudioProcessor& processor,
@@ -167,6 +179,9 @@ private:
     std::array<std::atomic<int>, kNumSlots> currentBeatIndices{};
     double currentCycleBeats = 1.0;
     double currentCyclePhase01 = 0.0;
+    // Atomic copies written at the end of every processBlock() for the render thread.
+    std::atomic<int64_t> lastProcessBlockWallTimeMs { 0 };
+    std::atomic<double>  currentCycleBeatsCached { 1.0 };
 
     // ====== Internal per-slot voice ======
     struct SlotVoice

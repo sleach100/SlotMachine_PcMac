@@ -711,7 +711,26 @@ void PolyrhythmVizComponent::timerCallback()
         : juce::jlimit(0.0f, 5.0f, (float)(nowMs - lastCallbackMs) * (60.0f / 1000.0f));
     lastCallbackMs = nowMs;
 
-    const double currentPhase = processor.getMasterPhase();
+    // Extrapolate the master phase forward from the end of the last audio block to the
+    // current wall-clock instant.  processBlock() stamps lastProcessBlockWallTimeMs at
+    // its start and writes the end-of-block phase to currentCyclePhase01.  By advancing
+    // the phase by (elapsed * BPM / (60 * cycleBeats)) we recover the audio position that
+    // is actually playing right now, eliminating bead-lag and wrong flash-vertex placement.
+    // elapsedSec is capped at 50 ms to avoid over-shooting when audio is paused or the
+    // block timestamp is stale.
+    const double rawPhase   = processor.getMasterPhase();
+    const int64_t blockMs   = processor.getLastProcessBlockWallTimeMs();
+    const double cycleBeats = processor.getCurrentCycleBeats();
+    const double bpmForExtrapolation = processor.getBpm();
+    const double currentPhase = [&]() -> double
+    {
+        if (blockMs == 0 || cycleBeats <= 0.0 || bpmForExtrapolation <= 0.0)
+            return rawPhase;
+        const double elapsedSec = juce::jlimit(0.0, 0.05,
+            static_cast<double>(nowMs - blockMs) / 1000.0);
+        return std::fmod(rawPhase + elapsedSec * bpmForExtrapolation / (60.0 * cycleBeats), 1.0);
+    }();
+
     const bool wrapped = (currentPhase + 0.02) < lastPhase;
     if (wrapped)
     {
