@@ -102,7 +102,7 @@
 		5F0EBDEF2F5374AA00491261 /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D182650E4EE89D0C01FE66CF /* WebKit.framework */; };
 		5F0EBDF02F5374AA00491261 /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 32B741B80A047C4172E59D92 /* Metal.framework */; };
 		5F0EBDF12F5374AA00491261 /* MetalKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4388B210510455F593A31B46 /* MetalKit.framework */; };
-		5F5A97942F5D11EF003CF556 /* Skins in Resources */ = {isa = PBXBuildFile; fileRef = 5F5A97932F5D11EF003CF556 /* Skins */; };
+		5F5A97982F5D2066003CF556 /* Skins in Resources */ = {isa = PBXBuildFile; fileRef = 5F5A97972F5D2066003CF556 /* Skins */; };
 		6B1342B0355877FA000BD124 /* include_juce_audio_processors_ara.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5B817F99F189DA47CFBBCAD4 /* include_juce_audio_processors_ara.cpp */; };
 		6D9905E56C1FDE274E349CEE /* StandaloneInit.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D74CDB2A497D2D1F4F97400B /* StandaloneInit.cpp */; };
 		7518598DF984CFDC4606C413 /* CoreMIDI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3E106A40AFBA56DB6C2B98FE /* CoreMIDI.framework */; };
@@ -253,6 +253,7 @@
 		5D0844EEFD1DE1BFEDA63F3F /* CoreAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudio.framework; path = System/Library/Frameworks/CoreAudio.framework; sourceTree = SDKROOT; };
 		5DC219A503706B5DE3F60AC5 /* PluginProcessor.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = PluginProcessor.cpp; path = ../../Source/PluginProcessor.cpp; sourceTree = SOURCE_ROOT; };
 		5F5A97932F5D11EF003CF556 /* Skins */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Skins; path = ../../../../SlotMachine/Skins; sourceTree = "<group>"; };
+		5F5A97972F5D2066003CF556 /* Skins */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Skins; path = ../../Resources/Skins; sourceTree = "<group>"; };
 		5FAF07BCA8BFCA4A13CAB9DF /* RIMSHOT-Rimshot 4.wav */ = {isa = PBXFileReference; lastKnownFileType = file.wav; name = "RIMSHOT-Rimshot 4.wav"; path = "../../Resources/Open Source Wav Files/RIMSHOT-Rimshot 4.wav"; sourceTree = SOURCE_ROOT; };
 		6111831AD1AA0AECEDAD9825 /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
 		6120095D81F4A04FB96C4BCE /* FX-SM.wav */ = {isa = PBXFileReference; lastKnownFileType = file.wav; name = "FX-SM.wav"; path = "../../Resources/Tutorial Sounds/FX-SM.wav"; sourceTree = SOURCE_ROOT; };
@@ -669,6 +670,7 @@
 			isa = PBXGroup;
 			children = (
 				5F5A97932F5D11EF003CF556 /* Skins */,
+				5F5A97972F5D2066003CF556 /* Skins */,
 				2DF39BD2D5B5F2656B1D6AF4 /* SlotMachine */,
 				2BB2C00C0DF25AEC56E4FB7E /* JUCE Modules */,
 				392A6A43EA9FDDEC2F04F462 /* JUCE Library Code */,
@@ -943,7 +945,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				5F5A97942F5D11EF003CF556 /* Skins in Resources */,
+				5F5A97982F5D2066003CF556 /* Skins in Resources */,
 				5F0EBDE12F5374AA00491261 /* RecentFilesMenuTemplate.nib in Resources */,
 				5F0EBDE22F5374AA00491261 /* version.txt in Resources */,
 				5F0EBDE32F5374AA00491261 /* tutorialslotmachine.mp4 in Resources */,
