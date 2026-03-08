@@ -102,6 +102,7 @@
 		5F0EBDEF2F5374AA00491261 /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D182650E4EE89D0C01FE66CF /* WebKit.framework */; };
 		5F0EBDF02F5374AA00491261 /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 32B741B80A047C4172E59D92 /* Metal.framework */; };
 		5F0EBDF12F5374AA00491261 /* MetalKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4388B210510455F593A31B46 /* MetalKit.framework */; };
+		5F5A97942F5D11EF003CF556 /* Skins in Resources */ = {isa = PBXBuildFile; fileRef = 5F5A97932F5D11EF003CF556 /* Skins */; };
 		6B1342B0355877FA000BD124 /* include_juce_audio_processors_ara.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5B817F99F189DA47CFBBCAD4 /* include_juce_audio_processors_ara.cpp */; };
 		6D9905E56C1FDE274E349CEE /* StandaloneInit.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D74CDB2A497D2D1F4F97400B /* StandaloneInit.cpp */; };
 		7518598DF984CFDC4606C413 /* CoreMIDI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3E106A40AFBA56DB6C2B98FE /* CoreMIDI.framework */; };
@@ -111,6 +112,9 @@
 		A3722969EF38B79235DA2D89 /* include_juce_graphics.mm in Sources */ = {isa = PBXBuildFile; fileRef = 7B915964A5507ED82C39BAD9 /* include_juce_graphics.mm */; };
 		A3A6C51F537A9627207453BF /* AudioUnit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1083AA5061DFE1F5C3F2F41A /* AudioUnit.framework */; };
 		A6176EE8E9F78E527CE8B3F6 /* include_juce_gui_basics.mm in Sources */ = {isa = PBXBuildFile; fileRef = 448AB3B0A748A0036C5BAE48 /* include_juce_gui_basics.mm */; };
+		AA00BB11CC22DD33EE44FF01 /* SlotMachine.icns in Resources */ = {isa = PBXBuildFile; fileRef = AA00BB11CC22DD33EE44FF00 /* SlotMachine.icns */; };
+		AA00BB11CC22DD33EE44FF02 /* SlotMachine.icns in Resources */ = {isa = PBXBuildFile; fileRef = AA00BB11CC22DD33EE44FF00 /* SlotMachine.icns */; };
+		AA00BB11CC22DD33EE44FF03 /* SlotMachine.icns in Resources */ = {isa = PBXBuildFile; fileRef = AA00BB11CC22DD33EE44FF00 /* SlotMachine.icns */; };
 		C14EADBA5B68C1F295578237 /* CoreAudioKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C068839C75EE4572F52E0A5B /* CoreAudioKit.framework */; };
 		C22C02A382F9E2004A32F8B5 /* include_juce_gui_extra.mm in Sources */ = {isa = PBXBuildFile; fileRef = A9BEF112964DF2430AD5C5FC /* include_juce_gui_extra.mm */; };
 		C3B7C81FD8E45983B6385DC0 /* include_juce_audio_basics.mm in Sources */ = {isa = PBXBuildFile; fileRef = 940FE7B9517FB890ECA70448 /* include_juce_audio_basics.mm */; };
@@ -248,6 +252,7 @@
 		5BC0B5883881ED45EA2736E4 /* RIMSHOT-Rimshot 2.wav */ = {isa = PBXFileReference; lastKnownFileType = file.wav; name = "RIMSHOT-Rimshot 2.wav"; path = "../../Resources/Open Source Wav Files/RIMSHOT-Rimshot 2.wav"; sourceTree = SOURCE_ROOT; };
 		5D0844EEFD1DE1BFEDA63F3F /* CoreAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudio.framework; path = System/Library/Frameworks/CoreAudio.framework; sourceTree = SDKROOT; };
 		5DC219A503706B5DE3F60AC5 /* PluginProcessor.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = PluginProcessor.cpp; path = ../../Source/PluginProcessor.cpp; sourceTree = SOURCE_ROOT; };
+		5F5A97932F5D11EF003CF556 /* Skins */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Skins; path = ../../../../SlotMachine/Skins; sourceTree = "<group>"; };
 		5FAF07BCA8BFCA4A13CAB9DF /* RIMSHOT-Rimshot 4.wav */ = {isa = PBXFileReference; lastKnownFileType = file.wav; name = "RIMSHOT-Rimshot 4.wav"; path = "../../Resources/Open Source Wav Files/RIMSHOT-Rimshot 4.wav"; sourceTree = SOURCE_ROOT; };
 		6111831AD1AA0AECEDAD9825 /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
 		6120095D81F4A04FB96C4BCE /* FX-SM.wav */ = {isa = PBXFileReference; lastKnownFileType = file.wav; name = "FX-SM.wav"; path = "../../Resources/Tutorial Sounds/FX-SM.wav"; sourceTree = SOURCE_ROOT; };
@@ -294,6 +299,7 @@
 		A89C36ADF831C677DCE3312D /* Info-Standalone_Plugin.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Info-Standalone_Plugin.plist"; sourceTree = SOURCE_ROOT; };
 		A9BEF112964DF2430AD5C5FC /* include_juce_gui_extra.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = include_juce_gui_extra.mm; path = ../../JuceLibraryCode/include_juce_gui_extra.mm; sourceTree = SOURCE_ROOT; };
 		A9F09B3C8EE3776B6F6FB9CC /* CYMBAL-Crash 2.wav */ = {isa = PBXFileReference; lastKnownFileType = file.wav; name = "CYMBAL-Crash 2.wav"; path = "../../Resources/Open Source Wav Files/CYMBAL-Crash 2.wav"; sourceTree = SOURCE_ROOT; };
+		AA00BB11CC22DD33EE44FF00 /* SlotMachine.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = SlotMachine.icns; path = ../../Resources/SlotMachine.icns; sourceTree = SOURCE_ROOT; };
 		AA91E5DACB086C53F830EDF8 /* include_juce_audio_plugin_client_ARA.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = include_juce_audio_plugin_client_ARA.cpp; path = ../../JuceLibraryCode/include_juce_audio_plugin_client_ARA.cpp; sourceTree = SOURCE_ROOT; };
 		AAA3B3C2EDE22477153D861C /* include_juce_audio_plugin_client_AU_2.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = include_juce_audio_plugin_client_AU_2.mm; path = ../../JuceLibraryCode/include_juce_audio_plugin_client_AU_2.mm; sourceTree = SOURCE_ROOT; };
 		AAE0A002BAFE5BE389711D0E /* SNARE-Snare 3.wav */ = {isa = PBXFileReference; lastKnownFileType = file.wav; name = "SNARE-Snare 3.wav"; path = "../../Resources/Open Source Wav Files/SNARE-Snare 3.wav"; sourceTree = SOURCE_ROOT; };
@@ -519,6 +525,7 @@
 				33666BA24186885AEF31E2D3 /* MuteON.png */,
 				C072130E7D68721F27E160A4 /* SlotMachine-UserManual.html */,
 				87A333CEDDBAB9182016A5A4 /* SlotMachine.ico */,
+				AA00BB11CC22DD33EE44FF00 /* SlotMachine.icns */,
 				FF1656E6EE7DB9DABE77A272 /* SM5.png */,
 				26CEEF626F938B0BA6FEE76E /* SoloOFF.png */,
 				56DC20F014A6BBE402312EFC /* SoloON.png */,
@@ -661,6 +668,7 @@
 		B4B4EAE36C2E02529DE5E206 /* Source */ = {
 			isa = PBXGroup;
 			children = (
+				5F5A97932F5D11EF003CF556 /* Skins */,
 				2DF39BD2D5B5F2656B1D6AF4 /* SlotMachine */,
 				2BB2C00C0DF25AEC56E4FB7E /* JUCE Modules */,
 				392A6A43EA9FDDEC2F04F462 /* JUCE Library Code */,
@@ -935,9 +943,11 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5F5A97942F5D11EF003CF556 /* Skins in Resources */,
 				5F0EBDE12F5374AA00491261 /* RecentFilesMenuTemplate.nib in Resources */,
 				5F0EBDE22F5374AA00491261 /* version.txt in Resources */,
 				5F0EBDE32F5374AA00491261 /* tutorialslotmachine.mp4 in Resources */,
+				AA00BB11CC22DD33EE44FF01 /* SlotMachine.icns in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -948,6 +958,7 @@
 				5F0EBDD02F5374AA00491261 /* RecentFilesMenuTemplate.nib in Resources */,
 				5F0EBDD12F5374AA00491261 /* version.txt in Resources */,
 				5F0EBDD22F5374AA00491261 /* tutorialslotmachine.mp4 in Resources */,
+				AA00BB11CC22DD33EE44FF02 /* SlotMachine.icns in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -958,6 +969,7 @@
 				F544D2AE9968A0E148AB245E /* RecentFilesMenuTemplate.nib in Resources */,
 				F3475D8082DF812291043B42 /* version.txt in Resources */,
 				FB42558CD3DC98156F3DD710 /* tutorialslotmachine.mp4 in Resources */,
+				AA00BB11CC22DD33EE44FF03 /* SlotMachine.icns in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

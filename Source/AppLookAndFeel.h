@@ -602,12 +602,46 @@ public:
     // Reload skin from SkinDef.txt
     void reloadSkin()
     {
+        ensureSkinsInstalled();
         loadSkinDefinition();
         loadKnobFilmstrip();
         loadBackgroundImages();
     }
 
 private:
+    // On macOS: copy any skin folders from the app bundle Resources/Skins that are
+    // not yet present in ~/Documents/SlotMachine/Skins (Option B – keeps user skins).
+    // The Windows installer handles this separately, so this is macOS-only.
+    void ensureSkinsInstalled()
+    {
+#if JUCE_MAC
+        // Locate Skins inside the app bundle (.app/Contents/Resources/Skins)
+        juce::File bundleSkinsDir = juce::File::getSpecialLocation(juce::File::currentApplicationFile)
+                                        .getChildFile("Contents")
+                                        .getChildFile("Resources")
+                                        .getChildFile("Skins");
+
+        if (!bundleSkinsDir.isDirectory())
+            return; // Nothing to install
+
+        // Ensure ~/Documents/SlotMachine/Skins/ exists
+        juce::File destSkinsDir = getSkinsDirectory();
+        if (!destSkinsDir.exists())
+            destSkinsDir.createDirectory();
+
+        // Copy each skin folder from the bundle that doesn't already exist in Documents
+        juce::Array<juce::File> bundleSkins =
+            bundleSkinsDir.findChildFiles(juce::File::findDirectories, false);
+
+        for (const auto& skinFolder : bundleSkins)
+        {
+            juce::File dest = destSkinsDir.getChildFile(skinFolder.getFileName());
+            if (!dest.exists())
+                skinFolder.copyDirectoryTo(dest);
+        }
+#endif
+    }
+
     // Helper function to get the Skins base directory from user's Documents folder
     juce::File getSkinsDirectory() const
     {
