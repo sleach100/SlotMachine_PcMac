@@ -3385,8 +3385,9 @@ private:
             return;
         }
 
-        // Get all subdirectories
+        // Get all subdirectories, sorted alphabetically
         juce::Array<juce::File> skinFolders = skinsDir.findChildFiles(juce::File::findDirectories, false);
+        skinFolders.sort();
 
         // Add each folder as an item
         int itemId = 1;
