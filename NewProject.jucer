@@ -136,6 +136,7 @@
     <FILE id="VR0002" name="tutorialslotmachine.mp4" compile="0" resource="0"
           file="Resources/tutorialslotmachine.mp4" xcodeResource="1"/>
     <FILE id="Z2Y83E" name="SlotMachine.ico" compile="0" resource="1" file="Resources/SlotMachine.ico"/>
+    <FILE id="IC0001" name="SlotMachine.icns" compile="0" resource="0" file="Resources/SlotMachine.icns" xcodeResource="1"/>
     <FILE id="n4aJ0r" name="SM5.png" compile="0" resource="1" file="Resources/Images/SM5.png"/>
     <FILE id="n8iawq" name="SoloOFF.png" compile="0" resource="1" file="Resources/Images/SoloOFF.png"/>
     <FILE id="QFLY1U" name="SoloON.png" compile="0" resource="1" file="Resources/Images/SoloON.png"/>

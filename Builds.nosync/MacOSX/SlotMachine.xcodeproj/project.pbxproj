@@ -88,6 +88,9 @@
 		5F0EBDE12F5374AA00491261 /* RecentFilesMenuTemplate.nib in Resources */ = {isa = PBXBuildFile; fileRef = 533DC626F7EBA2D8BC1B10E3 /* RecentFilesMenuTemplate.nib */; };
 		5F0EBDE22F5374AA00491261 /* version.txt in Resources */ = {isa = PBXBuildFile; fileRef = 16EA3E2E3A406015DFE15F67 /* version.txt */; };
 		5F0EBDE32F5374AA00491261 /* tutorialslotmachine.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 6B395F3E58F7B99B41656176 /* tutorialslotmachine.mp4 */; };
+		AA00BB11CC22DD33EE44FF01 /* SlotMachine.icns in Resources */ = {isa = PBXBuildFile; fileRef = AA00BB11CC22DD33EE44FF00 /* SlotMachine.icns */; };
+		AA00BB11CC22DD33EE44FF02 /* SlotMachine.icns in Resources */ = {isa = PBXBuildFile; fileRef = AA00BB11CC22DD33EE44FF00 /* SlotMachine.icns */; };
+		AA00BB11CC22DD33EE44FF03 /* SlotMachine.icns in Resources */ = {isa = PBXBuildFile; fileRef = AA00BB11CC22DD33EE44FF00 /* SlotMachine.icns */; };
 		5F0EBDE42F5374AA00491261 /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 342207EFD5FAFDDD31F10F7B /* Accelerate.framework */; };
 		5F0EBDE52F5374AA00491261 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E186CC3705B0ECF3F9D5A4D9 /* AudioToolbox.framework */; };
 		5F0EBDE62F5374AA00491261 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5A98D5ECED3B171364584E82 /* Cocoa.framework */; };
@@ -270,6 +273,7 @@
 		86DB90C6A4DD927191F282DC /* BinaryData.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = BinaryData.cpp; path = ../../JuceLibraryCode/BinaryData.cpp; sourceTree = SOURCE_ROOT; };
 		86FEF595D5C3B78ED46FA93F /* BinaryData2.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = BinaryData2.cpp; path = ../../JuceLibraryCode/BinaryData2.cpp; sourceTree = SOURCE_ROOT; };
 		87A333CEDDBAB9182016A5A4 /* SlotMachine.ico */ = {isa = PBXFileReference; lastKnownFileType = file.ico; name = SlotMachine.ico; path = ../../Resources/SlotMachine.ico; sourceTree = SOURCE_ROOT; };
+		AA00BB11CC22DD33EE44FF00 /* SlotMachine.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = SlotMachine.icns; path = ../../Resources/SlotMachine.icns; sourceTree = SOURCE_ROOT; };
 		89C8EE345F13A55DDDF9178E /* IOKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOKit.framework; path = System/Library/Frameworks/IOKit.framework; sourceTree = SDKROOT; };
 		8B80C57B719EEDFF284D6C69 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		8DE84E831CE63F5B21931A77 /* RIMSHOT-Rimshot 1.wav */ = {isa = PBXFileReference; lastKnownFileType = file.wav; name = "RIMSHOT-Rimshot 1.wav"; path = "../../Resources/Open Source Wav Files/RIMSHOT-Rimshot 1.wav"; sourceTree = SOURCE_ROOT; };
@@ -519,6 +523,7 @@
 				33666BA24186885AEF31E2D3 /* MuteON.png */,
 				C072130E7D68721F27E160A4 /* SlotMachine-UserManual.html */,
 				87A333CEDDBAB9182016A5A4 /* SlotMachine.ico */,
+				AA00BB11CC22DD33EE44FF00 /* SlotMachine.icns */,
 				FF1656E6EE7DB9DABE77A272 /* SM5.png */,
 				26CEEF626F938B0BA6FEE76E /* SoloOFF.png */,
 				56DC20F014A6BBE402312EFC /* SoloON.png */,
@@ -938,6 +943,7 @@
 				5F0EBDE12F5374AA00491261 /* RecentFilesMenuTemplate.nib in Resources */,
 				5F0EBDE22F5374AA00491261 /* version.txt in Resources */,
 				5F0EBDE32F5374AA00491261 /* tutorialslotmachine.mp4 in Resources */,
+				AA00BB11CC22DD33EE44FF01 /* SlotMachine.icns in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -948,6 +954,7 @@
 				5F0EBDD02F5374AA00491261 /* RecentFilesMenuTemplate.nib in Resources */,
 				5F0EBDD12F5374AA00491261 /* version.txt in Resources */,
 				5F0EBDD22F5374AA00491261 /* tutorialslotmachine.mp4 in Resources */,
+				AA00BB11CC22DD33EE44FF02 /* SlotMachine.icns in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -958,6 +965,7 @@
 				F544D2AE9968A0E148AB245E /* RecentFilesMenuTemplate.nib in Resources */,
 				F3475D8082DF812291043B42 /* version.txt in Resources */,
 				FB42558CD3DC98156F3DD710 /* tutorialslotmachine.mp4 in Resources */,
+				AA00BB11CC22DD33EE44FF03 /* SlotMachine.icns in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
