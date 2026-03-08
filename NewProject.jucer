@@ -3,7 +3,8 @@
 <JUCERPROJECT id="uZLUou" name="SlotMachine" projectType="audioplug" useAppConfig="0"
               addUsingNamespaceToJuceHeader="0" jucerFormatVersion="1" pluginVST3Category="Generator,Instrument,Synth"
               pluginCharacteristicsValue="pluginIsSynth,pluginProducesMidiOut,pluginWantsMidiIn"
-              companyName="Lone Pear Logic" companyCopyright="2005">
+              companyName="Lone Pear Logic" companyCopyright="2005"
+              smallIcon="Z2Y83E" bigIcon="Z2Y83E">
   <MAINGROUP id="JtL4vC" name="SlotMachine">
     <GROUP id="{6DAFA626-C461-0DE7-2A87-7D1750113952}" name="Sound Samples">
       <FILE id="ydlp9K" name="808-SM.wav" compile="0" resource="1" file="Resources/Tutorial Sounds/808-SM.wav"/>
