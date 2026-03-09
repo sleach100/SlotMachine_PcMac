@@ -1,28 +1,35 @@
-How to Code Sign my MacOS app
+How to Code Sign SLOT Machine:
 
-1) copy the final, built SlotMachine.app from /Release into a folder that is not synced to iCloud
-2) strip any attributes:  xattr -rc SlotMachine.app
-3) Confirm no attributes left:  xattr -lr SlotMachine.app
-4) Rename file:  mv SlotMachine.app "SLOT Machine.app"
-5) Code sign the app:  
+****************************************
+SHORTCUT - USE SCRIPT:
+
+CD Users/steveleach/SlotMachineDMG                                    
+./codesign-slot-machine.sh   
+****************************************
+
+
+1) Open a new terminal and change the directory to /Users/steveleach/SlotMachineDMG/
+2) copy /Users/steveleach/Documents/Projects/SlotMachine_PcMac/Builds.nosync/MacOSX/build/Release/SlotMachine.app to /Users/steveleach/SlotMachineDMG/ - Overwrite if already exists.
+3) strip any attributes:  xattr -rc SlotMachine.app
+4) Confirm no attributes left:  xattr -lr SlotMachine.app
+5) Rename file:  mv SlotMachine.app "SLOT Machine.app"
+6) Code sign the app:  
 
 codesign --deep --force --options runtime \
 --sign "Developer ID Application: Steven Leach (M5X8C8C6SW)" \
 "SLOT Machine.app"
 
-6) Zip up the app:  ditto -c -k --keepParent "SLOT Machine.app" "SLOT Machine.zip"
-7) Submit zip file to apple:  
+7) Zip up the app:  ditto -c -k --keepParent "SLOT Machine.app" "SLOT Machine.zip"
+8) Submit zip file to apple:  
 
 xcrun notarytool submit "SLOT Machine.zip" \
 --keychain-profile "notary-profile" \
 --wait
 
-(App Specific Password:  iztl-lirx-xrzn-nfzt)
- 
-8) After Apple approves it, Staple:  xcrun stapler staple "SLOT Machine.app"
-9) Verify:  spctl -a -t exec -vv "SLOT Machine.app"
+9) After Apple approves it, Staple:  xcrun stapler staple "SLOT Machine.app"
+10) Verify:  spctl -a -t exec -vv "SLOT Machine.app"
 
-10) Create DMG:
+11) Create DMG:
 
 create-dmg \
 --volname "SLOT Machine" \
@@ -36,7 +43,12 @@ create-dmg \
 SlotMachine-1.0.0.dmg \
 SlotMachineDMG/
 
-11) Sign the DMG:  codesign --force --sign "Developer ID Application: Steven Leach (M5X8C8C6SW)" "SlotMachine-1.0.0.dmg"
+12) Sign the DMG:  codesign --force --sign "Developer ID Application: Steven Leach (M5X8C8C6SW)" "SlotMachine-1.0.0.dmg"
 
-12) Verify:  codesign --verify --verbose=2 "SlotMachine-1.0.0.dmg"
+13) Verify:  codesign --verify --verbose=2 "SlotMachine-1.0.0.dmg"
 
+
+NOTE:  (App Specific Password:  iztl-lirx-xrzn-nfzt) //Just a note - not to be used directly.
+
+
+        
