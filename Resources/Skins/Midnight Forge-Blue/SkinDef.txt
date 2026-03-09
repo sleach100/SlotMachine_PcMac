@@ -18,7 +18,7 @@
 
 
 ;--- Buttons ---
-   LoadButtonWidth=75
+   LoadButtonWidth=100 ; Window=75, Mac=100
    Button=Button3_OPT.png
    ButtonHover=Button3Hover_OPT.png
    ButtonClicked=Button3clicked_OPT.png

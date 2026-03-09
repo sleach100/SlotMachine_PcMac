@@ -1,0 +1,1525 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>files</key>
+	<dict>
+		<key>Resources/RecentFilesMenuTemplate.nib</key>
+		<data>
+		4cEN55flubpq9bxeGSBG3zMPYQw=
+		</data>
+		<key>Resources/Skins/Classic/SkinDef.txt</key>
+		<data>
+		uk2Ihy6nCz/zj1Ywfpvls0VeHmM=
+		</data>
+		<key>Resources/Skins/Midnight Forge-Blue/Background-SampleFlash_OPT.png</key>
+		<data>
+		KDV7nIl+Y5JDSAtVuQJglMI9AO8=
+		</data>
+		<key>Resources/Skins/Midnight Forge-Blue/Background-SampleLoaded_OPT.png</key>
+		<data>
+		9MYa/dXWnBABBMmrniy+DBj9Hc8=
+		</data>
+		<key>Resources/Skins/Midnight Forge-Blue/Background_OPT.png</key>
+		<data>
+		nbRqTquo8LpAmLwuuMTqF3Pgyng=
+		</data>
+		<key>Resources/Skins/Midnight Forge-Blue/Button3Clicked_OPT.png</key>
+		<data>
+		K2O/vLzXNaGKO/Oy/FfcmsAbUqQ=
+		</data>
+		<key>Resources/Skins/Midnight Forge-Blue/Button3Hover_OPT.png</key>
+		<data>
+		sBQ/K06OX7id/nHH8EbuWPN6FuA=
+		</data>
+		<key>Resources/Skins/Midnight Forge-Blue/Button3_OPT.png</key>
+		<data>
+		MPFIF1K+ZAhBHdPOIO1fC1YFXvs=
+		</data>
+		<key>Resources/Skins/Midnight Forge-Blue/LED.ttf</key>
+		<data>
+		Xed27TA4RnvEXtBgQNww+ps7Tow=
+		</data>
+		<key>Resources/Skins/Midnight Forge-Blue/MIDIback_OPT.png</key>
+		<data>
+		Dlv95/8NR0GT/YsTjY99RO9aSjg=
+		</data>
+		<key>Resources/Skins/Midnight Forge-Blue/MuteON_OPT.png</key>
+		<data>
+		i4hTouQnY7vTxieEwkW4nCqabt8=
+		</data>
+		<key>Resources/Skins/Midnight Forge-Blue/MuteSoloOFF_OPT.png</key>
+		<data>
+		m4Hm5MyVGI5bszWiTlHUpDogEms=
+		</data>
+		<key>Resources/Skins/Midnight Forge-Blue/SM5-Metal.png</key>
+		<data>
+		GxXypzsddr4MJRT7TLQkpRj/P94=
+		</data>
+		<key>Resources/Skins/Midnight Forge-Blue/SkinDef.txt</key>
+		<data>
+		iCgWeLkt3tKFJPof2o7aJB7ahns=
+		</data>
+		<key>Resources/Skins/Midnight Forge-Blue/SliderThumb_OPT.png</key>
+		<data>
+		OermoExh6ULhQxBqZX78szlRpO8=
+		</data>
+		<key>Resources/Skins/Midnight Forge-Blue/SoloON_OPT.png</key>
+		<data>
+		2ghgtqT3ha8RGQrO4+4F5/sBtyk=
+		</data>
+		<key>Resources/Skins/Midnight Forge-Blue/Tempo.png</key>
+		<data>
+		VtJsfh8KKKJjpo7wRx8qijir5Hw=
+		</data>
+		<key>Resources/Skins/Midnight Forge-Blue/TextBox_OPT.png</key>
+		<data>
+		m2PMqJY1r7beUNgVCw9r+qRkAPs=
+		</data>
+		<key>Resources/Skins/Midnight Forge-Blue/large_knob_135frames.png</key>
+		<data>
+		hPkfJKl8NifPrBKOyt5XWv1NH94=
+		</data>
+		<key>Resources/Skins/Midnight Forge-Green/Background-SampleFlash-Green_OPT.png</key>
+		<data>
+		Qs2VTTIVuY/VVOiFFipJAunTXts=
+		</data>
+		<key>Resources/Skins/Midnight Forge-Green/Background-SampleLoaded_OPT.png</key>
+		<data>
+		9MYa/dXWnBABBMmrniy+DBj9Hc8=
+		</data>
+		<key>Resources/Skins/Midnight Forge-Green/Background_OPT.png</key>
+		<data>
+		nbRqTquo8LpAmLwuuMTqF3Pgyng=
+		</data>
+		<key>Resources/Skins/Midnight Forge-Green/Button3Clicked_OPT.png</key>
+		<data>
+		K2O/vLzXNaGKO/Oy/FfcmsAbUqQ=
+		</data>
+		<key>Resources/Skins/Midnight Forge-Green/Button3Hover_OPT.png</key>
+		<data>
+		sBQ/K06OX7id/nHH8EbuWPN6FuA=
+		</data>
+		<key>Resources/Skins/Midnight Forge-Green/Button3_OPT.png</key>
+		<data>
+		MPFIF1K+ZAhBHdPOIO1fC1YFXvs=
+		</data>
+		<key>Resources/Skins/Midnight Forge-Green/LED.ttf</key>
+		<data>
+		Xed27TA4RnvEXtBgQNww+ps7Tow=
+		</data>
+		<key>Resources/Skins/Midnight Forge-Green/MIDIback_OPT.png</key>
+		<data>
+		Dlv95/8NR0GT/YsTjY99RO9aSjg=
+		</data>
+		<key>Resources/Skins/Midnight Forge-Green/MuteON_OPT.png</key>
+		<data>
+		i4hTouQnY7vTxieEwkW4nCqabt8=
+		</data>
+		<key>Resources/Skins/Midnight Forge-Green/MuteSoloOFF_OPT.png</key>
+		<data>
+		m4Hm5MyVGI5bszWiTlHUpDogEms=
+		</data>
+		<key>Resources/Skins/Midnight Forge-Green/SM5-Metal.png</key>
+		<data>
+		GxXypzsddr4MJRT7TLQkpRj/P94=
+		</data>
+		<key>Resources/Skins/Midnight Forge-Green/SkinDef.txt</key>
+		<data>
+		0hp/IXwQ2VrutqJ3vBmuH0WaorQ=
+		</data>
+		<key>Resources/Skins/Midnight Forge-Green/SliderThumb_OPT.png</key>
+		<data>
+		OermoExh6ULhQxBqZX78szlRpO8=
+		</data>
+		<key>Resources/Skins/Midnight Forge-Green/SoloON_OPT.png</key>
+		<data>
+		2ghgtqT3ha8RGQrO4+4F5/sBtyk=
+		</data>
+		<key>Resources/Skins/Midnight Forge-Green/Tempo.png</key>
+		<data>
+		VtJsfh8KKKJjpo7wRx8qijir5Hw=
+		</data>
+		<key>Resources/Skins/Midnight Forge-Green/TextBox_OPT.png</key>
+		<data>
+		m2PMqJY1r7beUNgVCw9r+qRkAPs=
+		</data>
+		<key>Resources/Skins/Midnight Forge-Green/large_knob_135frames.png</key>
+		<data>
+		hPkfJKl8NifPrBKOyt5XWv1NH94=
+		</data>
+		<key>Resources/Skins/Midnight Forge-Red/Background-SampleFlash_OPT.png</key>
+		<data>
+		56cnV/eKzbOytNviKEtqzF4GC+M=
+		</data>
+		<key>Resources/Skins/Midnight Forge-Red/Background-SampleLoaded_OPT.png</key>
+		<data>
+		9MYa/dXWnBABBMmrniy+DBj9Hc8=
+		</data>
+		<key>Resources/Skins/Midnight Forge-Red/Background_OPT.png</key>
+		<data>
+		nbRqTquo8LpAmLwuuMTqF3Pgyng=
+		</data>
+		<key>Resources/Skins/Midnight Forge-Red/Button3Clicked_OPT.png</key>
+		<data>
+		K2O/vLzXNaGKO/Oy/FfcmsAbUqQ=
+		</data>
+		<key>Resources/Skins/Midnight Forge-Red/Button3Hover_OPT.png</key>
+		<data>
+		sBQ/K06OX7id/nHH8EbuWPN6FuA=
+		</data>
+		<key>Resources/Skins/Midnight Forge-Red/Button3_OPT.png</key>
+		<data>
+		MPFIF1K+ZAhBHdPOIO1fC1YFXvs=
+		</data>
+		<key>Resources/Skins/Midnight Forge-Red/LED.ttf</key>
+		<data>
+		Xed27TA4RnvEXtBgQNww+ps7Tow=
+		</data>
+		<key>Resources/Skins/Midnight Forge-Red/MIDIback_OPT.png</key>
+		<data>
+		Dlv95/8NR0GT/YsTjY99RO9aSjg=
+		</data>
+		<key>Resources/Skins/Midnight Forge-Red/MuteON_OPT.png</key>
+		<data>
+		i4hTouQnY7vTxieEwkW4nCqabt8=
+		</data>
+		<key>Resources/Skins/Midnight Forge-Red/MuteSoloOFF_OPT.png</key>
+		<data>
+		m4Hm5MyVGI5bszWiTlHUpDogEms=
+		</data>
+		<key>Resources/Skins/Midnight Forge-Red/SM5-Metal.png</key>
+		<data>
+		GxXypzsddr4MJRT7TLQkpRj/P94=
+		</data>
+		<key>Resources/Skins/Midnight Forge-Red/SkinDef.txt</key>
+		<data>
+		LkZjtvrmLJ8TPAkEzPV/GFIqqy8=
+		</data>
+		<key>Resources/Skins/Midnight Forge-Red/SliderThumb_OPT.png</key>
+		<data>
+		OermoExh6ULhQxBqZX78szlRpO8=
+		</data>
+		<key>Resources/Skins/Midnight Forge-Red/SoloON_OPT.png</key>
+		<data>
+		2ghgtqT3ha8RGQrO4+4F5/sBtyk=
+		</data>
+		<key>Resources/Skins/Midnight Forge-Red/Tempo.png</key>
+		<data>
+		VtJsfh8KKKJjpo7wRx8qijir5Hw=
+		</data>
+		<key>Resources/Skins/Midnight Forge-Red/TextBox_OPT.png</key>
+		<data>
+		m2PMqJY1r7beUNgVCw9r+qRkAPs=
+		</data>
+		<key>Resources/Skins/Midnight Forge-Red/large_knob_135frames.png</key>
+		<data>
+		hPkfJKl8NifPrBKOyt5XWv1NH94=
+		</data>
+		<key>Resources/Skins/Oak/ButtonOakClickedOPT.png</key>
+		<data>
+		60UsNAmR7C0XUCoWduv20voEUOE=
+		</data>
+		<key>Resources/Skins/Oak/ButtonOakHoverOPT.png</key>
+		<data>
+		+b1jXI1GR1B2tgHsGTeFNO7gjqw=
+		</data>
+		<key>Resources/Skins/Oak/ButtonOakOPT.png</key>
+		<data>
+		VmNhCwJzaQTd6WC9+rPsYgFEeF4=
+		</data>
+		<key>Resources/Skins/Oak/LogoOak.png</key>
+		<data>
+		0wlB3M9UnKJfjY3jbyUNGj3zl9U=
+		</data>
+		<key>Resources/Skins/Oak/Montserrat-SemiBold.ttf</key>
+		<data>
+		efdGFtaLh9bPiXmP5yJZA2MmVno=
+		</data>
+		<key>Resources/Skins/Oak/OakBackgroundThinFrameFlashOPT.png</key>
+		<data>
+		Mi0VMyze5YM04LKJLZjs70n0eC8=
+		</data>
+		<key>Resources/Skins/Oak/OakBackgroundThinFrameLoadedOPT.png</key>
+		<data>
+		BARY8/fGgvmlG8aUxRj3512j6IE=
+		</data>
+		<key>Resources/Skins/Oak/OakBackgroundThinFrameOPT.png</key>
+		<data>
+		idYdU6FVjTeSgk+mURjAF6fayvk=
+		</data>
+		<key>Resources/Skins/Oak/OakKnob-100frames.png</key>
+		<data>
+		bexJWtXkbjVnvXLSqlZ8lbrrzmI=
+		</data>
+		<key>Resources/Skins/Oak/SkinDef.txt</key>
+		<data>
+		KE+sarNACbr8vWE+S7rLXTIN354=
+		</data>
+		<key>Resources/Skins/Oak/SliderRailOakOPT.png</key>
+		<data>
+		ZdtAfBO/ta3rrSQciIr1+LBTUxw=
+		</data>
+		<key>Resources/Skins/Oak/SliderThumbOakOPT.png</key>
+		<data>
+		pxwfoE4IF0tXoLU6e/Mx+4J0wwk=
+		</data>
+		<key>Resources/Skins/Oak/SphereOakOffOPT.png</key>
+		<data>
+		5D4rGT/vWpnsBRGxYHjlvbYAYFs=
+		</data>
+		<key>Resources/Skins/Oak/SphereOakOnOPT.png</key>
+		<data>
+		QzCIf4vGR7ungX3mbMQgdj60POw=
+		</data>
+		<key>Resources/Skins/Oak/TempoOak2.png</key>
+		<data>
+		hZ4U1j/HssVoOcEF0GpvgIIsUfY=
+		</data>
+		<key>Resources/Skins/Oak/TextBoxOak.png</key>
+		<data>
+		dThFU8Yhg/cc9IuC/co1Cgjx1RA=
+		</data>
+		<key>Resources/Skins/Studio Steel 2/BrushedNickelBackground_LED_OFF_OPT.png</key>
+		<data>
+		hKxWt1B5gUhM4zS1gPT2lP1H4qE=
+		</data>
+		<key>Resources/Skins/Studio Steel 2/BrushedNickelBackground_LED_ON_OPT.png</key>
+		<data>
+		J5NAmSaPftH/5ewqyfHb3AXJpUs=
+		</data>
+		<key>Resources/Skins/Studio Steel 2/Button-Nickel_OPT.png</key>
+		<data>
+		IibDuNBMzOXNR9BtNuMPwDFB6qw=
+		</data>
+		<key>Resources/Skins/Studio Steel 2/ButtonClicked_OPT.png</key>
+		<data>
+		GTpPdLt7LLjnv0dhtuk85ZAtZWY=
+		</data>
+		<key>Resources/Skins/Studio Steel 2/ButtonHover_OPT.png</key>
+		<data>
+		okuB/FJVQsb/ZpIbDmwFFsIOQLI=
+		</data>
+		<key>Resources/Skins/Studio Steel 2/CircleNickelKnob.png</key>
+		<data>
+		AyaWTIF4y5uoIMePCcM9SuYi1IU=
+		</data>
+		<key>Resources/Skins/Studio Steel 2/LED.ttf</key>
+		<data>
+		Xed27TA4RnvEXtBgQNww+ps7Tow=
+		</data>
+		<key>Resources/Skins/Studio Steel 2/MIDIdropdown_OPT.png</key>
+		<data>
+		OyEnMgDqaGfzBe4FdDFGE9zG0Ck=
+		</data>
+		<key>Resources/Skins/Studio Steel 2/MuteOff_OPT.png</key>
+		<data>
+		cUOvLMRCm+yy4QIgkstXE2qmodo=
+		</data>
+		<key>Resources/Skins/Studio Steel 2/MuteOn_OPT.png</key>
+		<data>
+		iXMWJscYoorr1OENRI37sb8PmeI=
+		</data>
+		<key>Resources/Skins/Studio Steel 2/SM5-Metal_OPT.png</key>
+		<data>
+		UZWDNH0MLw6nZESw/HyaUnjTeDA=
+		</data>
+		<key>Resources/Skins/Studio Steel 2/SkinDef.txt</key>
+		<data>
+		UHOXm0egSFsea8QuQKO8nLxS4gg=
+		</data>
+		<key>Resources/Skins/Studio Steel 2/SliderThumbSilver_OPT.png</key>
+		<data>
+		RvwY3TqQgFzqFY/dSbL5rVZ9qaw=
+		</data>
+		<key>Resources/Skins/Studio Steel 2/SliderTrack-ThinMetal_OPT.png</key>
+		<data>
+		lvLR3ik6zpk17ejndyUNI+8IDXc=
+		</data>
+		<key>Resources/Skins/Studio Steel 2/SoloOFF_OPT.png</key>
+		<data>
+		Ceh7sXfzJTMmxQH9rilC1W27L3E=
+		</data>
+		<key>Resources/Skins/Studio Steel 2/SoloON_OPT.png</key>
+		<data>
+		AuL1iPDEsT2vvaukyR6Jg31M8tY=
+		</data>
+		<key>Resources/Skins/Studio Steel 2/Tempo_OPT.png</key>
+		<data>
+		sGdwqpmOK4jfgFdytz36A84wcQM=
+		</data>
+		<key>Resources/Skins/Studio Steel 2/TextBox-Metal_OPT.png</key>
+		<data>
+		gioQ74IxDLNQc80X2LA4Z1hCcJQ=
+		</data>
+		<key>Resources/Skins/Studio Steel 2/knob1.png</key>
+		<data>
+		jvG5ETzBdRugB/xyCVfAwgblqMs=
+		</data>
+		<key>Resources/Skins/Studio Steel 3/BrushedNickelBackground_LED_OFF_OPT.png</key>
+		<data>
+		hKxWt1B5gUhM4zS1gPT2lP1H4qE=
+		</data>
+		<key>Resources/Skins/Studio Steel 3/BrushedNickelBackground_LED_ON_OPT.png</key>
+		<data>
+		J5NAmSaPftH/5ewqyfHb3AXJpUs=
+		</data>
+		<key>Resources/Skins/Studio Steel 3/Button-Nickel_OPT.png</key>
+		<data>
+		IibDuNBMzOXNR9BtNuMPwDFB6qw=
+		</data>
+		<key>Resources/Skins/Studio Steel 3/ButtonClicked_OPT.png</key>
+		<data>
+		GTpPdLt7LLjnv0dhtuk85ZAtZWY=
+		</data>
+		<key>Resources/Skins/Studio Steel 3/ButtonHover_OPT.png</key>
+		<data>
+		okuB/FJVQsb/ZpIbDmwFFsIOQLI=
+		</data>
+		<key>Resources/Skins/Studio Steel 3/LED.ttf</key>
+		<data>
+		Xed27TA4RnvEXtBgQNww+ps7Tow=
+		</data>
+		<key>Resources/Skins/Studio Steel 3/MIDIdropdown_OPT.png</key>
+		<data>
+		OyEnMgDqaGfzBe4FdDFGE9zG0Ck=
+		</data>
+		<key>Resources/Skins/Studio Steel 3/MuteOff_OPT.png</key>
+		<data>
+		cUOvLMRCm+yy4QIgkstXE2qmodo=
+		</data>
+		<key>Resources/Skins/Studio Steel 3/MuteOn_OPT.png</key>
+		<data>
+		iXMWJscYoorr1OENRI37sb8PmeI=
+		</data>
+		<key>Resources/Skins/Studio Steel 3/SM5-Metal_OPT.png</key>
+		<data>
+		UZWDNH0MLw6nZESw/HyaUnjTeDA=
+		</data>
+		<key>Resources/Skins/Studio Steel 3/SkinDef.txt</key>
+		<data>
+		KiTA1tM9a9W7YAMBPAHCDhOiXp0=
+		</data>
+		<key>Resources/Skins/Studio Steel 3/SliderThumbSilver_OPT.png</key>
+		<data>
+		RvwY3TqQgFzqFY/dSbL5rVZ9qaw=
+		</data>
+		<key>Resources/Skins/Studio Steel 3/SliderTrack-ThinMetal_OPT.png</key>
+		<data>
+		lvLR3ik6zpk17ejndyUNI+8IDXc=
+		</data>
+		<key>Resources/Skins/Studio Steel 3/SoloOFF_OPT.png</key>
+		<data>
+		Ceh7sXfzJTMmxQH9rilC1W27L3E=
+		</data>
+		<key>Resources/Skins/Studio Steel 3/SoloON_OPT.png</key>
+		<data>
+		AuL1iPDEsT2vvaukyR6Jg31M8tY=
+		</data>
+		<key>Resources/Skins/Studio Steel 3/Tempo_OPT.png</key>
+		<data>
+		sGdwqpmOK4jfgFdytz36A84wcQM=
+		</data>
+		<key>Resources/Skins/Studio Steel 3/TextBox-Metal_OPT.png</key>
+		<data>
+		gioQ74IxDLNQc80X2LA4Z1hCcJQ=
+		</data>
+		<key>Resources/Skins/Studio Steel 3/Vintage_KnobScale.png</key>
+		<data>
+		og7LnuSrIqrP3R8STDkGKcQeHx4=
+		</data>
+		<key>Resources/Skins/Studio Steel 3/knob1.png</key>
+		<data>
+		jvG5ETzBdRugB/xyCVfAwgblqMs=
+		</data>
+		<key>Resources/Skins/Studio Steel/BrushedNickelBackground_LED_OFF_OPT.png</key>
+		<data>
+		hKxWt1B5gUhM4zS1gPT2lP1H4qE=
+		</data>
+		<key>Resources/Skins/Studio Steel/BrushedNickelBackground_LED_ON_OPT.png</key>
+		<data>
+		J5NAmSaPftH/5ewqyfHb3AXJpUs=
+		</data>
+		<key>Resources/Skins/Studio Steel/Button-Nickel_OPT.png</key>
+		<data>
+		IibDuNBMzOXNR9BtNuMPwDFB6qw=
+		</data>
+		<key>Resources/Skins/Studio Steel/ButtonClicked_OPT.png</key>
+		<data>
+		GTpPdLt7LLjnv0dhtuk85ZAtZWY=
+		</data>
+		<key>Resources/Skins/Studio Steel/ButtonHover_OPT.png</key>
+		<data>
+		okuB/FJVQsb/ZpIbDmwFFsIOQLI=
+		</data>
+		<key>Resources/Skins/Studio Steel/LED.ttf</key>
+		<data>
+		Xed27TA4RnvEXtBgQNww+ps7Tow=
+		</data>
+		<key>Resources/Skins/Studio Steel/MIDIdropdown_OPT.png</key>
+		<data>
+		OyEnMgDqaGfzBe4FdDFGE9zG0Ck=
+		</data>
+		<key>Resources/Skins/Studio Steel/MuteOff_OPT.png</key>
+		<data>
+		cUOvLMRCm+yy4QIgkstXE2qmodo=
+		</data>
+		<key>Resources/Skins/Studio Steel/MuteOn_OPT.png</key>
+		<data>
+		iXMWJscYoorr1OENRI37sb8PmeI=
+		</data>
+		<key>Resources/Skins/Studio Steel/SM5-Metal_OPT.png</key>
+		<data>
+		UZWDNH0MLw6nZESw/HyaUnjTeDA=
+		</data>
+		<key>Resources/Skins/Studio Steel/SkinDef.txt</key>
+		<data>
+		wOX3AbyIGwVMTkLiZVi069FhV/w=
+		</data>
+		<key>Resources/Skins/Studio Steel/SliderThumbSilver_OPT.png</key>
+		<data>
+		RvwY3TqQgFzqFY/dSbL5rVZ9qaw=
+		</data>
+		<key>Resources/Skins/Studio Steel/SliderTrack-ThinMetal_OPT.png</key>
+		<data>
+		lvLR3ik6zpk17ejndyUNI+8IDXc=
+		</data>
+		<key>Resources/Skins/Studio Steel/SoloOFF_OPT.png</key>
+		<data>
+		Ceh7sXfzJTMmxQH9rilC1W27L3E=
+		</data>
+		<key>Resources/Skins/Studio Steel/SoloON_OPT.png</key>
+		<data>
+		AuL1iPDEsT2vvaukyR6Jg31M8tY=
+		</data>
+		<key>Resources/Skins/Studio Steel/Tempo_OPT.png</key>
+		<data>
+		sGdwqpmOK4jfgFdytz36A84wcQM=
+		</data>
+		<key>Resources/Skins/Studio Steel/TextBox-Metal_OPT.png</key>
+		<data>
+		gioQ74IxDLNQc80X2LA4Z1hCcJQ=
+		</data>
+		<key>Resources/Skins/Studio Steel/knob1.png</key>
+		<data>
+		jvG5ETzBdRugB/xyCVfAwgblqMs=
+		</data>
+		<key>Resources/SlotMachine.icns</key>
+		<data>
+		qitoOm1oar2nEHqc/yR1g55ARS4=
+		</data>
+		<key>Resources/tutorialslotmachine.mp4</key>
+		<data>
+		jznF5Q5wFYC8l+1UENMK8agBud4=
+		</data>
+		<key>Resources/version.txt</key>
+		<data>
+		+XYIBFibr3Iyq4uYBr0bZlu0ivY=
+		</data>
+	</dict>
+	<key>files2</key>
+	<dict>
+		<key>Resources/RecentFilesMenuTemplate.nib</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			cY60xaOlVk3YMq6aNs9knz7yV86JbdkhaT7rYQG9AIo=
+			</data>
+		</dict>
+		<key>Resources/Skins/Classic/SkinDef.txt</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			Evz6Z/LL9ZuGkBl+47N3pS5bLTHM9WMbfwFChIHQtzc=
+			</data>
+		</dict>
+		<key>Resources/Skins/Midnight Forge-Blue/Background-SampleFlash_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			X+p8nd+AXqZp4WOjyWjn9kY0BCRk3T1hjXom8i+tSpw=
+			</data>
+		</dict>
+		<key>Resources/Skins/Midnight Forge-Blue/Background-SampleLoaded_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			CQR+yU4TSXL7ExKGc9ZItQ3LCquGoN3JN3Jue2qM5QE=
+			</data>
+		</dict>
+		<key>Resources/Skins/Midnight Forge-Blue/Background_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			7WkZPdvD4zFBVCtB0MAogCzG/zBYA6oOGytehGzGX+Y=
+			</data>
+		</dict>
+		<key>Resources/Skins/Midnight Forge-Blue/Button3Clicked_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			5l/GScMc5j2KC3NTP1dI/XKGU0hKvmaemmzLyAiM6z4=
+			</data>
+		</dict>
+		<key>Resources/Skins/Midnight Forge-Blue/Button3Hover_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			B/ZvFm2vAPLhbqCq/AolZyedbccE4MASJz7O++y5A/c=
+			</data>
+		</dict>
+		<key>Resources/Skins/Midnight Forge-Blue/Button3_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			GCKwXcJJoYhQ4opQKLrFnNPw/IgjxCvUb+Kz8l1bPfY=
+			</data>
+		</dict>
+		<key>Resources/Skins/Midnight Forge-Blue/LED.ttf</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			zOxkt9cUW5wcFdQp1FEWk09GDJBEn4D0o0oWujV0XeU=
+			</data>
+		</dict>
+		<key>Resources/Skins/Midnight Forge-Blue/MIDIback_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			Xr1bE3yP7j0oWeXd+SJZFg974hO9k+5mPsbcJ5iXe7M=
+			</data>
+		</dict>
+		<key>Resources/Skins/Midnight Forge-Blue/MuteON_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			DQzK+S05z7jan0pMhLwK2auugtR/th9YNXuaFlFAEfg=
+			</data>
+		</dict>
+		<key>Resources/Skins/Midnight Forge-Blue/MuteSoloOFF_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			VeGmjX+RtHlcM23KA7bz3ar4kZjlp2XlzaP8zdV4M9A=
+			</data>
+		</dict>
+		<key>Resources/Skins/Midnight Forge-Blue/SM5-Metal.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			URnOS/6Urijy/DGaPz1BUGl0BSRDhym9BGnE6+yFLvY=
+			</data>
+		</dict>
+		<key>Resources/Skins/Midnight Forge-Blue/SkinDef.txt</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			znZ5p5Y2/xi5uKOVsd1L6o7R5WBF6zcfEBOneY2ZDW8=
+			</data>
+		</dict>
+		<key>Resources/Skins/Midnight Forge-Blue/SliderThumb_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			nx0QT4Ibxq8gZrt0DmcJyj0O8vCw2xmAYJ0946x8ST8=
+			</data>
+		</dict>
+		<key>Resources/Skins/Midnight Forge-Blue/SoloON_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			LMAQf7NrDUznvY3nBv6dKvt4Gv6aaFrbIrBP0C0ViZk=
+			</data>
+		</dict>
+		<key>Resources/Skins/Midnight Forge-Blue/Tempo.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			O0PrtcimobWyxID3SceomuzmUyxqpfgG+OwYWq2QHTg=
+			</data>
+		</dict>
+		<key>Resources/Skins/Midnight Forge-Blue/TextBox_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			3CDZ1KtP3NdXgmgU9s9EaFNKxq1ooU/MzOzEaL4IGLU=
+			</data>
+		</dict>
+		<key>Resources/Skins/Midnight Forge-Blue/large_knob_135frames.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			FFSV5b+JAxmdRwB6z3zV/KpXp3Uk8K7Ig6549oz8d/A=
+			</data>
+		</dict>
+		<key>Resources/Skins/Midnight Forge-Green/Background-SampleFlash-Green_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			PNhrXZz/Mfs/iOj73GjXv+5L7vkGD8D+mpEUp/cpIro=
+			</data>
+		</dict>
+		<key>Resources/Skins/Midnight Forge-Green/Background-SampleLoaded_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			CQR+yU4TSXL7ExKGc9ZItQ3LCquGoN3JN3Jue2qM5QE=
+			</data>
+		</dict>
+		<key>Resources/Skins/Midnight Forge-Green/Background_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			7WkZPdvD4zFBVCtB0MAogCzG/zBYA6oOGytehGzGX+Y=
+			</data>
+		</dict>
+		<key>Resources/Skins/Midnight Forge-Green/Button3Clicked_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			5l/GScMc5j2KC3NTP1dI/XKGU0hKvmaemmzLyAiM6z4=
+			</data>
+		</dict>
+		<key>Resources/Skins/Midnight Forge-Green/Button3Hover_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			B/ZvFm2vAPLhbqCq/AolZyedbccE4MASJz7O++y5A/c=
+			</data>
+		</dict>
+		<key>Resources/Skins/Midnight Forge-Green/Button3_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			GCKwXcJJoYhQ4opQKLrFnNPw/IgjxCvUb+Kz8l1bPfY=
+			</data>
+		</dict>
+		<key>Resources/Skins/Midnight Forge-Green/LED.ttf</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			zOxkt9cUW5wcFdQp1FEWk09GDJBEn4D0o0oWujV0XeU=
+			</data>
+		</dict>
+		<key>Resources/Skins/Midnight Forge-Green/MIDIback_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			Xr1bE3yP7j0oWeXd+SJZFg974hO9k+5mPsbcJ5iXe7M=
+			</data>
+		</dict>
+		<key>Resources/Skins/Midnight Forge-Green/MuteON_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			DQzK+S05z7jan0pMhLwK2auugtR/th9YNXuaFlFAEfg=
+			</data>
+		</dict>
+		<key>Resources/Skins/Midnight Forge-Green/MuteSoloOFF_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			VeGmjX+RtHlcM23KA7bz3ar4kZjlp2XlzaP8zdV4M9A=
+			</data>
+		</dict>
+		<key>Resources/Skins/Midnight Forge-Green/SM5-Metal.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			URnOS/6Urijy/DGaPz1BUGl0BSRDhym9BGnE6+yFLvY=
+			</data>
+		</dict>
+		<key>Resources/Skins/Midnight Forge-Green/SkinDef.txt</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			r+rekbGH7shWwVwJZtKdjdjn15nGCb5O29vkLnUf3sI=
+			</data>
+		</dict>
+		<key>Resources/Skins/Midnight Forge-Green/SliderThumb_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			nx0QT4Ibxq8gZrt0DmcJyj0O8vCw2xmAYJ0946x8ST8=
+			</data>
+		</dict>
+		<key>Resources/Skins/Midnight Forge-Green/SoloON_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			LMAQf7NrDUznvY3nBv6dKvt4Gv6aaFrbIrBP0C0ViZk=
+			</data>
+		</dict>
+		<key>Resources/Skins/Midnight Forge-Green/Tempo.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			O0PrtcimobWyxID3SceomuzmUyxqpfgG+OwYWq2QHTg=
+			</data>
+		</dict>
+		<key>Resources/Skins/Midnight Forge-Green/TextBox_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			3CDZ1KtP3NdXgmgU9s9EaFNKxq1ooU/MzOzEaL4IGLU=
+			</data>
+		</dict>
+		<key>Resources/Skins/Midnight Forge-Green/large_knob_135frames.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			FFSV5b+JAxmdRwB6z3zV/KpXp3Uk8K7Ig6549oz8d/A=
+			</data>
+		</dict>
+		<key>Resources/Skins/Midnight Forge-Red/Background-SampleFlash_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			V1+iukONYZAWJd/I7+p256YPjS5mnQDLNSHw+nmnIy8=
+			</data>
+		</dict>
+		<key>Resources/Skins/Midnight Forge-Red/Background-SampleLoaded_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			CQR+yU4TSXL7ExKGc9ZItQ3LCquGoN3JN3Jue2qM5QE=
+			</data>
+		</dict>
+		<key>Resources/Skins/Midnight Forge-Red/Background_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			7WkZPdvD4zFBVCtB0MAogCzG/zBYA6oOGytehGzGX+Y=
+			</data>
+		</dict>
+		<key>Resources/Skins/Midnight Forge-Red/Button3Clicked_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			5l/GScMc5j2KC3NTP1dI/XKGU0hKvmaemmzLyAiM6z4=
+			</data>
+		</dict>
+		<key>Resources/Skins/Midnight Forge-Red/Button3Hover_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			B/ZvFm2vAPLhbqCq/AolZyedbccE4MASJz7O++y5A/c=
+			</data>
+		</dict>
+		<key>Resources/Skins/Midnight Forge-Red/Button3_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			GCKwXcJJoYhQ4opQKLrFnNPw/IgjxCvUb+Kz8l1bPfY=
+			</data>
+		</dict>
+		<key>Resources/Skins/Midnight Forge-Red/LED.ttf</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			zOxkt9cUW5wcFdQp1FEWk09GDJBEn4D0o0oWujV0XeU=
+			</data>
+		</dict>
+		<key>Resources/Skins/Midnight Forge-Red/MIDIback_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			Xr1bE3yP7j0oWeXd+SJZFg974hO9k+5mPsbcJ5iXe7M=
+			</data>
+		</dict>
+		<key>Resources/Skins/Midnight Forge-Red/MuteON_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			DQzK+S05z7jan0pMhLwK2auugtR/th9YNXuaFlFAEfg=
+			</data>
+		</dict>
+		<key>Resources/Skins/Midnight Forge-Red/MuteSoloOFF_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			VeGmjX+RtHlcM23KA7bz3ar4kZjlp2XlzaP8zdV4M9A=
+			</data>
+		</dict>
+		<key>Resources/Skins/Midnight Forge-Red/SM5-Metal.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			URnOS/6Urijy/DGaPz1BUGl0BSRDhym9BGnE6+yFLvY=
+			</data>
+		</dict>
+		<key>Resources/Skins/Midnight Forge-Red/SkinDef.txt</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			A6dQ63V7fOmkEqpEM9wdoZCU0ss993R66kJzzkjyOOA=
+			</data>
+		</dict>
+		<key>Resources/Skins/Midnight Forge-Red/SliderThumb_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			nx0QT4Ibxq8gZrt0DmcJyj0O8vCw2xmAYJ0946x8ST8=
+			</data>
+		</dict>
+		<key>Resources/Skins/Midnight Forge-Red/SoloON_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			LMAQf7NrDUznvY3nBv6dKvt4Gv6aaFrbIrBP0C0ViZk=
+			</data>
+		</dict>
+		<key>Resources/Skins/Midnight Forge-Red/Tempo.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			O0PrtcimobWyxID3SceomuzmUyxqpfgG+OwYWq2QHTg=
+			</data>
+		</dict>
+		<key>Resources/Skins/Midnight Forge-Red/TextBox_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			3CDZ1KtP3NdXgmgU9s9EaFNKxq1ooU/MzOzEaL4IGLU=
+			</data>
+		</dict>
+		<key>Resources/Skins/Midnight Forge-Red/large_knob_135frames.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			FFSV5b+JAxmdRwB6z3zV/KpXp3Uk8K7Ig6549oz8d/A=
+			</data>
+		</dict>
+		<key>Resources/Skins/Oak/ButtonOakClickedOPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			flxPravlOJSDKlkVjib6xtnXiSdOSzHh6+ZrItTgngc=
+			</data>
+		</dict>
+		<key>Resources/Skins/Oak/ButtonOakHoverOPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			kU2r1zCc3BQDwXRTwp66mHiTE98mOxgDEejIkLy/k7k=
+			</data>
+		</dict>
+		<key>Resources/Skins/Oak/ButtonOakOPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			GqtZyCvtZtWP/gfnakml5wbfM23zXJjxEwAJuMAM9bs=
+			</data>
+		</dict>
+		<key>Resources/Skins/Oak/LogoOak.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			F/l6RoxyYoLunBclDwwUiiQWzMZ08qJjKBFv/9zhXic=
+			</data>
+		</dict>
+		<key>Resources/Skins/Oak/Montserrat-SemiBold.ttf</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			nE2zgUh1QQ59ZP3I5pZ2w7hJaLsVvzrOizlExZ+8VrY=
+			</data>
+		</dict>
+		<key>Resources/Skins/Oak/OakBackgroundThinFrameFlashOPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			QR96gMXC3Qg0Qh5F4hr7dBIKQhFB9XBLn86oEGtvUmw=
+			</data>
+		</dict>
+		<key>Resources/Skins/Oak/OakBackgroundThinFrameLoadedOPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			B92dCWaNiqb9uA2GamsdQiY4fWxwYF4e+14yDMsuRj0=
+			</data>
+		</dict>
+		<key>Resources/Skins/Oak/OakBackgroundThinFrameOPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			3GSSPFhD6K/5KH99p9bKvWh20KcTPHlNQE9aJgPkwBM=
+			</data>
+		</dict>
+		<key>Resources/Skins/Oak/OakKnob-100frames.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			sLDo9k/y2UyrlbbLIhJ6Ra3Wy3xTIIeC9JSqkGcIQmk=
+			</data>
+		</dict>
+		<key>Resources/Skins/Oak/SkinDef.txt</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			Q8S2Fivbs50NpcwlLQEuy0Ztkmt1ilxPdaK/JVCOz4Y=
+			</data>
+		</dict>
+		<key>Resources/Skins/Oak/SliderRailOakOPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			jiNhlVGrhdGqKudH9HMNwRHZT1bsPHuwUgvYhApfF/0=
+			</data>
+		</dict>
+		<key>Resources/Skins/Oak/SliderThumbOakOPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			SOtQOMhGvgmukrfFndOCWFhnO5htXjZw8q/H4bXBUiw=
+			</data>
+		</dict>
+		<key>Resources/Skins/Oak/SphereOakOffOPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			SgQYJM5uR/EkzCbg937OZ4wvi9YbLd4nTtdSSco+E0I=
+			</data>
+		</dict>
+		<key>Resources/Skins/Oak/SphereOakOnOPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			Vaie3s/Ve+U43A0pOIiRIuLp9ajTcmCHCLFZc8Gch4o=
+			</data>
+		</dict>
+		<key>Resources/Skins/Oak/TempoOak2.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			uc4RCyQ74zkaLElZK3tRIQC62EBZqdlqcT2aPElEfwA=
+			</data>
+		</dict>
+		<key>Resources/Skins/Oak/TextBoxOak.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			qwr8pXecJkE/44gdxuJrqQNGeuoseu83FSIYLKscK0U=
+			</data>
+		</dict>
+		<key>Resources/Skins/Studio Steel 2/BrushedNickelBackground_LED_OFF_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			iocwZfWpn+Wry9iaxC5Xd1Qj9gAZ1w4vahUaAn3CkCc=
+			</data>
+		</dict>
+		<key>Resources/Skins/Studio Steel 2/BrushedNickelBackground_LED_ON_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			hvNKoWNtdZuoyzvZZdaTy/G2wP8gY+zGchOMmuCgPFc=
+			</data>
+		</dict>
+		<key>Resources/Skins/Studio Steel 2/Button-Nickel_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			mRQLRk7dCLH044dedSD1q1b9jWW9rVZkAC/eAN5dxtY=
+			</data>
+		</dict>
+		<key>Resources/Skins/Studio Steel 2/ButtonClicked_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			+3JCGFV6LGGqFzezVQgimnQQg5s/HBqc9DpHqP9Zp6c=
+			</data>
+		</dict>
+		<key>Resources/Skins/Studio Steel 2/ButtonHover_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			zX9F3n9hhKR/+5MxIFOnP4IqSz6ZKuS/KjULT4/1pYo=
+			</data>
+		</dict>
+		<key>Resources/Skins/Studio Steel 2/CircleNickelKnob.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			qaJ1HtpwzYyQr88sg0q/iffjlJSo7xbU7XyP1+BvqSQ=
+			</data>
+		</dict>
+		<key>Resources/Skins/Studio Steel 2/LED.ttf</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			zOxkt9cUW5wcFdQp1FEWk09GDJBEn4D0o0oWujV0XeU=
+			</data>
+		</dict>
+		<key>Resources/Skins/Studio Steel 2/MIDIdropdown_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			r1IEn8fHUa4z3HRNqOrlkIhL9dPO1cWZbHA6fPf2Txc=
+			</data>
+		</dict>
+		<key>Resources/Skins/Studio Steel 2/MuteOff_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			yH78lrEavhGmXDRbLZdm9kFEWXV82QVqSDTjaU+zSWo=
+			</data>
+		</dict>
+		<key>Resources/Skins/Studio Steel 2/MuteOn_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			R2MVSPBTkZHGseM1Kekj/HzHxG2cZv+dME+pMFB3LU0=
+			</data>
+		</dict>
+		<key>Resources/Skins/Studio Steel 2/SM5-Metal_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			gaqqWnvXC8QlNZzK+36wV42bYjdays+k07CWrlSS/1o=
+			</data>
+		</dict>
+		<key>Resources/Skins/Studio Steel 2/SkinDef.txt</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			CJJU+4DdUms4Q191yrTkBKrWRILcixEj45zUc8qpmnw=
+			</data>
+		</dict>
+		<key>Resources/Skins/Studio Steel 2/SliderThumbSilver_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			H0HGMVIs+Bs1h2VnnUvBlxEIuIWu/I6CTKjQmwfIiHg=
+			</data>
+		</dict>
+		<key>Resources/Skins/Studio Steel 2/SliderTrack-ThinMetal_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			wFrcOjv+3y+p7HZv3ZIFlWCFHb3ncPydJOPlf49dciw=
+			</data>
+		</dict>
+		<key>Resources/Skins/Studio Steel 2/SoloOFF_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			0vfPsT0gyDsNJjGiUxbKmbCSgYX0XLy/rBLIoyns8d4=
+			</data>
+		</dict>
+		<key>Resources/Skins/Studio Steel 2/SoloON_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			c4+wDRMTKaf0KXKARuhOxfiwFf452oRHHFgLJGNrp8o=
+			</data>
+		</dict>
+		<key>Resources/Skins/Studio Steel 2/Tempo_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			Kl6ZDx5VDmNvQvPpcP62j6MNnk2yfkqrFEjdaUfX1FA=
+			</data>
+		</dict>
+		<key>Resources/Skins/Studio Steel 2/TextBox-Metal_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			nfcnZQDRENbp7AUBrkM/dvh0smmotMaR40E+aIIUcrU=
+			</data>
+		</dict>
+		<key>Resources/Skins/Studio Steel 2/knob1.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			hSxBbbpbEYZ/6xctj/5xKdrwYDxK2Ylzbz/5gQU1DJQ=
+			</data>
+		</dict>
+		<key>Resources/Skins/Studio Steel 3/BrushedNickelBackground_LED_OFF_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			iocwZfWpn+Wry9iaxC5Xd1Qj9gAZ1w4vahUaAn3CkCc=
+			</data>
+		</dict>
+		<key>Resources/Skins/Studio Steel 3/BrushedNickelBackground_LED_ON_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			hvNKoWNtdZuoyzvZZdaTy/G2wP8gY+zGchOMmuCgPFc=
+			</data>
+		</dict>
+		<key>Resources/Skins/Studio Steel 3/Button-Nickel_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			mRQLRk7dCLH044dedSD1q1b9jWW9rVZkAC/eAN5dxtY=
+			</data>
+		</dict>
+		<key>Resources/Skins/Studio Steel 3/ButtonClicked_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			+3JCGFV6LGGqFzezVQgimnQQg5s/HBqc9DpHqP9Zp6c=
+			</data>
+		</dict>
+		<key>Resources/Skins/Studio Steel 3/ButtonHover_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			zX9F3n9hhKR/+5MxIFOnP4IqSz6ZKuS/KjULT4/1pYo=
+			</data>
+		</dict>
+		<key>Resources/Skins/Studio Steel 3/LED.ttf</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			zOxkt9cUW5wcFdQp1FEWk09GDJBEn4D0o0oWujV0XeU=
+			</data>
+		</dict>
+		<key>Resources/Skins/Studio Steel 3/MIDIdropdown_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			r1IEn8fHUa4z3HRNqOrlkIhL9dPO1cWZbHA6fPf2Txc=
+			</data>
+		</dict>
+		<key>Resources/Skins/Studio Steel 3/MuteOff_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			yH78lrEavhGmXDRbLZdm9kFEWXV82QVqSDTjaU+zSWo=
+			</data>
+		</dict>
+		<key>Resources/Skins/Studio Steel 3/MuteOn_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			R2MVSPBTkZHGseM1Kekj/HzHxG2cZv+dME+pMFB3LU0=
+			</data>
+		</dict>
+		<key>Resources/Skins/Studio Steel 3/SM5-Metal_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			gaqqWnvXC8QlNZzK+36wV42bYjdays+k07CWrlSS/1o=
+			</data>
+		</dict>
+		<key>Resources/Skins/Studio Steel 3/SkinDef.txt</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			uzk6UztTzlM5aMxiyc4UHy4uIioDJeKi/UjwEzp8Kzk=
+			</data>
+		</dict>
+		<key>Resources/Skins/Studio Steel 3/SliderThumbSilver_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			H0HGMVIs+Bs1h2VnnUvBlxEIuIWu/I6CTKjQmwfIiHg=
+			</data>
+		</dict>
+		<key>Resources/Skins/Studio Steel 3/SliderTrack-ThinMetal_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			wFrcOjv+3y+p7HZv3ZIFlWCFHb3ncPydJOPlf49dciw=
+			</data>
+		</dict>
+		<key>Resources/Skins/Studio Steel 3/SoloOFF_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			0vfPsT0gyDsNJjGiUxbKmbCSgYX0XLy/rBLIoyns8d4=
+			</data>
+		</dict>
+		<key>Resources/Skins/Studio Steel 3/SoloON_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			c4+wDRMTKaf0KXKARuhOxfiwFf452oRHHFgLJGNrp8o=
+			</data>
+		</dict>
+		<key>Resources/Skins/Studio Steel 3/Tempo_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			Kl6ZDx5VDmNvQvPpcP62j6MNnk2yfkqrFEjdaUfX1FA=
+			</data>
+		</dict>
+		<key>Resources/Skins/Studio Steel 3/TextBox-Metal_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			nfcnZQDRENbp7AUBrkM/dvh0smmotMaR40E+aIIUcrU=
+			</data>
+		</dict>
+		<key>Resources/Skins/Studio Steel 3/Vintage_KnobScale.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			CoMh9Ap4CiOYQexx/+s0uGUoJpmVTbVRbwSvS6JmEMA=
+			</data>
+		</dict>
+		<key>Resources/Skins/Studio Steel 3/knob1.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			hSxBbbpbEYZ/6xctj/5xKdrwYDxK2Ylzbz/5gQU1DJQ=
+			</data>
+		</dict>
+		<key>Resources/Skins/Studio Steel/BrushedNickelBackground_LED_OFF_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			iocwZfWpn+Wry9iaxC5Xd1Qj9gAZ1w4vahUaAn3CkCc=
+			</data>
+		</dict>
+		<key>Resources/Skins/Studio Steel/BrushedNickelBackground_LED_ON_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			hvNKoWNtdZuoyzvZZdaTy/G2wP8gY+zGchOMmuCgPFc=
+			</data>
+		</dict>
+		<key>Resources/Skins/Studio Steel/Button-Nickel_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			mRQLRk7dCLH044dedSD1q1b9jWW9rVZkAC/eAN5dxtY=
+			</data>
+		</dict>
+		<key>Resources/Skins/Studio Steel/ButtonClicked_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			+3JCGFV6LGGqFzezVQgimnQQg5s/HBqc9DpHqP9Zp6c=
+			</data>
+		</dict>
+		<key>Resources/Skins/Studio Steel/ButtonHover_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			zX9F3n9hhKR/+5MxIFOnP4IqSz6ZKuS/KjULT4/1pYo=
+			</data>
+		</dict>
+		<key>Resources/Skins/Studio Steel/LED.ttf</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			zOxkt9cUW5wcFdQp1FEWk09GDJBEn4D0o0oWujV0XeU=
+			</data>
+		</dict>
+		<key>Resources/Skins/Studio Steel/MIDIdropdown_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			r1IEn8fHUa4z3HRNqOrlkIhL9dPO1cWZbHA6fPf2Txc=
+			</data>
+		</dict>
+		<key>Resources/Skins/Studio Steel/MuteOff_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			yH78lrEavhGmXDRbLZdm9kFEWXV82QVqSDTjaU+zSWo=
+			</data>
+		</dict>
+		<key>Resources/Skins/Studio Steel/MuteOn_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			R2MVSPBTkZHGseM1Kekj/HzHxG2cZv+dME+pMFB3LU0=
+			</data>
+		</dict>
+		<key>Resources/Skins/Studio Steel/SM5-Metal_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			gaqqWnvXC8QlNZzK+36wV42bYjdays+k07CWrlSS/1o=
+			</data>
+		</dict>
+		<key>Resources/Skins/Studio Steel/SkinDef.txt</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			SJ324UJqoTmjwrt1Ekf1C/swoOTlq0YXv1S7sYtBQPQ=
+			</data>
+		</dict>
+		<key>Resources/Skins/Studio Steel/SliderThumbSilver_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			H0HGMVIs+Bs1h2VnnUvBlxEIuIWu/I6CTKjQmwfIiHg=
+			</data>
+		</dict>
+		<key>Resources/Skins/Studio Steel/SliderTrack-ThinMetal_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			wFrcOjv+3y+p7HZv3ZIFlWCFHb3ncPydJOPlf49dciw=
+			</data>
+		</dict>
+		<key>Resources/Skins/Studio Steel/SoloOFF_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			0vfPsT0gyDsNJjGiUxbKmbCSgYX0XLy/rBLIoyns8d4=
+			</data>
+		</dict>
+		<key>Resources/Skins/Studio Steel/SoloON_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			c4+wDRMTKaf0KXKARuhOxfiwFf452oRHHFgLJGNrp8o=
+			</data>
+		</dict>
+		<key>Resources/Skins/Studio Steel/Tempo_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			Kl6ZDx5VDmNvQvPpcP62j6MNnk2yfkqrFEjdaUfX1FA=
+			</data>
+		</dict>
+		<key>Resources/Skins/Studio Steel/TextBox-Metal_OPT.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			nfcnZQDRENbp7AUBrkM/dvh0smmotMaR40E+aIIUcrU=
+			</data>
+		</dict>
+		<key>Resources/Skins/Studio Steel/knob1.png</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			hSxBbbpbEYZ/6xctj/5xKdrwYDxK2Ylzbz/5gQU1DJQ=
+			</data>
+		</dict>
+		<key>Resources/SlotMachine.icns</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			K54brxLr9SAqB1RTEjdnZt3+Y6TsjLYnTs6BKx/JAuQ=
+			</data>
+		</dict>
+		<key>Resources/tutorialslotmachine.mp4</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			AV8levgWUwYtCrCnNEzdYHeTV82n9orjiqVvceqx1ow=
+			</data>
+		</dict>
+		<key>Resources/version.txt</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			wqSRzbPUhbOunWfZWX+tLMD6ZiHyMn17Su9d2t90zIU=
+			</data>
+		</dict>
+	</dict>
+	<key>rules</key>
+	<dict>
+		<key>^Resources/</key>
+		<true/>
+		<key>^Resources/.*\.lproj/</key>
+		<dict>
+			<key>optional</key>
+			<true/>
+			<key>weight</key>
+			<real>1000</real>
+		</dict>
+		<key>^Resources/.*\.lproj/locversion.plist$</key>
+		<dict>
+			<key>omit</key>
+			<true/>
+			<key>weight</key>
+			<real>1100</real>
+		</dict>
+		<key>^Resources/Base\.lproj/</key>
+		<dict>
+			<key>weight</key>
+			<real>1010</real>
+		</dict>
+		<key>^version.plist$</key>
+		<true/>
+	</dict>
+	<key>rules2</key>
+	<dict>
+		<key>.*\.dSYM($|/)</key>
+		<dict>
+			<key>weight</key>
+			<real>11</real>
+		</dict>
+		<key>^(.*/)?\.DS_Store$</key>
+		<dict>
+			<key>omit</key>
+			<true/>
+			<key>weight</key>
+			<real>2000</real>
+		</dict>
+		<key>^(Frameworks|SharedFrameworks|PlugIns|Plug-ins|XPCServices|Helpers|MacOS|Library/(Automator|Spotlight|LoginItems))/</key>
+		<dict>
+			<key>nested</key>
+			<true/>
+			<key>weight</key>
+			<real>10</real>
+		</dict>
+		<key>^.*</key>
+		<true/>
+		<key>^Info\.plist$</key>
+		<dict>
+			<key>omit</key>
+			<true/>
+			<key>weight</key>
+			<real>20</real>
+		</dict>
+		<key>^PkgInfo$</key>
+		<dict>
+			<key>omit</key>
+			<true/>
+			<key>weight</key>
+			<real>20</real>
+		</dict>
+		<key>^Resources/</key>
+		<dict>
+			<key>weight</key>
+			<real>20</real>
+		</dict>
+		<key>^Resources/.*\.lproj/</key>
+		<dict>
+			<key>optional</key>
+			<true/>
+			<key>weight</key>
+			<real>1000</real>
+		</dict>
+		<key>^Resources/.*\.lproj/locversion.plist$</key>
+		<dict>
+			<key>omit</key>
+			<true/>
+			<key>weight</key>
+			<real>1100</real>
+		</dict>
+		<key>^Resources/Base\.lproj/</key>
+		<dict>
+			<key>weight</key>
+			<real>1010</real>
+		</dict>
+		<key>^[^/]+$</key>
+		<dict>
+			<key>nested</key>
+			<true/>
+			<key>weight</key>
+			<real>10</real>
+		</dict>
+		<key>^embedded\.provisionprofile$</key>
+		<dict>
+			<key>weight</key>
+			<real>20</real>
+		</dict>
+		<key>^version\.plist$</key>
+		<dict>
+			<key>weight</key>
+			<real>20</real>
+		</dict>
+	</dict>
+</dict>
+</plist>

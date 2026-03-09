@@ -83,7 +83,7 @@ MidiSelectorColor=#E9DECD
 ; LoadButtonWidth: Width in pixels for the Load button
 ; 0 or omitted = auto-width (default 110px scaled)
 ; Right edge is anchored; width changes extend/reduce from left edge
-LoadButtonWidth=84
+LoadButtonWidth=100 ; Window=84, Mac=100
 
 ; Button: Normal button state image
 ; Applied to: All buttons in normal/idle state

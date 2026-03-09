@@ -1,0 +1,42 @@
+How to Code Sign my MacOS app
+
+1) copy the final, built SlotMachine.app from /Release into a folder that is not synced to iCloud
+2) strip any attributes:  xattr -rc SlotMachine.app
+3) Confirm no attributes left:  xattr -lr SlotMachine.app
+4) Rename file:  mv SlotMachine.app "SLOT Machine.app"
+5) Code sign the app:  
+
+codesign --deep --force --options runtime \
+--sign "Developer ID Application: Steven Leach (M5X8C8C6SW)" \
+"SLOT Machine.app"
+
+6) Zip up the app:  ditto -c -k --keepParent "SLOT Machine.app" "SLOT Machine.zip"
+7) Submit zip file to apple:  
+
+xcrun notarytool submit "SLOT Machine.zip" \
+--keychain-profile "notary-profile" \
+--wait
+
+(App Specific Password:  iztl-lirx-xrzn-nfzt)
+ 
+8) After Apple approves it, Staple:  xcrun stapler staple "SLOT Machine.app"
+9) Verify:  spctl -a -t exec -vv "SLOT Machine.app"
+
+10) Create DMG:
+
+create-dmg \
+--volname "SLOT Machine" \
+--window-pos 200 120 \
+--window-size 600 400 \
+--icon-size 100 \
+--icon "SLOT Machine.app" 150 200 \
+--icon "Applications" 450 200 \
+--background dmg-background.png \
+--hide-extension "SLOT Machine.app" \
+SlotMachine-1.0.0.dmg \
+SlotMachineDMG/
+
+11) Sign the DMG:  codesign --force --sign "Developer ID Application: Steven Leach (M5X8C8C6SW)" "SlotMachine-1.0.0.dmg"
+
+12) Verify:  codesign --verify --verbose=2 "SlotMachine-1.0.0.dmg"
+
